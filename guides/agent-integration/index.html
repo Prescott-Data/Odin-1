@@ -1882,7 +1882,7 @@
 
 
 <h1 id="ai-agent-integration">AI Agent Integration<a class="headerlink" href="#ai-agent-integration" title="Permanent link">&para;</a></h1>
-<p>Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable — because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.</p>
+<p>Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable: because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.</p>
 <table>
 <thead>
 <tr>
@@ -1927,7 +1927,7 @@
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">)</span>
 </span></code></pre></div>
 <h2 id="validate-the-agents-hypotheses">Validate the agent's hypotheses<a class="headerlink" href="#validate-the-agents-hypotheses" title="Permanent link">&para;</a></h2>
-<p>Reasoning runs the other way too. When the LLM <em>proposes</em> a relationship, check it against the graph before acting on it with <a href="../edge-scoring/"><code>score_edge()</code></a> — this closes the loop between free-form generation and verifiable structure:</p>
+<p>Reasoning runs the other way too. When the LLM <em>proposes</em> a relationship, check it against the graph before acting on it with <a href="../edge-scoring/"><code>score_edge()</code></a>, which closes the loop between free-form generation and verifiable structure:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">hypothesis</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">propose_relationship</span><span class="p">()</span>   <span class="c1"># (src, rel, dst)</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span><span class="o">*</span><span class="n">hypothesis</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">act_on</span><span class="p">(</span><span class="n">hypothesis</span><span class="p">)</span>
@@ -1942,17 +1942,17 @@
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">agent</span><span class="o">.</span><span class="n">load_context</span><span class="p">(</span><span class="s2">&quot;schema.json&quot;</span><span class="p">)</span>   <span class="c1"># now the agent knows the collections/fields</span>
 </span></code></pre></div>
 <h2 id="escalate-on-the-margin">Escalate on the margin<a class="headerlink" href="#escalate-on-the-margin" title="Permanent link">&para;</a></h2>
-<p>Finally, the triage score doubles as a clean three-way gate — a natural place to bring a human in only when it is actually warranted:</p>
+<p>Finally, the triage score doubles as a clean three-way gate, a natural place to bring a human in only when it is actually warranted:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="mi">75</span><span class="p">:</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>          <span class="c1"># strong signal — proceed</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>          <span class="c1"># strong signal, proceed</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">elif</span> <span class="n">score</span> <span class="o">&lt;=</span> <span class="mi">40</span><span class="p">:</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>         <span class="c1"># weak signal — drop it</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>         <span class="c1"># weak signal, drop it</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">else</span><span class="p">:</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">human_review</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>   <span class="c1"># uncertain — ask a person</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">human_review</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>   <span class="c1"># uncertain, ask a person</span>
 </span></code></pre></div>
 <h2 id="handing-evidence-to-the-llm">Handing evidence to the LLM<a class="headerlink" href="#handing-evidence-to-the-llm" title="Permanent link">&para;</a></h2>
-<p>Across all of these, keep the payload you give the model compact and readable — paths as arrows, plus the motifs and the score:</p>
+<p>Across all of these, keep the payload you give the model compact and readable: paths as arrows, plus the motifs and the score:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">format_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">):</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
@@ -1960,7 +1960,7 @@
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">chain</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 </span></code></pre></div>
-<p>You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract — Odin sends scored evidence downstream, the agent sends hypotheses back for validation:</p>
+<p>You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for validation:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>        seeds
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>          │
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>          ▼
@@ -1973,7 +1973,7 @@
 <p>For the full technical write-up, see the <a href="https://github.com/Prescott-Data/Odin-1/blob/main/whitepaper/AGENT_INTEGRATION_GUIDE.md">Agent Integration Guide</a> in the repository, or see the patterns applied end-to-end in the <a href="../../examples/">Examples</a>.</p>
 <script type="text/markdown" id="jc-page-source"># AI Agent Integration
 
-Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable — because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.
+Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable: because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.
 
 | Odin (the compass) | The agent (the explorer) |
 |--------------------|--------------------------|
@@ -2006,7 +2006,7 @@ def investigate(engine, agent, seeds):
 
 ## Validate the agent's hypotheses
 
-Reasoning runs the other way too. When the LLM *proposes* a relationship, check it against the graph before acting on it with [`score_edge()`](edge-scoring.md) — this closes the loop between free-form generation and verifiable structure:
+Reasoning runs the other way too. When the LLM *proposes* a relationship, check it against the graph before acting on it with [`score_edge()`](edge-scoring.md), which closes the loop between free-form generation and verifiable structure:
 
 ```python
 hypothesis = agent.propose_relationship()   # (src, rel, dst)
@@ -2029,21 +2029,21 @@ agent.load_context("schema.json")   # now the agent knows the collections/fields
 
 ## Escalate on the margin
 
-Finally, the triage score doubles as a clean three-way gate — a natural place to bring a human in only when it is actually warranted:
+Finally, the triage score doubles as a clean three-way gate, a natural place to bring a human in only when it is actually warranted:
 
 ```python
 score = result["triage"]["score"]
 if score &gt;= 75:
-    agent.act(result)          # strong signal — proceed
+    agent.act(result)          # strong signal, proceed
 elif score &lt;= 40:
-    agent.skip(result)         # weak signal — drop it
+    agent.skip(result)         # weak signal, drop it
 else:
-    human_review.enqueue(result)   # uncertain — ask a person
+    human_review.enqueue(result)   # uncertain, ask a person
 ```
 
 ## Handing evidence to the LLM
 
-Across all of these, keep the payload you give the model compact and readable — paths as arrows, plus the motifs and the score:
+Across all of these, keep the payload you give the model compact and readable: paths as arrows, plus the motifs and the score:
 
 ```python
 def format_paths(paths):
@@ -2054,7 +2054,7 @@ def format_paths(paths):
     return "\n".join(lines)
 ```
 
-You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract — Odin sends scored evidence downstream, the agent sends hypotheses back for validation:
+You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for validation:
 
 ```
         seeds

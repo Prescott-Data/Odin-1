@@ -1903,10 +1903,10 @@
 
 
 <h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often — scoring a single edge and finding the important nodes. Ten minutes, start to finish.</p>
+<p>This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.</p>
 <hr />
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
-<p>Odin needs <strong>Python 3.9+</strong> and a <strong>graph database</strong>; the reference backend is <a href="https://www.arangodb.com/">ArangoDB</a> 3.10 or later. That is genuinely all — there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.</p>
+<p>Odin needs <strong>Python 3.9+</strong> and a <strong>graph database</strong>; the reference backend is <a href="https://www.arangodb.com/">ArangoDB</a> 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.</p>
 <table>
 <thead>
 <tr>
@@ -1964,7 +1964,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_NO_AUTH</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>arangodb:3.12
 </span></code></pre></div>
-<p>This exposes ArangoDB on <code>http://localhost:8529</code> with authentication disabled — fine for local development, never for production. See <a href="../guides/arangodb/">Connecting ArangoDB</a> for authenticated setups.</p>
+<p>This exposes ArangoDB on <code>http://localhost:8529</code> with authentication disabled, which is fine for local development but never for production. See <a href="../guides/arangodb/">Connecting ArangoDB</a> for authenticated setups.</p>
 <hr />
 <h2 id="connect-and-initialize">Connect and initialize<a class="headerlink" href="#connect-and-initialize" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
@@ -1975,7 +1975,7 @@
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p>On the <strong>first</strong> initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2–5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See <a href="../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
+<p>On the <strong>first</strong> initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See <a href="../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">No model? No problem</p>
 <p>If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check <code>engine.has_npll</code> to see which mode you are in.</p>
@@ -1995,7 +1995,7 @@
 </span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    <span class="n">nodes</span> <span class="o">=</span> <span class="s2">&quot; → &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">])</span>
 </span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [</span><span class="si">{</span><span class="n">path</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">nodes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p><code>retrieve()</code> runs the full pipeline — <strong>PPR → Beam Search → NPLL scoring → aggregation</strong> — and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the <a href="../reference/result-schema/">Result Schema</a>.</p>
+<p><code>retrieve()</code> runs the full pipeline (<strong>PPR → Beam Search → NPLL scoring → aggregation</strong>) and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the <a href="../reference/result-schema/">Result Schema</a>.</p>
 <p>Whole-path retrieval is the main event, but the same engine gives you two more focused tools that are worth knowing from day one.</p>
 <hr />
 <h2 id="score-a-single-edge">Score a single edge<a class="headerlink" href="#score-a-single-edge" title="Permanent link">&para;</a></h2>
@@ -2011,7 +2011,7 @@
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">ppr_score</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ppr_score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p><code>find_anchors()</code> returns the top nodes by Personalized PageRank relative to your seeds — a fast way to orient before you retrieve. See <a href="../guides/anchors/">Finding Anchors</a>.</p>
+<p><code>find_anchors()</code> returns the top nodes by Personalized PageRank relative to your seeds, a fast way to orient before you retrieve. See <a href="../guides/anchors/">Finding Anchors</a>.</p>
 <hr />
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
@@ -2040,13 +2040,13 @@
 </div>
 <script type="text/markdown" id="jc-page-source"># Getting Started
 
-This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often — scoring a single edge and finding the important nodes. Ten minutes, start to finish.
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
 
 ---
 
 ## Requirements
 
-Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all — there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
+Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
 
 | Dependency | Why |
 |------------|-----|
@@ -2099,7 +2099,7 @@ docker run -d --name arango -p 8529:8529 \
   -e ARANGO_NO_AUTH=1 arangodb:3.12
 ```
 
-This exposes ArangoDB on `http://localhost:8529` with authentication disabled — fine for local development, never for production. See [Connecting ArangoDB](guides/arangodb.md) for authenticated setups.
+This exposes ArangoDB on `http://localhost:8529` with authentication disabled, which is fine for local development but never for production. See [Connecting ArangoDB](guides/arangodb.md) for authenticated setups.
 
 ---
 
@@ -2115,7 +2115,7 @@ db = client.db("my_graph", username="root", password="")
 engine = OdinEngine(db=db, community_id="global")
 ```
 
-On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2–5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
+On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
 
 !!! tip "No model? No problem"
     If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check `engine.has_npll` to see which mode you are in.
@@ -2139,7 +2139,7 @@ for path in result["paths"][:5]:
     print(f"  [{path['score']:.2f}] {nodes}")
 ```
 
-`retrieve()` runs the full pipeline — **PPR → Beam Search → NPLL scoring → aggregation** — and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the [Result Schema](reference/result-schema.md).
+`retrieve()` runs the full pipeline (**PPR → Beam Search → NPLL scoring → aggregation**) and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the [Result Schema](reference/result-schema.md).
 
 Whole-path retrieval is the main event, but the same engine gives you two more focused tools that are worth knowing from day one.
 
@@ -2168,7 +2168,7 @@ for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
 
-`find_anchors()` returns the top nodes by Personalized PageRank relative to your seeds — a fast way to orient before you retrieve. See [Finding Anchors](guides/anchors.md).
+`find_anchors()` returns the top nodes by Personalized PageRank relative to your seeds, a fast way to orient before you retrieve. See [Finding Anchors](guides/anchors.md).
 
 ---
 

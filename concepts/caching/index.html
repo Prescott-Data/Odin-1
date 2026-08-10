@@ -1838,12 +1838,12 @@
 
 
 <h1 id="caching">Caching<a class="headerlink" href="#caching" title="Permanent link">&para;</a></h1>
-<p>Graph exploration is repetitive by nature — PPR and beam search revisit the same nodes and edges constantly. To keep that from turning into a flood of database round-trips, Odin wraps every graph read in an LRU cache, so warm data is served from memory.</p>
+<p>Graph exploration is repetitive by nature: PPR and beam search revisit the same nodes and edges constantly. To keep that from turning into a flood of database round-trips, Odin wraps every graph read in an LRU cache, so warm data is served from memory.</p>
 <h2 id="two-layers-one-goal">Two layers, one goal<a class="headerlink" href="#two-layers-one-goal" title="Permanent link">&para;</a></h2>
 <p>There are actually two caches working together. The <strong>graph accessor</strong> cache sits over ArangoDB: when you build an engine, the raw accessor is wrapped in a <code>CachedGraphAccessor</code>, and every node fetch and neighbor lookup during a walk goes through it.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>   <span class="c1"># LRU size for graph reads</span>
 </span></code></pre></div>
-<p>Above that, the <strong>NPLL confidence</strong> layer caches <code>score_edge</code> results internally. Because a beam search evaluates the same <code>(head, relation, tail)</code> triples over and over, this makes edge scoring effectively free after the first lookup — roughly 5 ms per edge, cached.</p>
+<p>Above that, the <strong>NPLL confidence</strong> layer caches <code>score_edge</code> results internally. Because a beam search evaluates the same <code>(head, relation, tail)</code> triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.</p>
 <table>
 <thead>
 <tr>
@@ -1866,15 +1866,15 @@
 </tbody>
 </table>
 <h2 id="why-it-matters-for-latency">Why it matters for latency<a class="headerlink" href="#why-it-matters-for-latency" title="Permanent link">&para;</a></h2>
-<p>The payoff is concrete. On a warm cache Odin sees <strong>&gt;80% hit rates</strong> after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical <strong>300–800 ms</strong> range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in <a href="../../guides/production/">production</a>.</p>
+<p>The payoff is concrete. On a warm cache Odin sees <strong>&gt;80% hit rates</strong> after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical <strong>300-800 ms</strong> range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in <a href="../../guides/production/">production</a>.</p>
 <h2 id="sizing-the-cache">Sizing the cache<a class="headerlink" href="#sizing-the-cache" title="Permanent link">&para;</a></h2>
-<p><code>cache_size</code> is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly <strong>500 MB–2 GB</strong> of memory depending on cache size and graph density.</p>
-<p>One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a <strong>significant</strong> data change, construct a fresh engine — and if the edge patterns themselves shifted, <a href="../../guides/npll-lifecycle/">retrain the NPLL model</a> — so stale structure does not linger.</p>
+<p><code>cache_size</code> is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly <strong>500 MB-2 GB</strong> of memory depending on cache size and graph density.</p>
+<p>One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a <strong>significant</strong> data change, construct a fresh engine, and if the edge patterns themselves shifted, <a href="../../guides/npll-lifecycle/">retrain the NPLL model</a>, so stale structure does not linger.</p>
 <hr />
 <p>Cache size is one dial among a few; <a href="../../guides/tuning/">Tuning Retrieval</a> covers how it interacts with beam width and hops, and <a href="../../guides/production/">Production Deployment</a> puts it in the context of real workloads.</p>
 <script type="text/markdown" id="jc-page-source"># Caching
 
-Graph exploration is repetitive by nature — PPR and beam search revisit the same nodes and edges constantly. To keep that from turning into a flood of database round-trips, Odin wraps every graph read in an LRU cache, so warm data is served from memory.
+Graph exploration is repetitive by nature: PPR and beam search revisit the same nodes and edges constantly. To keep that from turning into a flood of database round-trips, Odin wraps every graph read in an LRU cache, so warm data is served from memory.
 
 ## Two layers, one goal
 
@@ -1884,7 +1884,7 @@ There are actually two caches working together. The **graph accessor** cache sit
 engine = OdinEngine(db, cache_size=5000)   # LRU size for graph reads
 ```
 
-Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this makes edge scoring effectively free after the first lookup — roughly 5 ms per edge, cached.
+Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.
 
 | Layer | What it caches | Controlled by |
 |-------|----------------|---------------|
@@ -1893,13 +1893,13 @@ Above that, the **NPLL confidence** layer caches `score_edge` results internally
 
 ## Why it matters for latency
 
-The payoff is concrete. On a warm cache Odin sees **&gt;80% hit rates** after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical **300–800 ms** range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
+The payoff is concrete. On a warm cache Odin sees **&gt;80% hit rates** after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical **300-800 ms** range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
 
 ## Sizing the cache
 
-`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly **500 MB–2 GB** of memory depending on cache size and graph density.
+`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly **500 MB-2 GB** of memory depending on cache size and graph density.
 
-One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a **significant** data change, construct a fresh engine — and if the edge patterns themselves shifted, [retrain the NPLL model](../guides/npll-lifecycle.md) — so stale structure does not linger.
+One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a **significant** data change, construct a fresh engine, and if the edge patterns themselves shifted, [retrain the NPLL model](../guides/npll-lifecycle.md), so stale structure does not linger.
 
 ---
 

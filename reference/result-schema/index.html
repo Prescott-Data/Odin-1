@@ -1930,22 +1930,22 @@
 <tr>
 <td><code>paths</code></td>
 <td><code>list[dict]</code></td>
-<td>Ranked, scored paths — the primary output</td>
+<td>Ranked, scored paths (the primary output)</td>
 </tr>
 <tr>
 <td><code>insight_score</code></td>
 <td><code>float</code></td>
-<td>Overall retrieval quality, <code>0.0–1.0</code></td>
+<td>Overall retrieval quality, <code>0.0-1.0</code></td>
 </tr>
 <tr>
 <td><code>evidence_strength</code></td>
 <td><code>float</code></td>
-<td>Strength of supporting evidence, <code>0.0–1.0</code></td>
+<td>Strength of supporting evidence, <code>0.0-1.0</code></td>
 </tr>
 <tr>
 <td><code>community_relevance</code></td>
 <td><code>float</code></td>
-<td>Relevance to the community scope, <code>0.0–1.0</code></td>
+<td>Relevance to the community scope, <code>0.0-1.0</code></td>
 </tr>
 <tr>
 <td><code>aggregates</code></td>
@@ -1955,7 +1955,7 @@
 <tr>
 <td><code>triage</code></td>
 <td><code>dict</code></td>
-<td>The <code>0–100</code> prioritization score and its components</td>
+<td>The <code>0-100</code> prioritization score and its components</td>
 </tr>
 <tr>
 <td><code>ics</code></td>
@@ -2035,7 +2035,7 @@
 <hr />
 <h2 id="triage"><code>triage</code><a class="headerlink" href="#triage" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mi">87</span><span class="p">,</span>                       <span class="c1"># 0–100</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mi">87</span><span class="p">,</span>                       <span class="c1"># 0-100</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">&quot;components&quot;</span><span class="p">:</span> <span class="p">{</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        <span class="s2">&quot;provenance&quot;</span><span class="p">:</span> <span class="mf">0.82</span><span class="p">,</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        <span class="s2">&quot;recency&quot;</span><span class="p">:</span> <span class="mf">0.74</span><span class="p">,</span>
@@ -2052,7 +2052,7 @@
 <p>The scoring formula and guards are documented in <a href="../../concepts/scoring/">Triage &amp; Insight Scoring</a>.</p>
 <hr />
 <h2 id="trace"><code>trace</code><a class="headerlink" href="#trace" title="Permanent link">&para;</a></h2>
-<p>Observability data — safe to log or drop:</p>
+<p>Observability data, safe to log or drop:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="s2">&quot;ppr&quot;</span><span class="p">:</span>  <span class="p">{</span><span class="o">...</span><span class="p">},</span>                     <span class="c1"># PPR trace</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">&quot;beam&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span>                     <span class="c1"># beam-search trace</span>
@@ -2085,12 +2085,12 @@ result.keys()
 | Field | Type | Description |
 |-------|------|-------------|
 | `topk_ppr` | `list` | Structurally important nodes (PPR anchors) used to seed exploration |
-| `paths` | `list[dict]` | Ranked, scored paths — the primary output |
-| `insight_score` | `float` | Overall retrieval quality, `0.0–1.0` |
-| `evidence_strength` | `float` | Strength of supporting evidence, `0.0–1.0` |
-| `community_relevance` | `float` | Relevance to the community scope, `0.0–1.0` |
+| `paths` | `list[dict]` | Ranked, scored paths (the primary output) |
+| `insight_score` | `float` | Overall retrieval quality, `0.0-1.0` |
+| `evidence_strength` | `float` | Strength of supporting evidence, `0.0-1.0` |
+| `community_relevance` | `float` | Relevance to the community scope, `0.0-1.0` |
 | `aggregates` | `dict` | Motifs, relation shares, and summary statistics |
-| `triage` | `dict` | The `0–100` prioritization score and its components |
+| `triage` | `dict` | The `0-100` prioritization score and its components |
 | `ics` | `dict` | Decomposition of `insight_score` |
 | `used_budget` | `dict` | Exploration budget consumed |
 | `trace` | `dict` | PPR/beam traces, params, and timings for observability |
@@ -2155,7 +2155,7 @@ See [Motifs &amp; Aggregation](../concepts/aggregation.md) for what each summary
 
 ```python
 {
-    "score": 87,                       # 0–100
+    "score": 87,                       # 0-100
     "components": {
         "provenance": 0.82,
         "recency": 0.74,
@@ -2176,7 +2176,7 @@ The scoring formula and guards are documented in [Triage &amp; Insight Scoring](
 
 ## `trace`
 
-Observability data — safe to log or drop:
+Observability data, safe to log or drop:
 
 ```python
 {

@@ -1975,9 +1975,9 @@
 <h2 id="intelligence_mode-is-constant-not-npll"><code>intelligence_mode</code> is <code>Constant</code>, not <code>NPLL</code><a class="headerlink" href="#intelligence_mode-is-constant-not-npll" title="Permanent link">&para;</a></h2>
 <p><code>engine.get_status()["intelligence_mode"] == "Constant"</code> means the NPLL model is not active. Causes:</p>
 <ul>
-<li><strong><code>auto_train=False</code></strong> — you disabled training. Set <code>auto_train=True</code>.</li>
-<li><strong>Empty or tiny graph</strong> — there were not enough edges to train a model.</li>
-<li><strong>Training raised</strong> — Odin caught an error and fell back. Check logs under the <code>odin</code> logger.</li>
+<li><strong><code>auto_train=False</code></strong>: you disabled training. Set <code>auto_train=True</code>.</li>
+<li><strong>Empty or tiny graph</strong>: there were not enough edges to train a model.</li>
+<li><strong>Training raised</strong>: Odin caught an error and fell back. Check logs under the <code>odin</code> logger.</li>
 </ul>
 <p>You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -1985,7 +1985,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="first-retrieval-is-very-slow">First retrieval is very slow<a class="headerlink" href="#first-retrieval-is-very-slow" title="Permanent link">&para;</a></h2>
-<p>The first <code>retrieve()</code> (or engine construction) trains or loads the NPLL model — <strong>2–5 minutes</strong> to train, <strong>~30 seconds</strong> to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See <a href="../../guides/production/">Production Deployment</a>.</p>
+<p>The first <code>retrieve()</code> (or engine construction) trains or loads the NPLL model, taking <strong>2-5 minutes</strong> to train or <strong>~30 seconds</strong> to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See <a href="../../guides/production/">Production Deployment</a>.</p>
 <hr />
 <h2 id="retrieve-returns-no-paths"><code>retrieve()</code> returns no paths<a class="headerlink" href="#retrieve-returns-no-paths" title="Permanent link">&para;</a></h2>
 <p>An empty <code>paths</code> list with <code>summary["low_support"] == True</code> usually means:</p>
@@ -1999,7 +1999,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="triage-score-is-surprisingly-low">Triage score is surprisingly low<a class="headerlink" href="#triage-score-is-surprisingly-low" title="Permanent link">&para;</a></h2>
-<p>Inspect the components — a guard may have fired:</p>
+<p>Inspect the components, since a guard may have fired:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;components&quot;</span><span class="p">]</span>
 </span></code></pre></div>
 <ul>
@@ -2026,7 +2026,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="out-of-memory-on-large-graphs">Out-of-memory on large graphs<a class="headerlink" href="#out-of-memory-on-large-graphs" title="Permanent link">&para;</a></h2>
-<p>Memory scales with <code>cache_size</code> and graph density (~500 MB–2 GB typical). Lower <code>cache_size</code> to reduce the resident working set at the cost of more database round-trips. See <a href="../../concepts/caching/">Caching</a>.</p>
+<p>Memory scales with <code>cache_size</code> and graph density (~500 MB-2 GB typical). Lower <code>cache_size</code> to reduce the resident working set at the cost of more database round-trips. See <a href="../../concepts/caching/">Caching</a>.</p>
 <hr />
 <h2 id="high-latency">High latency<a class="headerlink" href="#high-latency" title="Permanent link">&para;</a></h2>
 <p>Inspect where time goes before changing parameters:</p>
@@ -2046,9 +2046,9 @@ Common issues and how to resolve them.
 
 `engine.get_status()["intelligence_mode"] == "Constant"` means the NPLL model is not active. Causes:
 
-- **`auto_train=False`** — you disabled training. Set `auto_train=True`.
-- **Empty or tiny graph** — there were not enough edges to train a model.
-- **Training raised** — Odin caught an error and fell back. Check logs under the `odin` logger.
+- **`auto_train=False`**: you disabled training. Set `auto_train=True`.
+- **Empty or tiny graph**: there were not enough edges to train a model.
+- **Training raised**: Odin caught an error and fell back. Check logs under the `odin` logger.
 
 You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
@@ -2061,7 +2061,7 @@ logging.getLogger("odin").setLevel(logging.INFO)
 
 ## First retrieval is very slow
 
-The first `retrieve()` (or engine construction) trains or loads the NPLL model — **2–5 minutes** to train, **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
+The first `retrieve()` (or engine construction) trains or loads the NPLL model, taking **2-5 minutes** to train or **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
 
 ---
 
@@ -2083,7 +2083,7 @@ engine.get_neighbors("entity/claim_123")["degree"]   # should be &gt; 0
 
 ## Triage score is surprisingly low
 
-Inspect the components — a guard may have fired:
+Inspect the components, since a guard may have fired:
 
 ```python
 result["triage"]["components"]
@@ -2124,7 +2124,7 @@ from odin import OdinEngine       # correct
 
 ## Out-of-memory on large graphs
 
-Memory scales with `cache_size` and graph density (~500 MB–2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
+Memory scales with `cache_size` and graph density (~500 MB-2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
 
 ---
 

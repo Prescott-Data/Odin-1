@@ -1860,7 +1860,7 @@
 
 
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
-<p>Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — <a href="../../reference/engine/"><code>OdinEngine</code></a>, the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.</p>
+<p>Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly: <a href="../../reference/engine/"><code>OdinEngine</code></a>, the public entry point. Understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.</p>
 <h2 id="the-pipeline">The pipeline<a class="headerlink" href="#the-pipeline" title="Permanent link">&para;</a></h2>
 <p>A call to <code>retrieve()</code> runs four stages in order, each feeding the next:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌─────────────┐    ┌──────────────────────────────────────┐    ┌─────────────────┐
@@ -1868,7 +1868,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│ Entities    │    │            (Odin Engine)             │    │ Motifs + Scores │
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>└─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 </span></code></pre></div>
-<p><a href="../ppr/"><strong>PPR</strong></a> goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. <a href="../beam-search/"><strong>Beam search</strong></a> grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, <a href="../npll/"><strong>NPLL</strong></a> scores each candidate edge for plausibility and prunes the nonsense. Finally, <a href="../aggregation/"><strong>aggregation</strong></a> folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.</p>
+<p><a href="../ppr/"><strong>PPR</strong></a> goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. <a href="../beam-search/"><strong>Beam search</strong></a> grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, <a href="../npll/"><strong>NPLL</strong></a> scores each candidate edge for plausibility and prunes the nonsense. Finally, <a href="../aggregation/"><strong>aggregation</strong></a> folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable: PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.</p>
 <h2 id="the-pieces-that-do-the-work">The pieces that do the work<a class="headerlink" href="#the-pieces-that-do-the-work" title="Permanent link">&para;</a></h2>
 <p>Behind <code>OdinEngine</code>, the <code>RetrievalOrchestrator</code> runs that pipeline and assembles the result. Everything else is a component it coordinates:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>┌─────────────────────────────────────────────────────────────────────────┐
@@ -1946,12 +1946,12 @@
 </span></code></pre></div>
 <p>Every one of these parameters is documented in the <a href="../../reference/engine/">OdinEngine API</a>.</p>
 <h2 id="one-deliberate-boundary">One deliberate boundary<a class="headerlink" href="#one-deliberate-boundary" title="Permanent link">&para;</a></h2>
-<p>The design keeps <strong>graph intelligence</strong> and <strong>language reasoning</strong> strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.</p>
+<p>The design keeps <strong>graph intelligence</strong> and <strong>language reasoning</strong> strictly apart. Odin returns structured, scored evidence (nodes, edges, motifs, numbers) and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships; it only ranks the ones that are already there.</p>
 <hr />
-<p>From here, follow the pipeline in order — <a href="../data-model/">Data Model</a>, then <a href="../ppr/">PPR</a> — or skip to the <a href="../../reference/result-schema/">Result Schema</a> for the exact shape <code>retrieve()</code> hands back.</p>
+<p>From here, follow the pipeline in order, <a href="../data-model/">Data Model</a> then <a href="../ppr/">PPR</a>, or skip to the <a href="../../reference/result-schema/">Result Schema</a> for the exact shape <code>retrieve()</code> hands back.</p>
 <script type="text/markdown" id="jc-page-source"># Architecture
 
-Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — [`OdinEngine`](../reference/engine.md), the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
+Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly: [`OdinEngine`](../reference/engine.md), the public entry point. Understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
 
 ## The pipeline
 
@@ -1964,7 +1964,7 @@ A call to `retrieve()` runs four stages in order, each feeding the next:
 └─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 ```
 
-[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
+[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable: PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
 
 ## The pieces that do the work
 
@@ -2013,11 +2013,11 @@ Every one of these parameters is documented in the [OdinEngine API](../reference
 
 ## One deliberate boundary
 
-The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.
+The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence (nodes, edges, motifs, numbers) and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships; it only ranks the ones that are already there.
 
 ---
 
-From here, follow the pipeline in order — [Data Model](data-model.md), then [PPR](ppr.md) — or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.
+From here, follow the pipeline in order, [Data Model](data-model.md) then [PPR](ppr.md), or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.
 </script>
 
 

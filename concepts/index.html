@@ -1734,8 +1734,8 @@
 
 
 <h1 id="concepts">Concepts<a class="headerlink" href="#concepts" title="Permanent link">&para;</a></h1>
-<p>The ideas behind Odin — what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.</p>
-<p>Odin's job is narrow and deliberate: <strong>given seed entities, return the most relevant scored paths through a knowledge graph.</strong> It does not answer natural-language questions or generate prose — that is the agent's job. Odin is the <em>compass</em>; the agent is the <em>explorer</em>.</p>
+<p>The ideas behind Odin: what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.</p>
+<p>Odin's job is narrow and deliberate: <strong>given seed entities, return the most relevant scored paths through a knowledge graph.</strong> It does not answer natural-language questions or generate prose; that is the agent's job. Odin is the <em>compass</em>; the agent is the <em>explorer</em>.</p>
 <div class="grid cards">
 <ul>
 <li>
@@ -1745,7 +1745,7 @@
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.5 17c-.13 0-.26 0-.39.04l-1.61-3.25a2.5 2.5 0 0 0-1.75-4.29c-.13 0-.25 0-.39.04l-1.63-3.25c.48-.45.77-1.08.77-1.79a2.5 2.5 0 0 0-5 0c0 .71.29 1.34.76 1.79L8.64 9.54c-.14-.04-.26-.04-.39-.04a2.5 2.5 0 0 0-1.75 4.29l-1.61 3.25C4.76 17 4.63 17 4.5 17a2.5 2.5 0 0 0 0 5A2.5 2.5 0 0 0 7 19.5c0-.7-.29-1.34-.76-1.79l1.62-3.25c.14.04.26.04.39.04s.25 0 .39-.04l1.63 3.25c-.47.45-.77 1.09-.77 1.79a2.5 2.5 0 0 0 5 0A2.5 2.5 0 0 0 12 17c-.13 0-.26 0-.39.04L10 13.79c.46-.45.75-1.08.75-1.79s-.29-1.34-.75-1.79l1.61-3.25c.13.04.26.04.39.04s.26 0 .39-.04L14 10.21c-.45.45-.75 1.09-.75 1.79a2.5 2.5 0 0 0 2.5 2.5c.13 0 .25 0 .39-.04l1.63 3.25c-.47.45-.77 1.09-.77 1.79a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0-2.5-2.5"/></svg></span> <strong>Data Model</strong></p>
-<p>Entities, relationships, and communities — how Odin sees your graph.</p>
+<p>Entities, relationships, and communities: how Odin sees your graph.</p>
 <p><a href="data-model/">Read more →</a></p>
 </li>
 <li>
@@ -1770,7 +1770,7 @@
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 17V9H2V7h4v10zm18-2a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 1-1.5 1.5 1.5 1.5 0 0 1 1.5 1.5zm-8 0v2H8v-4a2 2 0 0 1 2-2h2V9H8V7h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2z"/></svg></span> <strong>Triage &amp; Insight Scoring</strong></p>
-<p>Collapsing many signals into one 0–100 prioritization number.</p>
+<p>Collapsing many signals into one 0-100 prioritization number.</p>
 <p><a href="scoring/">Read more →</a></p>
 </li>
 <li>
@@ -1812,9 +1812,9 @@
 <p>No single signal is sufficient. PPR alone finds important nodes but follows nonsensical edges. Beam search alone explodes without a scoring signal to prune. NPLL alone validates edges but has no notion of importance. Together they let an agent focus on paths that are <em>important, reachable, and plausible</em>.</p>
 <script type="text/markdown" id="jc-page-source"># Concepts
 
-The ideas behind Odin — what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.
+The ideas behind Odin: what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.
 
-Odin's job is narrow and deliberate: **given seed entities, return the most relevant scored paths through a knowledge graph.** It does not answer natural-language questions or generate prose — that is the agent's job. Odin is the *compass*; the agent is the *explorer*.
+Odin's job is narrow and deliberate: **given seed entities, return the most relevant scored paths through a knowledge graph.** It does not answer natural-language questions or generate prose; that is the agent's job. Odin is the *compass*; the agent is the *explorer*.
 
 &lt;div class="grid cards" markdown&gt;
 
@@ -1826,7 +1826,7 @@ Odin's job is narrow and deliberate: **given seed entities, return the most rele
 
 -   :material-graph: **Data Model**
 
-    Entities, relationships, and communities — how Odin sees your graph.
+    Entities, relationships, and communities: how Odin sees your graph.
 
     [Read more →](data-model.md)
 
@@ -1856,7 +1856,7 @@ Odin's job is narrow and deliberate: **given seed entities, return the most rele
 
 -   :material-numeric: **Triage &amp; Insight Scoring**
 
-    Collapsing many signals into one 0–100 prioritization number.
+    Collapsing many signals into one 0-100 prioritization number.
 
     [Read more →](scoring.md)
 

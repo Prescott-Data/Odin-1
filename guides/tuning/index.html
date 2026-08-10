@@ -1838,7 +1838,7 @@
 
 
 <h1 id="tuning-retrieval">Tuning Retrieval<a class="headerlink" href="#tuning-retrieval" title="Permanent link">&para;</a></h1>
-<p>Odin's defaults are chosen to work well out of the box, and most of the time you should leave them alone. When you do need to tune, only a few parameters matter — and understanding what each one trades away is more useful than any recommended value.</p>
+<p>Odin's defaults are chosen to work well out of the box, and most of the time you should leave them alone. When you do need to tune, only a few parameters matter, and understanding what each one trades away is more useful than any recommended value.</p>
 <table>
 <thead>
 <tr>
@@ -1882,14 +1882,14 @@
 </tbody>
 </table>
 <h2 id="width-and-depth">Width and depth<a class="headerlink" href="#width-and-depth" title="Permanent link">&para;</a></h2>
-<p>The two dials that shape a search are <code>beam_width</code> and <code>hop_limit</code>. <code>beam_width</code> controls how many partial paths survive each hop of <a href="../../concepts/beam-search/">beam search</a>: widen it to 128 or 256 for higher recall when you suspect relevant paths are being missed, or narrow it to 16–32 for faster, sharper results. Start at the default <code>64</code> and only move once you have a reason to.</p>
+<p>The two dials that shape a search are <code>beam_width</code> and <code>hop_limit</code>. <code>beam_width</code> controls how many partial paths survive each hop of <a href="../../concepts/beam-search/">beam search</a>: widen it to 128 or 256 for higher recall when you suspect relevant paths are being missed, or narrow it to 16-32 for faster, sharper results. Start at the default <code>64</code> and only move once you have a reason to.</p>
 <p><code>hop_limit</code> sets how far a path can reach. Two hops is enough for direct relationships and immediate context; the default of three covers most retrieval with good depth and no explosion; four or five is for genuinely deep chains, like tracing a multi-tier supply chain. Because each extra hop multiplies work by roughly the beam width, raise it deliberately rather than by default.</p>
-<p>That multiplication is the key to using them together — latency tracks with <code>beam_width × hop_limit</code>, so the two are not independent. To go deeper without paying for it, narrow the beam; to go broader, keep hops shallow and widen it:</p>
+<p>That multiplication is the key to using them together: latency tracks with <code>beam_width × hop_limit</code>, so the two are not independent. To go deeper without paying for it, narrow the beam; to go broader, keep hops shallow and widen it:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">hop_limit</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>    <span class="c1"># deep but focused</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">hop_limit</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">beam_width</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>   <span class="c1"># shallow but thorough</span>
 </span></code></pre></div>
 <h2 id="the-lever-most-people-miss">The lever most people miss<a class="headerlink" href="#the-lever-most-people-miss" title="Permanent link">&para;</a></h2>
-<p>Before touching any of that, look at your <strong>seeds</strong> — they are the single biggest influence on quality. Specific, relevant seeds sharpen the <a href="../../concepts/ppr/">PPR</a> signal and produce high-triage results; broad or generic seeds dilute it and everything downstream feels noisy. When a retrieval disappoints, tighten the seeds first, or run an <a href="../anchors/#anchor-then-retrieve-pattern">anchor-then-retrieve</a> pass to discover better ones. Parameter tuning cannot rescue a bad starting point.</p>
+<p>Before touching any of that, look at your <strong>seeds</strong>: they are the single biggest influence on quality. Specific, relevant seeds sharpen the <a href="../../concepts/ppr/">PPR</a> signal and produce high-triage results; broad or generic seeds dilute it and everything downstream feels noisy. When a retrieval disappoints, tighten the seeds first, or run an <a href="../anchors/#anchor-then-retrieve">anchor-then-retrieve</a> pass to discover better ones. Parameter tuning cannot rescue a bad starting point.</p>
 <h2 id="tune-with-evidence-not-guesswork">Tune with evidence, not guesswork<a class="headerlink" href="#tune-with-evidence-not-guesswork" title="Permanent link">&para;</a></h2>
 <p>Every result tells you where its time and budget went, so you never have to guess which stage to adjust:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">&quot;used_budget&quot;</span><span class="p">]</span>              <span class="c1"># exploration budget consumed</span>
@@ -1900,7 +1900,7 @@
 <p>The memory side of that loop is covered in <a href="../../concepts/caching/">Caching</a>, and <a href="../production/">Production Deployment</a> puts these knobs in the context of a real serving setup.</p>
 <script type="text/markdown" id="jc-page-source"># Tuning Retrieval
 
-Odin's defaults are chosen to work well out of the box, and most of the time you should leave them alone. When you do need to tune, only a few parameters matter — and understanding what each one trades away is more useful than any recommended value.
+Odin's defaults are chosen to work well out of the box, and most of the time you should leave them alone. When you do need to tune, only a few parameters matter, and understanding what each one trades away is more useful than any recommended value.
 
 | Parameter | Where | Default | Trades |
 |-----------|-------|---------|--------|
@@ -1912,11 +1912,11 @@ Odin's defaults are chosen to work well out of the box, and most of the time you
 
 ## Width and depth
 
-The two dials that shape a search are `beam_width` and `hop_limit`. `beam_width` controls how many partial paths survive each hop of [beam search](../concepts/beam-search.md): widen it to 128 or 256 for higher recall when you suspect relevant paths are being missed, or narrow it to 16–32 for faster, sharper results. Start at the default `64` and only move once you have a reason to.
+The two dials that shape a search are `beam_width` and `hop_limit`. `beam_width` controls how many partial paths survive each hop of [beam search](../concepts/beam-search.md): widen it to 128 or 256 for higher recall when you suspect relevant paths are being missed, or narrow it to 16-32 for faster, sharper results. Start at the default `64` and only move once you have a reason to.
 
 `hop_limit` sets how far a path can reach. Two hops is enough for direct relationships and immediate context; the default of three covers most retrieval with good depth and no explosion; four or five is for genuinely deep chains, like tracing a multi-tier supply chain. Because each extra hop multiplies work by roughly the beam width, raise it deliberately rather than by default.
 
-That multiplication is the key to using them together — latency tracks with `beam_width × hop_limit`, so the two are not independent. To go deeper without paying for it, narrow the beam; to go broader, keep hops shallow and widen it:
+That multiplication is the key to using them together: latency tracks with `beam_width × hop_limit`, so the two are not independent. To go deeper without paying for it, narrow the beam; to go broader, keep hops shallow and widen it:
 
 ```python
 engine.retrieve(seeds, hop_limit=5, beam_width=24)    # deep but focused
@@ -1925,7 +1925,7 @@ engine.retrieve(seeds, hop_limit=2, beam_width=128)   # shallow but thorough
 
 ## The lever most people miss
 
-Before touching any of that, look at your **seeds** — they are the single biggest influence on quality. Specific, relevant seeds sharpen the [PPR](../concepts/ppr.md) signal and produce high-triage results; broad or generic seeds dilute it and everything downstream feels noisy. When a retrieval disappoints, tighten the seeds first, or run an [anchor-then-retrieve](anchors.md#anchor-then-retrieve-pattern) pass to discover better ones. Parameter tuning cannot rescue a bad starting point.
+Before touching any of that, look at your **seeds**: they are the single biggest influence on quality. Specific, relevant seeds sharpen the [PPR](../concepts/ppr.md) signal and produce high-triage results; broad or generic seeds dilute it and everything downstream feels noisy. When a retrieval disappoints, tighten the seeds first, or run an [anchor-then-retrieve](anchors.md#anchor-then-retrieve) pass to discover better ones. Parameter tuning cannot rescue a bad starting point.
 
 ## Tune with evidence, not guesswork
 

@@ -2015,7 +2015,7 @@
 <div class="jc-hero">
 <p><img src="assets/combo-brand.svg" class="jc-hero-logo" alt="Odin Logo" /></p>
 <h1 id="graph-intelligence-for-autonomous-ai-agents">Graph intelligence for autonomous AI agents<a class="headerlink" href="#graph-intelligence-for-autonomous-ai-agents" title="Permanent link">&para;</a></h1>
-<p>Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths — so agents spend their compute on what matters.</p>
+<p>Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths, so agents spend their compute on what matters.</p>
 <div class="jc-cta-text">
 <p><a href="getting-started/">Get started</a> <a href="concepts/">Concepts</a> <a href="reference/engine/">API Reference</a></p>
 </div>
@@ -2023,11 +2023,11 @@
 <hr />
 <div class="jc-stats">
 <div class="jc-stat">
-<p><span class="jc-stat-value">10K–5M</span>
+<p><span class="jc-stat-value">10K-5M</span>
 <span class="jc-stat-label">Entities per graph</span></p>
 </div>
 <div class="jc-stat">
-<p><span class="jc-stat-value">300–800ms</span>
+<p><span class="jc-stat-value">300-800ms</span>
 <span class="jc-stat-label">Typical retrieval</span></p>
 </div>
 <div class="jc-stat">
@@ -2045,7 +2045,7 @@
 <div class="jc-card">
 <p><span class="jc-card-label">Navigation</span></p>
 <h3 id="guided-exploration">Guided exploration<a class="headerlink" href="#guided-exploration" title="Permanent link">&para;</a></h3>
-<p>Odin is the <strong>compass</strong>, not the explorer. Given seed entities, it returns ranked, scored paths through the graph — leaving the agent to interpret what it finds instead of drowning in raw traversal.</p>
+<p>Odin is the <strong>compass</strong>, not the explorer. Given seed entities, it returns ranked, scored paths through the graph, leaving the agent to interpret what it finds instead of drowning in raw traversal.</p>
 </div>
 <div class="jc-card">
 <p><span class="jc-card-label">Structure</span></p>
@@ -2062,13 +2062,13 @@
 <div class="jc-card">
 <p><span class="jc-card-label">Search</span></p>
 <h3 id="beam-search">Beam search<a class="headerlink" href="#beam-search" title="Permanent link">&para;</a></h3>
-<p>A bounded, best-first walk keeps multi-hop exploration tractable — top-K paths at each hop instead of exponential blow-up.</p>
+<p>A bounded, best-first walk keeps multi-hop exploration tractable: top-K paths at each hop instead of exponential blow-up.</p>
 <p><a href="concepts/beam-search/">Beam search →</a></p>
 </div>
 <div class="jc-card">
 <p><span class="jc-card-label">Patterns</span></p>
 <h3 id="motifs-triage">Motifs &amp; triage<a class="headerlink" href="#motifs-triage" title="Permanent link">&para;</a></h3>
-<p>Aggregation surfaces recurring motifs and produces a 0–100 triage score, giving agents a single prioritization signal per retrieval.</p>
+<p>Aggregation surfaces recurring motifs and produces a 0-100 triage score, giving agents a single prioritization signal per retrieval.</p>
 <p><a href="concepts/aggregation/">Aggregation →</a></p>
 </div>
 <div class="jc-card">
@@ -2109,17 +2109,17 @@
 <h2 id="where-to-start">Where to start<a class="headerlink" href="#where-to-start" title="Permanent link">&para;</a></h2>
 <p>If you are new to Odin, read in this order:</p>
 <ol>
-<li><a href="getting-started/">Getting Started</a> — install, connect ArangoDB, and run your first retrieval</li>
-<li><a href="concepts/architecture/">Architecture</a> — the mental model for how the pipeline fits together</li>
-<li><a href="concepts/ppr/">Personalized PageRank</a> → <a href="concepts/beam-search/">Beam Search</a> → <a href="concepts/npll/">NPLL</a> — the three scoring signals</li>
-<li><a href="concepts/scoring/">Triage &amp; Insight Scoring</a> — how paths become a single prioritization number</li>
+<li><a href="getting-started/">Getting Started</a>: install, connect ArangoDB, and run your first retrieval</li>
+<li><a href="concepts/architecture/">Architecture</a>: the mental model for how the pipeline fits together</li>
+<li><a href="concepts/ppr/">Personalized PageRank</a> → <a href="concepts/beam-search/">Beam Search</a> → <a href="concepts/npll/">NPLL</a>: the three scoring signals</li>
+<li><a href="concepts/scoring/">Triage &amp; Insight Scoring</a>: how paths become a single prioritization number</li>
 </ol>
 <p>If you are evaluating for a specific use case:</p>
 <ul>
-<li><a href="guides/agent-integration/">AI Agent Integration</a> — wire Odin into an agent loop</li>
-<li><a href="examples/healthcare-fraud/">Healthcare Fraud Detection</a> — a worked end-to-end example</li>
-<li><a href="reference/engine/">OdinEngine API</a> — the full method surface</li>
-<li><a href="reference/configuration/">Configuration</a> — every parameter and its default</li>
+<li><a href="guides/agent-integration/">AI Agent Integration</a>: wire Odin into an agent loop</li>
+<li><a href="examples/healthcare-fraud/">Healthcare Fraud Detection</a>: a worked end-to-end example</li>
+<li><a href="reference/engine/">OdinEngine API</a>: the full method surface</li>
+<li><a href="reference/configuration/">Configuration</a>: every parameter and its default</li>
 </ul>
 <hr />
 <h2 id="explore-the-ecosystem">Explore the ecosystem<a class="headerlink" href="#explore-the-ecosystem" title="Permanent link">&para;</a></h2>
@@ -2133,19 +2133,19 @@
 <tbody>
 <tr>
 <td><strong>Reference</strong></td>
-<td>Full API surface, parameters, and result schema — <a href="reference/engine/">view reference</a></td>
+<td>Full API surface, parameters, and result schema. <a href="reference/engine/">View reference</a></td>
 </tr>
 <tr>
 <td><strong>Source</strong></td>
-<td>Browse the code, open issues, and submit PRs — <a href="https://github.com/Prescott-Data/Odin-1" rel="noopener" target="_blank">GitHub</a></td>
+<td>Browse the code, open issues, and submit PRs. <a href="https://github.com/Prescott-Data/Odin-1" rel="noopener" target="_blank">GitHub</a></td>
 </tr>
 <tr>
 <td><strong>PyPI</strong></td>
-<td>Install the released package — <a href="https://pypi.org/project/odin-engine/" rel="noopener" target="_blank">odin-engine</a></td>
+<td>Install the released package: <a href="https://pypi.org/project/odin-engine/" rel="noopener" target="_blank">odin-engine</a></td>
 </tr>
 <tr>
 <td><strong>Prescott Data</strong></td>
-<td>The team behind Odin — <a href="https://prescottdata.io" rel="noopener" target="_blank">prescottdata.io</a></td>
+<td>The team behind Odin: <a href="https://prescottdata.io" rel="noopener" target="_blank">prescottdata.io</a></td>
 </tr>
 </tbody>
 </table>
@@ -2160,7 +2160,7 @@
 </div>
 <div class="jc-ecosystem-card">
 <h3 id="build-something">Build something<a class="headerlink" href="#build-something" title="Permanent link">&para;</a></h3>
-<p>Odin is MIT-licensed and made to be extended — new adapters, aggregators, and PPR variants welcome.</p>
+<p>Odin is MIT-licensed and made to be extended: new adapters, aggregators, and PPR variants welcome.</p>
 <div class="jc-cta">
 <p><a class="jc-btn" href="guides/">Read the guides</a></p>
 </div>
@@ -2172,7 +2172,7 @@
 
 # Graph intelligence for autonomous AI agents
 
-Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths — so agents spend their compute on what matters.
+Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths, so agents spend their compute on what matters.
 
 &lt;div class="jc-cta-text" markdown&gt;
 [Get started](getting-started.md) [Concepts](concepts/index.md) [API Reference](reference/engine.md)
@@ -2184,11 +2184,11 @@ Odin is a Python library that guides AI agents through large knowledge graphs. I
 
 &lt;div class="jc-stats" markdown&gt;
 &lt;div class="jc-stat" markdown&gt;
-&lt;span class="jc-stat-value"&gt;10K–5M&lt;/span&gt;
+&lt;span class="jc-stat-value"&gt;10K-5M&lt;/span&gt;
 &lt;span class="jc-stat-label"&gt;Entities per graph&lt;/span&gt;
 &lt;/div&gt;
 &lt;div class="jc-stat" markdown&gt;
-&lt;span class="jc-stat-value"&gt;300–800ms&lt;/span&gt;
+&lt;span class="jc-stat-value"&gt;300-800ms&lt;/span&gt;
 &lt;span class="jc-stat-label"&gt;Typical retrieval&lt;/span&gt;
 &lt;/div&gt;
 &lt;div class="jc-stat" markdown&gt;
@@ -2211,7 +2211,7 @@ Odin is a Python library that guides AI agents through large knowledge graphs. I
 
 ### Guided exploration
 
-Odin is the **compass**, not the explorer. Given seed entities, it returns ranked, scored paths through the graph — leaving the agent to interpret what it finds instead of drowning in raw traversal.
+Odin is the **compass**, not the explorer. Given seed entities, it returns ranked, scored paths through the graph, leaving the agent to interpret what it finds instead of drowning in raw traversal.
 &lt;/div&gt;
 
 &lt;div class="jc-card" markdown&gt;
@@ -2239,7 +2239,7 @@ Neural Probabilistic Logic Learning scores how plausible each edge is, filtering
 
 ### Beam search
 
-A bounded, best-first walk keeps multi-hop exploration tractable — top-K paths at each hop instead of exponential blow-up.
+A bounded, best-first walk keeps multi-hop exploration tractable: top-K paths at each hop instead of exponential blow-up.
 
 [Beam search →](concepts/beam-search.md)
 &lt;/div&gt;
@@ -2249,7 +2249,7 @@ A bounded, best-first walk keeps multi-hop exploration tractable — top-K paths
 
 ### Motifs &amp; triage
 
-Aggregation surfaces recurring motifs and produces a 0–100 triage score, giving agents a single prioritization signal per retrieval.
+Aggregation surfaces recurring motifs and produces a 0-100 triage score, giving agents a single prioritization signal per retrieval.
 
 [Aggregation →](concepts/aggregation.md)
 &lt;/div&gt;
@@ -2304,17 +2304,17 @@ for path in result["paths"][:5]:
 
 If you are new to Odin, read in this order:
 
-1. [Getting Started](getting-started.md) — install, connect ArangoDB, and run your first retrieval
-2. [Architecture](concepts/architecture.md) — the mental model for how the pipeline fits together
-3. [Personalized PageRank](concepts/ppr.md) → [Beam Search](concepts/beam-search.md) → [NPLL](concepts/npll.md) — the three scoring signals
-4. [Triage &amp; Insight Scoring](concepts/scoring.md) — how paths become a single prioritization number
+1. [Getting Started](getting-started.md): install, connect ArangoDB, and run your first retrieval
+2. [Architecture](concepts/architecture.md): the mental model for how the pipeline fits together
+3. [Personalized PageRank](concepts/ppr.md) → [Beam Search](concepts/beam-search.md) → [NPLL](concepts/npll.md): the three scoring signals
+4. [Triage &amp; Insight Scoring](concepts/scoring.md): how paths become a single prioritization number
 
 If you are evaluating for a specific use case:
 
-- [AI Agent Integration](guides/agent-integration.md) — wire Odin into an agent loop
-- [Healthcare Fraud Detection](examples/healthcare-fraud.md) — a worked end-to-end example
-- [OdinEngine API](reference/engine.md) — the full method surface
-- [Configuration](reference/configuration.md) — every parameter and its default
+- [AI Agent Integration](guides/agent-integration.md): wire Odin into an agent loop
+- [Healthcare Fraud Detection](examples/healthcare-fraud.md): a worked end-to-end example
+- [OdinEngine API](reference/engine.md): the full method surface
+- [Configuration](reference/configuration.md): every parameter and its default
 
 ---
 
@@ -2322,10 +2322,10 @@ If you are evaluating for a specific use case:
 
 | | |
 |---|---|
-| **Reference** | Full API surface, parameters, and result schema — [view reference](reference/engine.md) |
-| **Source** | Browse the code, open issues, and submit PRs — [GitHub](https://github.com/Prescott-Data/Odin-1){ target="_blank" rel="noopener" } |
-| **PyPI** | Install the released package — [odin-engine](https://pypi.org/project/odin-engine/){ target="_blank" rel="noopener" } |
-| **Prescott Data** | The team behind Odin — [prescottdata.io](https://prescottdata.io){ target="_blank" rel="noopener" } |
+| **Reference** | Full API surface, parameters, and result schema. [View reference](reference/engine.md) |
+| **Source** | Browse the code, open issues, and submit PRs. [GitHub](https://github.com/Prescott-Data/Odin-1){ target="_blank" rel="noopener" } |
+| **PyPI** | Install the released package: [odin-engine](https://pypi.org/project/odin-engine/){ target="_blank" rel="noopener" } |
+| **Prescott Data** | The team behind Odin: [prescottdata.io](https://prescottdata.io){ target="_blank" rel="noopener" } |
 
 ---
 
@@ -2345,7 +2345,7 @@ Help more developers discover Odin. Every star makes the project easier to find 
 
 ### Build something
 
-Odin is MIT-licensed and made to be extended — new adapters, aggregators, and PPR variants welcome.
+Odin is MIT-licensed and made to be extended: new adapters, aggregators, and PPR variants welcome.
 
 &lt;div class="jc-cta" markdown&gt;
 [Read the guides](guides/index.md){ .jc-btn }

@@ -1860,9 +1860,9 @@
 
 
 <h1 id="triage-insight-scoring">Triage &amp; Insight Scoring<a class="headerlink" href="#triage-insight-scoring" title="Permanent link">&para;</a></h1>
-<p>A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says <em>how much attention this deserves</em>. That number is the <strong>triage score</strong>, an integer from 0 to 100, and it is the value most agent loops gate on.</p>
+<p>A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that; it needs one number that says <em>how much attention this deserves</em>. That number is the <strong>triage score</strong>, an integer from 0 to 100, and it is the value most agent loops gate on.</p>
 <h2 id="how-the-score-is-built">How the score is built<a class="headerlink" href="#how-the-score-is-built" title="Permanent link">&para;</a></h2>
-<p>The score is a weighted blend of five components drawn from the <a href="../aggregation/">aggregation summary</a>, each on a <code>0–1</code> scale:</p>
+<p>The score is a weighted blend of five components drawn from the <a href="../aggregation/">aggregation summary</a>, each on a <code>0-1</code> scale:</p>
 <p>$$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
 $$</p>
@@ -1910,7 +1910,7 @@ $$</p>
 </table>
 <p>The weighting is deliberate: provenance, recency, and surprise dominate because a finding that is well-sourced, current, and <em>unexpected</em> is the kind worth waking an analyst for. With everything maxed the score reaches 100.</p>
 <h2 id="two-guards-keep-it-honest">Two guards keep it honest<a class="headerlink" href="#two-guards-keep-it-honest" title="Permanent link">&para;</a></h2>
-<p>Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If <code>label_coverage</code> falls below <code>0.8</code>, <code>motif_density</code> is capped at <code>0.3</code> and a flat <strong>15 points</strong> are subtracted — poorly-labeled data cannot earn full pattern credit. And if <code>low_support</code> is set because there simply is not enough evidence, the whole score is cut by <strong>40%</strong>. Together they ensure a confident-looking number is actually backed by confident-looking data.</p>
+<p>Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If <code>label_coverage</code> falls below <code>0.8</code>, <code>motif_density</code> is capped at <code>0.3</code> and a flat <strong>15 points</strong> are subtracted, because poorly-labeled data cannot earn full pattern credit. And if <code>low_support</code> is set because there simply is not enough evidence, the whole score is cut by <strong>40%</strong>. Together they ensure a confident-looking number is actually backed by confident-looking data.</p>
 <h2 id="a-score-is-never-a-black-box">A score is never a black box<a class="headerlink" href="#a-score-is-never-a-black-box" title="Permanent link">&para;</a></h2>
 <p>Every triage result carries the breakdown that produced it, so you can always see <em>why</em> a number came out the way it did:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">triage</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">]</span>
@@ -1929,9 +1929,9 @@ $$</p>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  <span class="s2">&quot;low_support&quot;</span><span class="p">:</span> <span class="n">false</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>When a score comes back lower than you expected, this is the first thing to read — a <code>penalty</code> of 15 or a low <code>provenance</code> usually explains it immediately.</p>
+<p>When a score comes back lower than you expected, this is the first thing to read: a <code>penalty</code> of 15 or a low <code>provenance</code> usually explains it immediately.</p>
 <h2 id="triage-vs-the-other-signals">Triage vs. the other signals<a class="headerlink" href="#triage-vs-the-other-signals" title="Permanent link">&para;</a></h2>
-<p>Triage is the headline, but Odin reports finer-grained signals alongside it. The <code>insight_score</code> is an overall <code>0–1</code> quality measure, and <code>ics</code> decomposes it into the <code>evidence_strength</code> and <code>community_relevance</code> that make it up:</p>
+<p>Triage is the headline, but Odin reports finer-grained signals alongside it. The <code>insight_score</code> is an overall <code>0-1</code> quality measure, and <code>ics</code> decomposes it into the <code>evidence_strength</code> and <code>community_relevance</code> that make it up:</p>
 <table>
 <thead>
 <tr>
@@ -1943,22 +1943,22 @@ $$</p>
 <tbody>
 <tr>
 <td><code>triage["score"]</code></td>
-<td>0–100</td>
-<td>Prioritization — "should I look at this?"</td>
+<td>0-100</td>
+<td>Prioritization: "should I look at this?"</td>
 </tr>
 <tr>
 <td><code>insight_score</code></td>
-<td>0.0–1.0</td>
+<td>0.0-1.0</td>
 <td>Overall retrieval quality</td>
 </tr>
 <tr>
 <td><code>evidence_strength</code></td>
-<td>0.0–1.0</td>
+<td>0.0-1.0</td>
 <td>Strength of the supporting evidence</td>
 </tr>
 <tr>
 <td><code>community_relevance</code></td>
-<td>0.0–1.0</td>
+<td>0.0-1.0</td>
 <td>Relevance to the community scope</td>
 </tr>
 <tr>
@@ -1976,14 +1976,14 @@ $$</p>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;low triage&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
-<p>That gate is the seam between Odin and the agent — <a href="../../guides/agent-integration/">AI Agent Integration</a> builds it out into a full loop, and the <a href="../../reference/result-schema/">Result Schema</a> documents every field these scores live in.</p>
+<p>That gate is the seam between Odin and the agent: <a href="../../guides/agent-integration/">AI Agent Integration</a> builds it out into a full loop, and the <a href="../../reference/result-schema/">Result Schema</a> documents every field these scores live in.</p>
 <script type="text/markdown" id="jc-page-source"># Triage &amp; Insight Scoring
 
-A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
+A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that; it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
 
 ## How the score is built
 
-The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0–1` scale:
+The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0-1` scale:
 
 $$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
@@ -2001,7 +2001,7 @@ The weighting is deliberate: provenance, recency, and surprise dominate because 
 
 ## Two guards keep it honest
 
-Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted — poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
+Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted, because poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
 
 ## A score is never a black box
 
@@ -2027,18 +2027,18 @@ triage["dominant_relation"]
 }
 ```
 
-When a score comes back lower than you expected, this is the first thing to read — a `penalty` of 15 or a low `provenance` usually explains it immediately.
+When a score comes back lower than you expected, this is the first thing to read: a `penalty` of 15 or a low `provenance` usually explains it immediately.
 
 ## Triage vs. the other signals
 
-Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0–1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
+Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0-1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
 
 | Field | Range | Use |
 |-------|-------|-----|
-| `triage["score"]` | 0–100 | Prioritization — "should I look at this?" |
-| `insight_score` | 0.0–1.0 | Overall retrieval quality |
-| `evidence_strength` | 0.0–1.0 | Strength of the supporting evidence |
-| `community_relevance` | 0.0–1.0 | Relevance to the community scope |
+| `triage["score"]` | 0-100 | Prioritization: "should I look at this?" |
+| `insight_score` | 0.0-1.0 | Overall retrieval quality |
+| `evidence_strength` | 0.0-1.0 | Strength of the supporting evidence |
+| `community_relevance` | 0.0-1.0 | Relevance to the community scope |
 | `ics` | object | Decomposition of `insight_score` |
 
 The rule of thumb is simple: **gate on the triage score**, and reach for the others when you need observability rather than a decision.
@@ -2053,7 +2053,7 @@ else:
 
 ---
 
-That gate is the seam between Odin and the agent — [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.
+That gate is the seam between Odin and the agent: [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.
 </script>
 
 

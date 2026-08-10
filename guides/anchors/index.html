@@ -1075,10 +1075,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-method" class="md-nav__link">
+  <a href="#calling-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The method
+        Calling it
       
     </span>
   </a>
@@ -1086,10 +1086,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-to-use-anchors" class="md-nav__link">
+  <a href="#anchor-then-retrieve" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When to use anchors
+        Anchor-then-retrieve
       
     </span>
   </a>
@@ -1097,32 +1097,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#anchor-then-retrieve-pattern" class="md-nav__link">
+  <a href="#inspecting-one-node" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Anchor-then-retrieve pattern
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#choosing-topn" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Choosing topn
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting-a-nodes-neighborhood" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inspecting a node's neighborhood
+        Inspecting one node
       
     </span>
   </a>
@@ -1770,10 +1748,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-method" class="md-nav__link">
+  <a href="#calling-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The method
+        Calling it
       
     </span>
   </a>
@@ -1781,10 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-to-use-anchors" class="md-nav__link">
+  <a href="#anchor-then-retrieve" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When to use anchors
+        Anchor-then-retrieve
       
     </span>
   </a>
@@ -1792,32 +1770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#anchor-then-retrieve-pattern" class="md-nav__link">
+  <a href="#inspecting-one-node" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Anchor-then-retrieve pattern
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#choosing-topn" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Choosing topn
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inspecting-a-nodes-neighborhood" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inspecting a node's neighborhood
+        Inspecting one node
       
     </span>
   </a>
@@ -1904,9 +1860,9 @@
 
 
 <h1 id="finding-anchors">Finding Anchors<a class="headerlink" href="#finding-anchors" title="Permanent link">&para;</a></h1>
-<p>Anchors are the structurally important nodes relative to your seeds, found with <a href="../../concepts/ppr/">Personalized PageRank</a>. They tell an agent <em>where to look</em> before any traversal happens.</p>
-<hr />
-<h2 id="the-method">The method<a class="headerlink" href="#the-method" title="Permanent link">&para;</a></h2>
+<p>Anchors are the structurally important nodes relative to your seeds, found with <a href="../../concepts/ppr/">Personalized PageRank</a>. They answer <em>where to look</em> before any traversal happens, which makes them useful both as a standalone orientation tool and as a way to sharpen a retrieval.</p>
+<h2 id="calling-it">Calling it<a class="headerlink" href="#calling-it" title="Permanent link">&para;</a></h2>
+<p>Give <code>find_anchors()</code> your seeds and how many nodes you want back:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">anchors</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">find_anchors</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </span></code></pre></div>
 <table>
@@ -1920,7 +1876,7 @@
 <tbody>
 <tr>
 <td><code>seeds</code></td>
-<td>—</td>
+<td>required</td>
 <td>Seed entities for personalized PageRank</td>
 </tr>
 <tr>
@@ -1930,38 +1886,14 @@
 </tr>
 </tbody>
 </table>
-<p>Returns a list of <code>(node_id, ppr_score)</code> tuples, sorted by importance (highest first).</p>
+<p>It returns <code>(node_id, ppr_score)</code> tuples sorted by importance, highest first:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">anchors</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">find_anchors</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;community/insurance_claims&quot;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">ppr_score</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ppr_score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<hr />
-<h2 id="when-to-use-anchors">When to use anchors<a class="headerlink" href="#when-to-use-anchors" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Use case</th>
-<th>Why anchors help</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Targeted retrieval</strong></td>
-<td>Feed high-PPR anchors back in as seeds for a focused second pass</td>
-</tr>
-<tr>
-<td><strong>Graph orientation</strong></td>
-<td>Show an agent the neighborhood's key players before deciding what to explore</td>
-</tr>
-<tr>
-<td><strong>Budget control</strong></td>
-<td>Explore only from the top anchors instead of the entire frontier</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="anchor-then-retrieve-pattern">Anchor-then-retrieve pattern<a class="headerlink" href="#anchor-then-retrieve-pattern" title="Permanent link">&para;</a></h2>
-<p>A common two-step flow: discover the important nodes, then explore from the strongest ones.</p>
+<p><code>topn</code> is the main dial. A small value (5 to 10) gives sharp focus on the few most important nodes; the default of 20 is a balanced neighborhood view; a large value (50 or more) maps a wider region at the cost of more work downstream.</p>
+<h2 id="anchor-then-retrieve">Anchor-then-retrieve<a class="headerlink" href="#anchor-then-retrieve" title="Permanent link">&para;</a></h2>
+<p>The most valuable pattern is a two-step flow: use anchors to discover the important nodes around a broad seed, then retrieve paths from only the strongest of them.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># 1. Find the important nodes around a broad seed</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">anchors</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">find_anchors</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;community/insurance_claims&quot;</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
@@ -1969,52 +1901,23 @@
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">strong</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_id</span> <span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">[:</span><span class="mi">3</span><span class="p">]]</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="n">strong</span><span class="p">,</span> <span class="n">max_paths</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">hop_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 </span></code></pre></div>
-<p>This narrows a broad starting point down to the parts of the graph that actually matter before spending exploration budget.</p>
-<hr />
-<h2 id="choosing-topn">Choosing <code>topn</code><a class="headerlink" href="#choosing-topn" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th><code>topn</code></th>
-<th>Effect</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Small (5–10)</td>
-<td>Sharp focus on the few most important nodes</td>
-</tr>
-<tr>
-<td>Medium (20)</td>
-<td>Balanced neighborhood view (default)</td>
-</tr>
-<tr>
-<td>Large (50+)</td>
-<td>Broad map of the region; more compute downstream</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="inspecting-a-nodes-neighborhood">Inspecting a node's neighborhood<a class="headerlink" href="#inspecting-a-nodes-neighborhood" title="Permanent link">&para;</a></h2>
-<p>To look at one node in detail rather than rank many, use <code>get_neighbors()</code>:</p>
+<p>This narrows a vague starting point down to the parts of the graph that actually matter before you spend any exploration budget, which is often the difference between a noisy retrieval and a sharp one. The same idea shows up in <a href="../tuning/">Tuning Retrieval</a> as the single biggest lever on quality.</p>
+<h2 id="inspecting-one-node">Inspecting one node<a class="headerlink" href="#inspecting-one-node" title="Permanent link">&para;</a></h2>
+<p>When you want to study a single node rather than rank many, <code>get_neighbors()</code> returns its immediate neighborhood with relation types and directions:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">info</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">&quot;entity/provider_456&quot;</span><span class="p">)</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;degree&quot;</span><span class="p">])</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;neighbors&quot;</span><span class="p">][:</span><span class="mi">10</span><span class="p">]:</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s2">&quot;direction&quot;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;rel&quot;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span>
 </span></code></pre></div>
-<hr />
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../concepts/ppr/">Personalized PageRank</a> — the concept behind anchors</li>
-<li><a href="../first-retrieval/">Your First Retrieval</a></li>
-</ul>
+<p>The concept behind all of this is <a href="../../concepts/ppr/">Personalized PageRank</a>, and <a href="../first-retrieval/">Your First Retrieval</a> shows where anchors fit in the full pipeline.</p>
 <script type="text/markdown" id="jc-page-source"># Finding Anchors
 
-Anchors are the structurally important nodes relative to your seeds, found with [Personalized PageRank](../concepts/ppr.md). They tell an agent *where to look* before any traversal happens.
+Anchors are the structurally important nodes relative to your seeds, found with [Personalized PageRank](../concepts/ppr.md). They answer *where to look* before any traversal happens, which makes them useful both as a standalone orientation tool and as a way to sharpen a retrieval.
 
----
+## Calling it
 
-## The method
+Give `find_anchors()` your seeds and how many nodes you want back:
 
 ```python
 anchors = engine.find_anchors(seeds, topn=20)
@@ -2022,10 +1925,10 @@ anchors = engine.find_anchors(seeds, topn=20)
 
 | Argument | Default | Meaning |
 |----------|---------|---------|
-| `seeds` | — | Seed entities for personalized PageRank |
+| `seeds` | required | Seed entities for personalized PageRank |
 | `topn` | `20` | How many top nodes to return |
 
-Returns a list of `(node_id, ppr_score)` tuples, sorted by importance (highest first).
+It returns `(node_id, ppr_score)` tuples sorted by importance, highest first:
 
 ```python
 anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
@@ -2033,21 +1936,11 @@ for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
 
----
+`topn` is the main dial. A small value (5 to 10) gives sharp focus on the few most important nodes; the default of 20 is a balanced neighborhood view; a large value (50 or more) maps a wider region at the cost of more work downstream.
 
-## When to use anchors
+## Anchor-then-retrieve
 
-| Use case | Why anchors help |
-|----------|------------------|
-| **Targeted retrieval** | Feed high-PPR anchors back in as seeds for a focused second pass |
-| **Graph orientation** | Show an agent the neighborhood's key players before deciding what to explore |
-| **Budget control** | Explore only from the top anchors instead of the entire frontier |
-
----
-
-## Anchor-then-retrieve pattern
-
-A common two-step flow: discover the important nodes, then explore from the strongest ones.
+The most valuable pattern is a two-step flow: use anchors to discover the important nodes around a broad seed, then retrieve paths from only the strongest of them.
 
 ```python
 # 1. Find the important nodes around a broad seed
@@ -2058,23 +1951,11 @@ strong = [node_id for node_id, score in anchors[:3]]
 result = engine.retrieve(seeds=strong, max_paths=50, hop_limit=3)
 ```
 
-This narrows a broad starting point down to the parts of the graph that actually matter before spending exploration budget.
+This narrows a vague starting point down to the parts of the graph that actually matter before you spend any exploration budget, which is often the difference between a noisy retrieval and a sharp one. The same idea shows up in [Tuning Retrieval](tuning.md) as the single biggest lever on quality.
 
----
+## Inspecting one node
 
-## Choosing `topn`
-
-| `topn` | Effect |
-|--------|--------|
-| Small (5–10) | Sharp focus on the few most important nodes |
-| Medium (20) | Balanced neighborhood view (default) |
-| Large (50+) | Broad map of the region; more compute downstream |
-
----
-
-## Inspecting a node's neighborhood
-
-To look at one node in detail rather than rank many, use `get_neighbors()`:
+When you want to study a single node rather than rank many, `get_neighbors()` returns its immediate neighborhood with relation types and directions:
 
 ```python
 info = engine.get_neighbors("entity/provider_456")
@@ -2083,12 +1964,9 @@ for n in info["neighbors"][:10]:
     print(n["direction"], n["rel"], n["id"], n["weight"])
 ```
 
----
-
 ## Next
 
-- [Personalized PageRank](../concepts/ppr.md) — the concept behind anchors
-- [Your First Retrieval](first-retrieval.md)
+The concept behind all of this is [Personalized PageRank](../concepts/ppr.md), and [Your First Retrieval](first-retrieval.md) shows where anchors fit in the full pipeline.
 </script>
 
 

@@ -1904,10 +1904,10 @@
 
 
 <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
-<p>All configuration is passed as arguments — there are no global settings or environment variables that Odin reads on its own. This page collects every parameter in one place.</p>
+<p>All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.</p>
 <hr />
 <h2 id="engine-construction">Engine construction<a class="headerlink" href="#engine-construction" title="Permanent link">&para;</a></h2>
-<p><code>OdinEngine(...)</code> — see the <a href="../engine/#constructor">OdinEngine API</a>.</p>
+<p><code>OdinEngine(...)</code>. See the <a href="../engine/#constructor">OdinEngine API</a>.</p>
 <table>
 <thead>
 <tr>
@@ -1921,7 +1921,7 @@
 <tr>
 <td><code>db</code></td>
 <td><code>StandardDatabase</code></td>
-<td>—</td>
+<td>required</td>
 <td>Connected <code>python-arango</code> handle</td>
 </tr>
 <tr>
@@ -1934,7 +1934,7 @@
 <td><code>cache_size</code></td>
 <td><code>int</code></td>
 <td><code>5000</code></td>
-<td>Graph-accessor LRU size — see <a href="../../concepts/caching/">Caching</a></td>
+<td>Graph-accessor LRU size (see <a href="../../concepts/caching/">Caching</a>)</td>
 </tr>
 <tr>
 <td><code>auto_train</code></td>
@@ -1952,7 +1952,7 @@
 </table>
 <hr />
 <h2 id="retrieval">Retrieval<a class="headerlink" href="#retrieval" title="Permanent link">&para;</a></h2>
-<p><code>retrieve(...)</code> — see <a href="../../guides/tuning/">Tuning Retrieval</a>.</p>
+<p><code>retrieve(...)</code>. See <a href="../../guides/tuning/">Tuning Retrieval</a>.</p>
 <table>
 <thead>
 <tr>
@@ -1966,7 +1966,7 @@
 <tr>
 <td><code>seeds</code></td>
 <td><code>list[str]</code></td>
-<td>—</td>
+<td>required</td>
 <td>Where exploration starts</td>
 </tr>
 <tr>
@@ -2004,7 +2004,7 @@
 <tr>
 <td><code>seeds</code></td>
 <td><code>list[str]</code></td>
-<td>—</td>
+<td>required</td>
 </tr>
 <tr>
 <td><code>topn</code></td>
@@ -2028,7 +2028,7 @@
 <tr>
 <td><code>db</code></td>
 <td><code>StandardDatabase</code></td>
-<td>—</td>
+<td>required</td>
 </tr>
 <tr>
 <td><code>max_sample_docs</code></td>
@@ -2040,7 +2040,7 @@
 <p><code>inspect_arango_schema(db, output_file="schema.json")</code>.</p>
 <hr />
 <h2 id="database-connection-yours">Database connection (yours)<a class="headerlink" href="#database-connection-yours" title="Permanent link">&para;</a></h2>
-<p>Odin does not manage the connection — you construct it with <code>python-arango</code>. In production, source these from the environment:</p>
+<p>Odin does not manage the connection; you construct it with <code>python-arango</code>. In production, source these from the environment:</p>
 <table>
 <thead>
 <tr>
@@ -2104,19 +2104,19 @@
 <p>Runtime dependencies (<code>torch</code>, <code>python-arango</code>, <code>numpy</code>, <code>scipy</code>, <code>networkx</code>, <code>scikit-learn</code>, <code>gremlinpython</code>) install automatically with <code>pip install odin-engine</code>.</p>
 <script type="text/markdown" id="jc-page-source"># Configuration
 
-All configuration is passed as arguments — there are no global settings or environment variables that Odin reads on its own. This page collects every parameter in one place.
+All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.
 
 ---
 
 ## Engine construction
 
-`OdinEngine(...)` — see the [OdinEngine API](engine.md#constructor).
+`OdinEngine(...)`. See the [OdinEngine API](engine.md#constructor).
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `db` | `StandardDatabase` | — | Connected `python-arango` handle |
+| `db` | `StandardDatabase` | required | Connected `python-arango` handle |
 | `community_id` | `str` | `"global"` | Exploration scope |
-| `cache_size` | `int` | `5000` | Graph-accessor LRU size — see [Caching](../concepts/caching.md) |
+| `cache_size` | `int` | `5000` | Graph-accessor LRU size (see [Caching](../concepts/caching.md)) |
 | `auto_train` | `bool` | `True` | Train NPLL on first run if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = scoped |
 
@@ -2124,11 +2124,11 @@ All configuration is passed as arguments — there are no global settings or env
 
 ## Retrieval
 
-`retrieve(...)` — see [Tuning Retrieval](../guides/tuning.md).
+`retrieve(...)`. See [Tuning Retrieval](../guides/tuning.md).
 
 | Parameter | Type | Default | Effect |
 |-----------|------|---------|--------|
-| `seeds` | `list[str]` | — | Where exploration starts |
+| `seeds` | `list[str]` | required | Where exploration starts |
 | `max_paths` | `int` | `50` | Output size |
 | `hop_limit` | `int` | `3` | Maximum path length |
 | `beam_width` | `int` | `64` | Paths kept per hop |
@@ -2141,7 +2141,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `seeds` | `list[str]` | — |
+| `seeds` | `list[str]` | required |
 | `topn` | `int` | `20` |
 
 ---
@@ -2152,7 +2152,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `db` | `StandardDatabase` | — |
+| `db` | `StandardDatabase` | required |
 | `max_sample_docs` | `int` | `5` |
 
 `inspect_arango_schema(db, output_file="schema.json")`.
@@ -2161,7 +2161,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 ## Database connection (yours)
 
-Odin does not manage the connection — you construct it with `python-arango`. In production, source these from the environment:
+Odin does not manage the connection; you construct it with `python-arango`. In production, source these from the environment:
 
 | Variable (suggested) | Used for |
 |----------------------|----------|

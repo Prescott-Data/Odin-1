@@ -1157,21 +1157,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#checking-the-mode" class="md-nav__link">
+  <a href="#retraining" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Checking the mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#forcing-a-retrain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Forcing a retrain
+        Retraining
       
     </span>
   </a>
@@ -1190,10 +1179,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#failure-handling" class="md-nav__link">
+  <a href="#when-things-go-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Failure handling
+        When things go wrong
       
     </span>
   </a>
@@ -1803,21 +1792,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#checking-the-mode" class="md-nav__link">
+  <a href="#retraining" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Checking the mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#forcing-a-retrain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Forcing a retrain
+        Retraining
       
     </span>
   </a>
@@ -1836,10 +1814,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#failure-handling" class="md-nav__link">
+  <a href="#when-things-go-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Failure handling
+        When things go wrong
       
     </span>
   </a>
@@ -1926,96 +1904,71 @@
 
 
 <h1 id="model-lifecycle">Model Lifecycle<a class="headerlink" href="#model-lifecycle" title="Permanent link">&para;</a></h1>
-<p>Odin's <a href="../../concepts/npll/">NPLL</a> model is <strong>self-managing</strong>: it trains itself from your graph, persists to the database, and reloads automatically. This guide explains the lifecycle and how to control it.</p>
-<hr />
+<p>The <a href="../../concepts/npll/">NPLL</a> model is self-managing: it trains itself from your graph, persists to the database, and reloads on its own. You rarely have to think about it, but when you do, this is how it works and how to steer it.</p>
 <h2 id="the-three-phases">The three phases<a class="headerlink" href="#the-three-phases" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>first run ──▶ train (2–5 min) ──▶ persist weights ──▶ ArangoDB
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>first run ──▶ train (2-5 min) ──▶ persist weights ──▶ ArangoDB
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                                                          │
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>later runs ◀── rebuild (~30 s) ◀── load weights ◀────────┘
 </span></code></pre></div>
-<ol>
-<li><strong>First run</strong> — when you construct an <code>OdinEngine</code> and no model exists, <code>KnowledgeBootstrapper</code> extracts edge patterns from the graph and trains the NPLL model (typically 2–5 minutes).</li>
-<li><strong>Persist</strong> — the learned weights are stored in an ArangoDB collection. There are no <code>.pt</code> files to manage.</li>
-<li><strong>Subsequent runs</strong> — the weights are loaded from the database and the model is rebuilt in about 30 seconds.</li>
-</ol>
-<hr />
+<p>The <strong>first run</strong> does the heavy lifting. When you construct an <code>OdinEngine</code> and no model exists yet, <code>KnowledgeBootstrapper</code> extracts the graph's edge patterns and trains the model, usually in two to five minutes. Those learned weights are then <strong>persisted</strong> into an ArangoDB collection, so there are no <code>.pt</code> files to ship or mount. On every <strong>subsequent run</strong>, Odin loads the weights and rebuilds the model in about thirty seconds.</p>
 <h2 id="controlling-training-at-startup">Controlling training at startup<a class="headerlink" href="#controlling-training-at-startup" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Default: train automatically if no model exists</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Disable training — use a constant-confidence fallback instead</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<p>By default the engine trains automatically when it finds no model. You can turn that off:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># default: train if none exists</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># skip NPLL, use constant confidence</span>
 </span></code></pre></div>
-<p>With <code>auto_train=False</code>, Odin skips NPLL entirely and uses a constant edge-confidence. You still get PPR-driven structural exploration, but not semantic pruning.</p>
-<hr />
-<h2 id="checking-the-mode">Checking the mode<a class="headerlink" href="#checking-the-mode" title="Permanent link">&para;</a></h2>
+<p>With <code>auto_train=False</code> Odin skips NPLL entirely and falls back to a constant edge-confidence. You keep PPR-driven structural exploration, but you lose semantic pruning until a model is available.</p>
+<p>Whichever path you take, you can always confirm which mode you ended up in:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">has_npll</span>          <span class="c1"># True if the NPLL model is active</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># {&#39;community_id&#39;: &#39;global&#39;, &#39;npll_loaded&#39;: True,</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">#  &#39;intelligence_mode&#39;: &#39;NPLL&#39;, &#39;cache_size&#39;: 5000}</span>
 </span></code></pre></div>
-<p>If <code>intelligence_mode</code> is <code>Constant</code>, either training was disabled, or it could not complete (for example, an empty graph).</p>
-<hr />
-<h2 id="forcing-a-retrain">Forcing a retrain<a class="headerlink" href="#forcing-a-retrain" title="Permanent link">&para;</a></h2>
-<p>After <strong>significant</strong> graph changes — new relation types, a large data load, or a structural shift — retrain so the model reflects current patterns:</p>
+<p>An <code>intelligence_mode</code> of <code>Constant</code> means training was either disabled or could not complete, which most often happens on an empty graph.</p>
+<h2 id="retraining">Retraining<a class="headerlink" href="#retraining" title="Permanent link">&para;</a></h2>
+<p>When the graph changes materially (new relation types, a large data load, a structural shift), retrain so the model reflects current patterns:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ok</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">retrain_model</span><span class="p">()</span>   <span class="c1"># returns True on success</span>
 </span></code></pre></div>
-<p><code>retrain_model()</code> retrains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.</p>
+<p><code>retrain_model()</code> trains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.</p>
 <div class="admonition tip">
 <p class="admonition-title">When to retrain</p>
-<p>You do <strong>not</strong> need to retrain for ordinary incremental writes. Retrain when the <em>shape</em> of the graph changes — new kinds of entities or relationships — not merely when a few documents are added.</p>
+<p>Ordinary incremental writes do not need a retrain. Retrain when the <em>shape</em> of the graph changes, meaning new kinds of entities or relationships, not merely a few new documents.</p>
 </div>
-<hr />
 <h2 id="per-community-models">Per-community models<a class="headerlink" href="#per-community-models" title="Permanent link">&para;</a></h2>
-<p>Because NPLL learns the patterns of the community it trains on, a model is tied to its <code>community_id</code>. If you serve multiple communities, each gets its own model, trained the first time you initialize an engine for that community.</p>
+<p>Because NPLL learns the patterns of the community it trains on, each model is tied to its <code>community_id</code>. If you serve several communities, each one gets its own model, trained the first time you initialize an engine for it:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">claims</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;claims&quot;</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;mapping&quot;</span><span class="p">)</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">supply</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;supply&quot;</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;mapping&quot;</span><span class="p">)</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Each trains/loads its own NPLL model on first use.</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Each trains or loads its own NPLL model on first use.</span>
 </span></code></pre></div>
-<hr />
-<h2 id="failure-handling">Failure handling<a class="headerlink" href="#failure-handling" title="Permanent link">&para;</a></h2>
-<p>NPLL initialization is defensive: if training or loading raises, Odin logs the error and falls back to constant confidence rather than failing the whole engine. Inspect logs under the <code>odin</code> logger to see what happened, and confirm the mode with <code>get_status()</code>.</p>
-<hr />
+<h2 id="when-things-go-wrong">When things go wrong<a class="headerlink" href="#when-things-go-wrong" title="Permanent link">&para;</a></h2>
+<p>Initialization is deliberately defensive. If training or loading raises, Odin logs the error and falls back to constant confidence rather than taking the whole engine down. When a model does not come up as expected, check the logs under the <code>odin</code> logger and confirm the mode with <code>get_status()</code>.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../concepts/npll/">NPLL Edge Scoring</a></li>
-<li><a href="../production/">Production Deployment</a></li>
-</ul>
+<p>The signal this model produces is explained in <a href="../../concepts/npll/">NPLL Edge Scoring</a>, and warming a model before serving traffic is covered in <a href="../production/">Production Deployment</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Model Lifecycle
 
-Odin's [NPLL](../concepts/npll.md) model is **self-managing**: it trains itself from your graph, persists to the database, and reloads automatically. This guide explains the lifecycle and how to control it.
-
----
+The [NPLL](../concepts/npll.md) model is self-managing: it trains itself from your graph, persists to the database, and reloads on its own. You rarely have to think about it, but when you do, this is how it works and how to steer it.
 
 ## The three phases
 
 ```
-first run ──▶ train (2–5 min) ──▶ persist weights ──▶ ArangoDB
+first run ──▶ train (2-5 min) ──▶ persist weights ──▶ ArangoDB
                                                           │
 later runs ◀── rebuild (~30 s) ◀── load weights ◀────────┘
 ```
 
-1. **First run** — when you construct an `OdinEngine` and no model exists, `KnowledgeBootstrapper` extracts edge patterns from the graph and trains the NPLL model (typically 2–5 minutes).
-2. **Persist** — the learned weights are stored in an ArangoDB collection. There are no `.pt` files to manage.
-3. **Subsequent runs** — the weights are loaded from the database and the model is rebuilt in about 30 seconds.
-
----
+The **first run** does the heavy lifting. When you construct an `OdinEngine` and no model exists yet, `KnowledgeBootstrapper` extracts the graph's edge patterns and trains the model, usually in two to five minutes. Those learned weights are then **persisted** into an ArangoDB collection, so there are no `.pt` files to ship or mount. On every **subsequent run**, Odin loads the weights and rebuilds the model in about thirty seconds.
 
 ## Controlling training at startup
 
-```python
-# Default: train automatically if no model exists
-engine = OdinEngine(db, auto_train=True)
+By default the engine trains automatically when it finds no model. You can turn that off:
 
-# Disable training — use a constant-confidence fallback instead
-engine = OdinEngine(db, auto_train=False)
+```python
+engine = OdinEngine(db, auto_train=True)    # default: train if none exists
+engine = OdinEngine(db, auto_train=False)   # skip NPLL, use constant confidence
 ```
 
-With `auto_train=False`, Odin skips NPLL entirely and uses a constant edge-confidence. You still get PPR-driven structural exploration, but not semantic pruning.
+With `auto_train=False` Odin skips NPLL entirely and falls back to a constant edge-confidence. You keep PPR-driven structural exploration, but you lose semantic pruning until a model is available.
 
----
-
-## Checking the mode
+Whichever path you take, you can always confirm which mode you ended up in:
 
 ```python
 engine.has_npll          # True if the NPLL model is active
@@ -2024,47 +1977,38 @@ engine.get_status()
 #  'intelligence_mode': 'NPLL', 'cache_size': 5000}
 ```
 
-If `intelligence_mode` is `Constant`, either training was disabled, or it could not complete (for example, an empty graph).
+An `intelligence_mode` of `Constant` means training was either disabled or could not complete, which most often happens on an empty graph.
 
----
+## Retraining
 
-## Forcing a retrain
-
-After **significant** graph changes — new relation types, a large data load, or a structural shift — retrain so the model reflects current patterns:
+When the graph changes materially (new relation types, a large data load, a structural shift), retrain so the model reflects current patterns:
 
 ```python
 ok = engine.retrain_model()   # returns True on success
 ```
 
-`retrain_model()` retrains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.
+`retrain_model()` trains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.
 
 !!! tip "When to retrain"
-    You do **not** need to retrain for ordinary incremental writes. Retrain when the *shape* of the graph changes — new kinds of entities or relationships — not merely when a few documents are added.
-
----
+    Ordinary incremental writes do not need a retrain. Retrain when the *shape* of the graph changes, meaning new kinds of entities or relationships, not merely a few new documents.
 
 ## Per-community models
 
-Because NPLL learns the patterns of the community it trains on, a model is tied to its `community_id`. If you serve multiple communities, each gets its own model, trained the first time you initialize an engine for that community.
+Because NPLL learns the patterns of the community it trains on, each model is tied to its `community_id`. If you serve several communities, each one gets its own model, trained the first time you initialize an engine for it:
 
 ```python
 claims = OdinEngine(db, community_id="claims", community_mode="mapping")
 supply = OdinEngine(db, community_id="supply", community_mode="mapping")
-# Each trains/loads its own NPLL model on first use.
+# Each trains or loads its own NPLL model on first use.
 ```
 
----
+## When things go wrong
 
-## Failure handling
-
-NPLL initialization is defensive: if training or loading raises, Odin logs the error and falls back to constant confidence rather than failing the whole engine. Inspect logs under the `odin` logger to see what happened, and confirm the mode with `get_status()`.
-
----
+Initialization is deliberately defensive. If training or loading raises, Odin logs the error and falls back to constant confidence rather than taking the whole engine down. When a model does not come up as expected, check the logs under the `odin` logger and confirm the mode with `get_status()`.
 
 ## Next
 
-- [NPLL Edge Scoring](../concepts/npll.md)
-- [Production Deployment](production.md)
+The signal this model produces is explained in [NPLL Edge Scoring](../concepts/npll.md), and warming a model before serving traffic is covered in [Production Deployment](production.md).
 </script>
 
 

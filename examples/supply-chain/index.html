@@ -1882,7 +1882,7 @@
 
 
 <h1 id="supply-chain-risk">Supply Chain Risk<a class="headerlink" href="#supply-chain-risk" title="Permanent link">&para;</a></h1>
-<p>Suppose you need to identify cascading supplier dependencies — the cases where trouble at a deep-tier supplier ripples all the way up to many downstream products. What makes this different from the <a href="../healthcare-fraud/">fraud example</a> is <em>depth</em>: the risk usually hides several tiers down.</p>
+<p>Suppose you need to identify cascading supplier dependencies: the cases where trouble at a deep-tier supplier ripples all the way up to many downstream products. What makes this different from the <a href="../healthcare-fraud/">fraud example</a> is <em>depth</em>: the risk usually hides several tiers down.</p>
 <p>The graph holds entities like <code>Supplier</code>, <code>Component</code>, <code>Product</code>, <code>Facility</code>, and <code>Region</code>, connected by relations such as <code>supplies</code>, <code>depends_on</code>, <code>manufactured_at</code>, and <code>ships_to</code>.</p>
 <h2 id="explore-deep-dependencies">Explore deep dependencies<a class="headerlink" href="#explore-deep-dependencies" title="Permanent link">&para;</a></h2>
 <p>Because the interesting chains run deep, this is the case that calls for a <strong>higher <code>hop_limit</code></strong>:</p>
@@ -1937,7 +1937,7 @@
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">ppr</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ppr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>   <span class="c1"># the load-bearing suppliers in the region</span>
 </span></code></pre></div>
-<p>High-PPR suppliers are the ones whose failure would affect the most paths — the priorities for a resilience review.</p>
+<p>High-PPR suppliers are the ones whose failure would affect the most paths, and the priorities for a resilience review.</p>
 <hr />
 <h2 id="hand-off-to-an-agent">Hand off to an agent<a class="headerlink" href="#hand-off-to-an-agent" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">65</span><span class="p">:</span>
@@ -1954,7 +1954,7 @@
 </ul>
 <script type="text/markdown" id="jc-page-source"># Supply Chain Risk
 
-Suppose you need to identify cascading supplier dependencies — the cases where trouble at a deep-tier supplier ripples all the way up to many downstream products. What makes this different from the [fraud example](healthcare-fraud.md) is *depth*: the risk usually hides several tiers down.
+Suppose you need to identify cascading supplier dependencies: the cases where trouble at a deep-tier supplier ripples all the way up to many downstream products. What makes this different from the [fraud example](healthcare-fraud.md) is *depth*: the risk usually hides several tiers down.
 
 The graph holds entities like `Supplier`, `Component`, `Product`, `Facility`, and `Region`, connected by relations such as `supplies`, `depends_on`, `manufactured_at`, and `ships_to`.
 
@@ -2008,7 +2008,7 @@ for node_id, ppr in anchors[:10]:
     print(f"{ppr:.4f}  {node_id}")   # the load-bearing suppliers in the region
 ```
 
-High-PPR suppliers are the ones whose failure would affect the most paths — the priorities for a resilience review.
+High-PPR suppliers are the ones whose failure would affect the most paths, and the priorities for a resilience review.
 
 ---
 
