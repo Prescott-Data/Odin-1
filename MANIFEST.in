@@ -1,0 +1,12 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include whitepaper/ARCHITECTURE.md
+include whitepaper/AGENT_INTEGRATION_GUIDE.md
+
+# Exclude build artifacts
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.so
+global-exclude .git*

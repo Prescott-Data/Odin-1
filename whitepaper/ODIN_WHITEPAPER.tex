@@ -1,0 +1,516 @@
+\documentclass[10pt,twocolumn]{article}
+
+% Essential packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{balance}
+
+% Theorem environments
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+
+% Color definitions
+\definecolor{prescottblue}{RGB}{0,76,153}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.95}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=prescottblue,
+    filecolor=prescottblue,      
+    urlcolor=prescottblue,
+    citecolor=prescottblue,
+    pdftitle={Odin: Multi-Signal Graph Intelligence for Autonomous Discovery},
+    pdfauthor={Muyukani Kizito, Elizabeth Nyambere},
+}
+
+% Code listing style
+\lstdefinestyle{compactcode}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{green!60!black},
+    keywordstyle=\color{prescottblue}\bfseries,
+    stringstyle=\color{orange!80!black},
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=none,
+    xleftmargin=3pt,
+    xrightmargin=3pt,
+    aboveskip=2pt,
+    belowskip=2pt
+}
+\lstset{style=compactcode}
+
+% Compact lists
+\setlist{noitemsep,topsep=2pt,parsep=1pt,partopsep=0pt,leftmargin=*}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{prescottblue}}{\thesection}{0.5em}{}
+\titlespacing*{\section}{0pt}{6pt plus 2pt minus 1pt}{3pt plus 1pt minus 1pt}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{prescottblue}}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{5pt plus 2pt minus 1pt}{2pt plus 1pt minus 1pt}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{4pt plus 1pt minus 1pt}{2pt plus 1pt minus 1pt}
+
+% Caption formatting
+\captionsetup{font=small,labelfont={bf,color=prescottblue},skip=4pt}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Odin: Multi-Signal Graph Intelligence}}
+\fancyhead[R]{\small\textit{January 2026}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Paragraph spacing
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\setlength{\columnsep}{0.25in}
+
+% Math operators
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\begin{document}
+
+% Title
+\twocolumn[
+\begin{@twocolumnfalse}
+\begin{center}
+    {\LARGE\bfseries\color{prescottblue} Odin: Multi-Signal Graph Intelligence for\\ Autonomous Discovery in Knowledge Graphs\par}
+    \vspace{0.3cm}
+    
+    {\large Muyukani Kizito\,$^{1}$ \quad Elizabeth Nyambere\,$^{1}$\par}
+    \vspace{0.15cm}
+    
+    {\normalsize $^{1}$Prescott Data \quad \texttt{\{muyukani,elizabeth\}@prescottdata.io}\par}
+    \vspace{0.2cm}
+\end{center}
+
+% Abstract
+\begin{abstract}
+We present Odin, a graph intelligence engine that enables autonomous discovery of meaningful patterns in knowledge graphs without prior specification. Unlike retrieval-based systems that answer predefined queries, Odin guides exploration by scoring graph paths through a novel multi-signal framework combining (1) structural importance via Personalized PageRank, (2) semantic plausibility through Neural Probabilistic Logic Learning (NPLL) used as a discriminative filter rather than generative model, and (3) temporal relevance with configurable decay. We formalize the autonomous discovery problem, prove theoretical properties of our scoring function, and demonstrate that beam search with multi-signal guidance achieves $O(b \cdot h)$ complexity while maintaining high recall compared to exhaustive exploration. Production deployments in healthcare and insurance domains show significant improvements in pattern discovery quality and analyst efficiency. Our approach maintains complete provenance traceability---a critical requirement for regulated industries where hallucination is unacceptable.
+\end{abstract}
+
+\vspace{0.3cm}
+\end{@twocolumnfalse}
+]
+
+\section{Introduction}
+
+Knowledge graphs (KGs) have emerged as a powerful paradigm for representing structured, interconnected organizational data~\cite{paulheim2017knowledge}. Unlike document stores or relational databases, KGs explicitly model entities, typed relationships, and multi-modal evidence, enabling sophisticated reasoning. However, extracting actionable insights from large-scale KGs remains challenging. Traditional approaches rely on query languages (SPARQL, Cypher, AQL) that require analysts to specify exact patterns~\cite{angles2017foundations}---a fundamental limitation when the goal is \textit{discovery} rather than \textit{retrieval}.
+
+Consider a healthcare KG containing millions of patient records, diagnoses, treatments, and outcomes. An analyst might query for ``patients with sepsis treated with antibiotics,'' but this only finds patterns they already hypothesize. What about unknown correlations? Emerging trends? Cross-domain patterns spanning facility transfers, provider networks, and readmission rates? Such discoveries require \textit{autonomous exploration}---the ability to identify meaningful patterns without prior specification.
+
+\textbf{The Core Challenge.} Autonomous exploration faces three critical trade-offs: (1) \textit{Coverage vs. Efficiency}: Exhaustive multi-hop traversal has complexity $O(d^h)$ where $d$ is average degree and $h$ is hop depth, quickly becoming intractable; (2) \textit{Signal vs. Noise}: Not all graph edges are equally informative---data extraction errors, temporal invalidity, and spurious correlations create semantically implausible paths; (3) \textit{Explainability vs. Performance}: Black-box methods (e.g., end-to-end GNNs) struggle in regulated domains requiring audit trails.
+
+\textbf{Our Approach.} We introduce Odin, a graph intelligence engine designed as a \textit{compass} for AI agents rather than a retrieval system. Odin does not answer questions; it scores possible exploration directions using a principled multi-signal framework. This architectural separation---graph intelligence from natural language reasoning---provides modularity, explainability, and adaptability across different agent objectives.
+
+\textbf{Key Contributions.}
+\begin{itemize}
+\item Formalization of the autonomous discovery problem as beam search over scored graph paths with provable complexity bounds
+\item A novel multi-signal scoring function unifying structural importance (PPR), semantic plausibility (NPLL as discriminative filter), and temporal relevance
+\item Self-managing NPLL architecture that auto-trains from graph data and stores only rule weights, eliminating operational overhead
+\item Empirical validation on production healthcare and insurance KGs demonstrating order-of-magnitude efficiency gains with maintained discovery quality
+\item Open design enabling integration with any agent framework (ReAct, LangGraph, AutoGen)
+\end{itemize}
+
+\section{Problem Formulation}
+\label{sec:problem}
+
+\subsection{Knowledge Graph Representation}
+
+We define a knowledge graph as $\mathcal{G} = (\mathcal{E}, \mathcal{R}, \mathcal{T})$ where $\mathcal{E}$ is a set of entities, $\mathcal{R}$ is a set of typed relationships, and $\mathcal{T} \subseteq \mathcal{E} \times \mathcal{R} \times \mathcal{E}$ is a set of triples $(e_s, r, e_o)$ representing directed edges. Each triple has associated metadata including temporal annotations $t \in \mathbb{R}^+$ and provenance links to source documents $D$.
+
+\begin{definition}[Path]
+A path $p$ of length $h$ in $\mathcal{G}$ is a sequence of connected triples: $p = [(e_0, r_1, e_1), (e_1, r_2, e_2), \ldots, (e_{h-1}, r_h, e_h)]$ where consecutive triples share an entity.
+\end{definition}
+
+\subsection{Autonomous Discovery Problem}
+
+Traditional KG reasoning tasks include link prediction~\cite{bordes2013translating}, entity resolution~\cite{shen2015entity}, and query answering~\cite{hamilton2018embedding}. These assume knowledge of target patterns. In contrast:
+
+\begin{definition}[Autonomous Discovery]
+Given a KG $\mathcal{G}$ and seed entities $\mathcal{S} \subset \mathcal{E}$, the autonomous discovery task is to identify a set of paths $\mathcal{P}^*$ starting from $\mathcal{S}$ that maximize a discovery utility function $U: 2^{\mathcal{P}} \rightarrow \mathbb{R}$ measuring novelty, significance, and evidence quality, subject to computational budget $B$.
+\end{definition}
+
+The key distinction: we do not specify \textit{what} to find, only \textit{where to start} and \textit{how to evaluate} discovered patterns. This requires a scoring mechanism that prioritizes promising paths during exploration.
+
+\subsection{Requirements Analysis}
+
+From production deployments in healthcare and insurance domains, we identify critical requirements:
+
+\textbf{R1: Multi-hop Reasoning.} Insights often span $h \geq 3$ relationships. E.g., ``Patient $\xrightarrow{\text{admitted}}$ Facility $\xrightarrow{\text{referred\_by}}$ Provider $\xrightarrow{\text{high\_rate}}$ Readmission'' requires 3-hop traversal.
+
+\textbf{R2: Semantic Plausibility.} Structural connectivity alone is insufficient. The path ``Patient $\xrightarrow{\text{diagnosed}}$ Fracture $\xrightarrow{\text{treated}}$ Antibiotics'' may exist in the graph but is medically implausible.
+
+\textbf{R3: Evidence Grounding.} Unlike generative models, every path must trace to source documents. Hallucination is unacceptable in regulated industries.
+
+\textbf{R4: Scalability.} Enterprise KGs contain $|\mathcal{E}| \sim 10^6$--$10^7$ entities. Exploration must complete in seconds for interactive use.
+
+\textbf{R5: Explainability.} Scores must decompose into interpretable components for auditing and debugging.
+
+\section{The Odin Framework}
+
+\subsection{Architecture Overview}
+
+Odin implements a \textit{score-based exploration} paradigm. Given current position $e_c \in \mathcal{E}$, Odin computes scores for all outgoing edges $(e_c, r, e_n)$ and returns top-$k$ candidates. This supports the OODA loop (Observe-Orient-Decide-Act)~\cite{boyd1996essence} commonly used in agent design:
+
+\begin{algorithmic}[1]
+\STATE \textbf{Observe:} Agent at entity $e_c$ with accumulated context $C$
+\STATE \textbf{Orient:} Query Odin for scored neighbors
+\STATE \textbf{Decide:} Agent selects next entity $e_{c+1}$ using LLM reasoning
+\STATE \textbf{Act:} Move to $e_{c+1}$, update $C$, repeat
+\end{algorithmic}
+
+\subsection{Multi-Signal Scoring Function}
+
+At the core of Odin is a compositional scoring function that combines multiple signals. For a path $p$, we define:
+
+\begin{equation}
+\text{Score}(p) = \alpha \cdot S_{\text{struct}}(p) + \beta \cdot S_{\text{plaus}}(p) + \gamma \cdot S_{\text{temp}}(p) + \delta \cdot S_{\text{prior}}(p)
+\end{equation}
+
+where $\alpha, \beta, \gamma, \delta$ are learnable weights (default: uniform), and:
+
+\textbf{$S_{\text{struct}}(p)$: Structural Importance} via Personalized PageRank (PPR)~\cite{haveliwala2002topic}. Given seed set $\mathcal{S}$, PPR computes stationary distribution $\pi$ of random walk with teleport probability $\alpha_{\text{ppr}}$ back to $\mathcal{S}$:
+
+\begin{equation}
+\pi = (1 - \alpha_{\text{ppr}}) \mathbf{A}^T \pi + \alpha_{\text{ppr}} \mathbf{s}
+\end{equation}
+
+where $\mathbf{A}$ is the column-normalized adjacency matrix and $\mathbf{s}$ is the seed distribution. For path $p$, we aggregate: $S_{\text{struct}}(p) = \frac{1}{h} \sum_{i=1}^{h} \pi(e_i)$.
+
+We implement approximate PPR using local push~\cite{andersen2006local} with complexity $O(\epsilon^{-1})$ where $\epsilon$ is approximation error, enabling real-time computation.
+
+\textbf{$S_{\text{plaus}}(p)$: Semantic Plausibility} via Neural Probabilistic Logic Learning (NPLL). Unlike traditional KG completion methods that \textit{generate} missing edges, we use NPLL to \textit{filter} existing edges. This is a critical distinction:
+
+\begin{theorem}[Discriminative NPLL]
+Let $\mathcal{M}$ be an NPLL model trained on $\mathcal{G}$. For observed triple $(e_s, r, e_o) \in \mathcal{T}$, the plausibility score $S_{\text{plaus}}(e_s, r, e_o) = \mathcal{M}(e_s, r, e_o)$ satisfies:
+\begin{enumerate}
+\item \textbf{Evidence-grounded}: Score does not introduce edges not in $\mathcal{T}$
+\item \textbf{Compositional}: For path $p$, $S_{\text{plaus}}(p) = \prod_{i=1}^{h} \mathcal{M}(e_{i-1}, r_i, e_i)$
+\end{enumerate}
+\end{theorem}
+
+NPLL combines logical rules $\mathcal{L}$ (extracted via rule mining~\cite{yang2017differentiable}) with neural scoring. Rule $\ell \in \mathcal{L}$ has form: $r_1(X,Y) \wedge r_2(Y,Z) \Rightarrow r_3(X,Z)$. Model parameters $\theta = \{\mathbf{w}, \mathbf{E}, \mathbf{R}\}$ include rule weights $\mathbf{w}$, entity embeddings $\mathbf{E} \in \mathbb{R}^{|\mathcal{E}| \times d}$, and relation embeddings $\mathbf{R} \in \mathbb{R}^{|\mathcal{R}| \times d}$.
+
+Training uses Expectation-Maximization:
+\begin{align}
+\text{E-step:} \quad & \mathbb{E}[\mathbf{w} | \mathcal{T}, \theta_{t-1}] \\
+\text{M-step:} \quad & \theta_t = \argmax_{\theta} \log P(\mathcal{T} | \mathbf{w}, \theta)
+\end{align}
+
+\textbf{$S_{\text{temp}}(p)$: Temporal Relevance} with exponential decay:
+
+\begin{equation}
+S_{\text{temp}}(p) = \frac{1}{h} \sum_{i=1}^{h} \exp\left(-\lambda \cdot (t_{\text{now}} - t_i)\right)
+\end{equation}
+
+where $t_i$ is timestamp of triple $i$ and $\lambda$ is decay rate (domain-specific).
+
+\textbf{$S_{\text{prior}}(p)$: Edge Prior} based on global statistics:
+
+\begin{equation}
+S_{\text{prior}}(p) = \frac{1}{h} \sum_{i=1}^{h} \frac{\text{count}(r_i)}{\sum_{r' \in \mathcal{R}} \text{count}(r')}
+\end{equation}
+
+This downweights trivially common relations (e.g., ``located\_in'').
+
+\subsection{Beam Search with Multi-Signal Guidance}
+
+Exhaustive path enumeration has complexity $O(|\mathcal{E}| \cdot d^h)$, intractable for $h \geq 3$. We employ beam search (Algorithm~\ref{alg:beam}) which maintains only top-$b$ candidates at each hop.
+
+\begin{algorithm}[t]
+\caption{Multi-Signal Beam Search}
+\label{alg:beam}
+\begin{algorithmic}[1]
+\REQUIRE Seeds $\mathcal{S}$, hop limit $h$, beam width $b$
+\ENSURE Top-$k$ scored paths
+\STATE $\mathcal{B}_0 \gets \{(e, \emptyset, 0) : e \in \mathcal{S}\}$ \COMMENT{(entity, path, score)}
+\FOR{$i = 1$ to $h$}
+    \STATE $\mathcal{C} \gets \emptyset$ \COMMENT{Candidates}
+    \FOR{$(e, p, s) \in \mathcal{B}_{i-1}$}
+        \FOR{$(e, r, e') \in \text{Neighbors}(e)$}
+            \STATE $p' \gets p \cup \{(e, r, e')\}$
+            \STATE $s' \gets \text{Score}(p')$ \COMMENT{Multi-signal}
+            \STATE $\mathcal{C} \gets \mathcal{C} \cup \{(e', p', s')\}$
+        \ENDFOR
+    \ENDFOR
+    \STATE $\mathcal{B}_i \gets \text{Top-}b(\mathcal{C})$ \COMMENT{Keep best $b$}
+\ENDFOR
+\RETURN $\text{Top-}k(\bigcup_{i=1}^{h} \mathcal{B}_i)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}[Complexity]
+Algorithm~\ref{alg:beam} has time complexity $O(b \cdot d \cdot h)$ and space complexity $O(b \cdot h)$ where $d$ is average degree.
+\end{proposition}
+
+\begin{proof}
+At each hop $i$, we expand $b$ beams, each with $\sim d$ neighbors, computing $O(1)$ score per edge. With $h$ hops: $O(b \cdot d \cdot h)$. Space stores $b$ active beams and $b \cdot h$ historical paths.
+\end{proof}
+
+For typical values $b=64$, $d=50$, $h=3$, this yields $64 \cdot 50 \cdot 3 = 9,600$ score computations vs. $50^3 = 125,000$ for exhaustive search---a 13x reduction.
+
+\subsection{Self-Managing NPLL Lifecycle}
+
+A key innovation is automatic model management. When \texttt{OdinEngine} initializes:
+
+\begin{enumerate}
+\item \textbf{Check Database:} Query for stored NPLL weights in collection \texttt{ModelWeights}
+\item \textbf{Train if Missing:} Extract rules via AMIE+~\cite{galarraga2015fast}, sample entity pairs, run EM for $T=10$ epochs
+\item \textbf{Weights-Only Storage:} Persist only $\mathbf{w} \in \mathbb{R}^{|\mathcal{L}|}$ (typically $<$1KB), not embeddings
+\item \textbf{Lazy Reconstruction:} Rebuild $\mathbf{E}, \mathbf{R}$ from graph on-demand
+\item \textbf{Graceful Fallback:} If training fails, set $S_{\text{plaus}} \equiv 1$
+\end{enumerate}
+
+This eliminates operational complexity of ML deployment while ensuring model freshness.
+
+\section{Theoretical Properties}
+
+\subsection{Coverage vs. Efficiency Trade-off}
+
+\begin{theorem}[Beam Search Guarantees]
+Let $\mathcal{P}^*$ be the set of all paths reachable in $h$ hops from $\mathcal{S}$, and $\mathcal{P}_b$ be paths discovered by beam search with width $b$. If scoring function satisfies monotonicity ($\text{Score}(p \cup \{e\}) \geq \text{Score}(p) - \epsilon$), then:
+\begin{equation}
+\mathbb{E}[|\mathcal{P}_b \cap \mathcal{P}^*_{\text{top-}k}|] \geq k \cdot (1 - e^{-b/d})
+\end{equation}
+where $\mathcal{P}^*_{\text{top-}k}$ are the $k$ highest-scoring paths under exhaustive search.
+\end{theorem}
+
+This result (proof omitted for space) shows that beam width $b \sim O(d)$ suffices to recover most high-value paths, explaining our choice $b=64$ for graphs with $d \approx 50$.
+
+\subsection{Explainability via Shapley Decomposition}
+
+Each path score decomposes as:
+\begin{equation}
+\text{Score}(p) = \sum_{i \in \{\text{struct, plaus, temp, prior}\}} \phi_i
+\end{equation}
+
+We compute Shapley values $\phi_i$ quantifying each signal's contribution~\cite{lundberg2017unified}, enabling audit trails required in regulated domains.
+
+\section{Experimental Validation}
+
+\subsection{Datasets and Setup}
+
+We evaluate on two production KGs:
+
+\textbf{Healthcare KG (HKG):} 2.3M entities, 8.7M triples from de-identified patient records across 15 hospitals. Entity types: Patient, Diagnosis, Treatment, Provider, Facility. Relationships: diagnosed\_with, treated\_by, admitted\_to, prescribed, transferred\_from.
+
+\textbf{Insurance KG (IKG):} 1.8M entities, 6.2M triples from claims data. Entity types: Policyholder, Claim, Provider, Assessor, Facility. Relationships: filed\_by, processed\_by, serviced\_at, approved\_by.
+
+Baselines: (1) \textbf{Exhaustive BFS} (up to $h=2$ due to cost), (2) \textbf{Random Walk} with 1000 walks, (3) \textbf{PPR-only} (no NPLL), (4) \textbf{GNN Embeddings}~\cite{schlichtkrull2018modeling} with nearest neighbor search.
+
+Metrics: (1) \textbf{Coverage@k:} Fraction of expert-labeled patterns found in top-$k$ paths, (2) \textbf{Efficiency:} Paths explored, wall-clock time, (3) \textbf{Quality:} Expert rating (1--5 scale) of discovered patterns.
+
+\subsection{Results}
+
+Table~\ref{tab:results} shows Odin achieves comparable coverage to exhaustive search (90\% vs. 95\%) while exploring 65x fewer paths. GNN embeddings fail to capture multi-hop patterns (52\% coverage). PPR-only suffers from semantic noise (quality score 3.1 vs. 4.2 for full Odin).
+
+\begin{table}[t]
+\centering
+\small
+\caption{Experimental Results on Healthcare KG ($h=3$, $k=50$)}
+\label{tab:results}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Method} & \textbf{Cov.@50} & \textbf{Paths} & \textbf{Time} & \textbf{Quality} \\ \midrule
+Exhaustive & 95\% & 125k & 47s & 4.3 \\
+Random Walk & 68\% & 3k & 8s & 3.5 \\
+PPR-only & 87\% & 1.9k & 3.2s & 3.1 \\
+GNN Embed. & 52\% & 2.1k & 4.1s & 2.8 \\
+\textbf{Odin} & \textbf{90\%} & \textbf{1.9k} & \textbf{3.8s} & \textbf{4.2} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation Study}
+
+Removing NPLL ($\beta=0$) reduces quality score from 4.2 to 3.1, confirming semantic filtering's importance. Removing temporal weighting ($\gamma=0$) has minimal impact in HKG (static data) but degrades performance in IKG where recency matters for fraud detection.
+
+\subsection{Case Study: Insurance Fraud Ring}
+
+In production deployment, Odin discovered a coordinated fraud pattern: 5 policyholders, no shared attributes in structured fields, filed claims within 3 weeks. Beam search identified common service provider and assessor (6-hop path), with NPLL scoring the temporal clustering as anomalous (low $S_{\text{plaus}}$ due to unusual frequency). Manual investigation confirmed coordinated scheme. This pattern had zero overlap with rule-based alerts, demonstrating discovery of genuinely novel patterns.
+
+\section{Related Work}
+
+\subsection{Knowledge Graph Reasoning}
+
+\textbf{Link Prediction} methods (TransE~\cite{bordes2013translating}, RotatE~\cite{sun2019rotate}, ComplEx~\cite{trouillon2016complex}) learn embeddings to predict missing edges. These are \textit{generative}---they add edges not in the graph. Odin is \textit{discriminative}---it scores existing edges for traversal. This distinction is critical for evidence-grounded applications.
+
+\textbf{Probabilistic Logic} (Markov Logic Networks~\cite{richardson2006markov}, Neural LP~\cite{yang2017differentiable}, DRUM~\cite{sadeghian2019drum}) combine rules with neural scoring. Odin builds on this tradition but applies it as a traversal filter during beam search, not as a standalone completion system.
+
+\textbf{Graph Neural Networks} (GCN~\cite{kipf2016semi}, R-GCN~\cite{schlichtkrull2018modeling}, GraphSAGE~\cite{hamilton2017inductive}) learn node representations via message passing. While powerful, they require labeled data and produce opaque embeddings. Odin's compositional scoring provides interpretability required in regulated domains.
+
+\subsection{Graph RAG Systems}
+
+Microsoft GraphRAG~\cite{edge2024local} uses graph structure for retrieval-augmented generation, focusing on question answering with community summarization. LlamaIndex and Neo4j GraphRAG provide query-based retrieval. These systems answer \textit{known questions}; Odin enables discovery of \textit{unknown patterns}. The approaches are complementary.
+
+\subsection{Exploration Methods}
+
+Personalized PageRank~\cite{haveliwala2002topic} and approximate variants~\cite{andersen2006local} provide structural scoring but lack semantic awareness. Random walks~\cite{perozzi2014deepwalk} explore broadly but inefficiently. Reinforcement learning for graph exploration~\cite{chen2018reinforcement} requires reward engineering and extensive training. Odin's multi-signal beam search combines the efficiency of informed search with the semantic awareness of learned models.
+
+\section{Limitations and Future Work}
+
+\textbf{Cold Start:} NPLL training takes 10--30s on first connection. Future work includes incremental training as graph evolves.
+
+\textbf{Dynamic Graphs:} Current implementation requires full retrain on significant updates. Streaming PPR~\cite{bahmani2010fast} and incremental EM could address this.
+
+\textbf{Cross-Graph Discovery:} Odin operates on single KGs. Federated exploration across multiple graphs is an open problem.
+
+\textbf{Theoretical Analysis:} Tighter bounds on beam search coverage and NPLL approximation error warrant further investigation.
+
+\section{Conclusion}
+
+We presented Odin, a multi-signal graph intelligence engine for autonomous discovery in knowledge graphs. By combining structural importance (PPR), semantic plausibility (NPLL as discriminative filter), and temporal relevance in a principled scoring framework, Odin enables AI agents to explore large KGs efficiently while maintaining evidence grounding. Production deployments demonstrate significant improvements in pattern discovery quality and analyst efficiency. The self-managing NPLL architecture eliminates operational complexity, making Odin practical for enterprise adoption. As organizations continue to invest in knowledge graphs, the shift from retrieval-based to exploration-based intelligence will become increasingly critical. Odin provides a rigorous foundation for this transition.
+
+\textbf{Broader Impact.} While Odin enables discovery in sensitive domains (healthcare, insurance), all deployments operate on de-identified data with strict access controls. The evidence-grounding guarantee (R3) prevents hallucination, a key safety property. Future work should investigate fairness implications of automated pattern discovery.
+
+\section*{Acknowledgments}
+
+The authors thank the Prescott Data engineering team and deployment partners for their contributions. This work was supported by production deployments in healthcare and insurance domains.
+
+\balance
+
+\bibliographystyle{plain}
+\begin{thebibliography}{10}
+
+\bibitem{paulheim2017knowledge}
+H.~Paulheim.
+\newblock Knowledge graph refinement: A survey of approaches and evaluation methods.
+\newblock {\em Semantic Web}, 8(3):489--508, 2017.
+
+\bibitem{angles2017foundations}
+R.~Angles and C.~Gutierrez.
+\newblock An introduction to graph data management.
+\newblock {\em arXiv preprint arXiv:1801.00036}, 2017.
+
+\bibitem{bordes2013translating}
+A.~Bordes et al.
+\newblock Translating embeddings for modeling multi-relational data.
+\newblock In {\em NeurIPS}, 2013.
+
+\bibitem{shen2015entity}
+W.~Shen et al.
+\newblock Entity linking with a knowledge base: Issues, techniques, and solutions.
+\newblock {\em IEEE TKDE}, 27(2):443--460, 2015.
+
+\bibitem{hamilton2018embedding}
+W.~Hamilton et al.
+\newblock Embedding logical queries on knowledge graphs.
+\newblock In {\em NeurIPS}, 2018.
+
+\bibitem{boyd1996essence}
+J.~Boyd.
+\newblock The essence of winning and losing.
+\newblock Unpublished lecture notes, 1996.
+
+\bibitem{haveliwala2002topic}
+T.~Haveliwala.
+\newblock Topic-sensitive pagerank.
+\newblock In {\em WWW}, 2002.
+
+\bibitem{andersen2006local}
+R.~Andersen et al.
+\newblock Local graph partitioning using pagerank vectors.
+\newblock In {\em FOCS}, 2006.
+
+\bibitem{yang2017differentiable}
+F.~Yang et al.
+\newblock Differentiable learning of logical rules for knowledge base reasoning.
+\newblock In {\em NeurIPS}, 2017.
+
+\bibitem{galarraga2015fast}
+L.~Galárraga et al.
+\newblock Fast rule mining in ontological knowledge bases with AMIE+.
+\newblock {\em VLDB Journal}, 24(6):707--730, 2015.
+
+\bibitem{lundberg2017unified}
+S.~Lundberg and S.~Lee.
+\newblock A unified approach to interpreting model predictions.
+\newblock In {\em NeurIPS}, 2017.
+
+\bibitem{schlichtkrull2018modeling}
+M.~Schlichtkrull et al.
+\newblock Modeling relational data with graph convolutional networks.
+\newblock In {\em ESWC}, 2018.
+
+\bibitem{sun2019rotate}
+Z.~Sun et al.
+\newblock RotatE: Knowledge graph embedding by relational rotation.
+\newblock In {\em ICLR}, 2019.
+
+\bibitem{trouillon2016complex}
+T.~Trouillon et al.
+\newblock Complex embeddings for simple link prediction.
+\newblock In {\em ICML}, 2016.
+
+\bibitem{richardson2006markov}
+M.~Richardson and P.~Domingos.
+\newblock Markov logic networks.
+\newblock {\em Machine Learning}, 62(1-2):107--136, 2006.
+
+\bibitem{sadeghian2019drum}
+A.~Sadeghian et al.
+\newblock DRUM: End-to-end differentiable rule mining.
+\newblock In {\em NeurIPS}, 2019.
+
+\bibitem{kipf2016semi}
+T.~Kipf and M.~Welling.
+\newblock Semi-supervised classification with graph convolutional networks.
+\newblock In {\em ICLR}, 2017.
+
+\bibitem{hamilton2017inductive}
+W.~Hamilton et al.
+\newblock Inductive representation learning on large graphs.
+\newblock In {\em NeurIPS}, 2017.
+
+\bibitem{edge2024local}
+D.~Edge et al.
+\newblock From local to global: A graph RAG approach.
+\newblock Microsoft Research, 2024.
+
+\bibitem{perozzi2014deepwalk}
+B.~Perozzi et al.
+\newblock DeepWalk: Online learning of social representations.
+\newblock In {\em KDD}, 2014.
+
+\bibitem{chen2018reinforcement}
+H.~Chen et al.
+\newblock Reinforcement learning for relation classification.
+\newblock In {\em NAACL}, 2018.
+
+\bibitem{bahmani2010fast}
+B.~Bahmani et al.
+\newblock Fast personalized pagerank on mapreduce.
+\newblock In {\em SIGMOD}, 2010.
+
+\end{thebibliography}
+
+\end{document}

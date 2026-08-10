@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.log
+*.pt
+.env
+.git
+.gitignore
+**/.ipynb_checkpoints
+**/.mypy_cache
+**/.pytest_cache
+**/.DS_Store
+**/.vscode
+**/.idea

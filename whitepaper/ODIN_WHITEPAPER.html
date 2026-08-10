@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odin: A Graph Intelligence Engine for Autonomous Insight Discovery</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 11pt;
+            max-width: 8.5in;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        .cover-page {
+            page-break-after: always;
+            text-align: center;
+            padding-top: 3in;
+        }
+        
+        .cover-page h1 {
+            font-size: 28pt;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5in;
+            line-height: 1.2;
+        }
+        
+        .cover-page .subtitle {
+            font-size: 14pt;
+            color: #666;
+            margin-bottom: 0.3in;
+        }
+        
+        .cover-page .authors {
+            font-size: 13pt;
+            color: #333;
+            margin-bottom: 0.2in;
+        }
+        
+        .cover-page .org {
+            font-size: 12pt;
+            color: #0066cc;
+            margin-bottom: 1.5in;
+        }
+        
+        .cover-page .date {
+            font-size: 11pt;
+            color: #666;
+        }
+        
+        h1 {
+            font-size: 20pt;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-top: 24pt;
+            margin-bottom: 12pt;
+            page-break-after: avoid;
+        }
+        
+        h2 {
+            font-size: 16pt;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-top: 18pt;
+            margin-bottom: 10pt;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            font-size: 13pt;
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-top: 14pt;
+            margin-bottom: 8pt;
+            page-break-after: avoid;
+        }
+        
+        h4 {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #333;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+        }
+        
+        p {
+            margin-bottom: 10pt;
+            text-align: justify;
+        }
+        
+        .abstract, .executive-summary {
+            background: #f8f9fa;
+            padding: 16pt;
+            border-left: 4pt solid #0066cc;
+            margin: 16pt 0;
+        }
+        
+        .abstract p, .executive-summary p {
+            margin-bottom: 8pt;
+        }
+        
+        .abstract p:last-child, .executive-summary p:last-child {
+            margin-bottom: 0;
+        }
+        
+        ul, ol {
+            margin-left: 24pt;
+            margin-bottom: 10pt;
+        }
+        
+        li {
+            margin-bottom: 4pt;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2pt 4pt;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 12pt;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 12pt 0;
+            border: 1px solid #e1e4e8;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16pt 0;
+            font-size: 10pt;
+        }
+        
+        table th {
+            background: #f1f3f5;
+            padding: 8pt;
+            text-align: left;
+            font-weight: 600;
+            border: 1pt solid #dee2e6;
+        }
+        
+        table td {
+            padding: 8pt;
+            border: 1pt solid #dee2e6;
+        }
+        
+        table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        strong {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        em {
+            font-style: italic;
+        }
+        
+        .toc {
+            margin: 24pt 0;
+        }
+        
+        .toc-item {
+            margin: 8pt 0;
+        }
+        
+        .glossary-table {
+            margin-top: 16pt;
+        }
+        
+        .reference {
+            margin-bottom: 8pt;
+            padding-left: 24pt;
+            text-indent: -24pt;
+        }
+        
+        blockquote {
+            border-left: 3pt solid #ccc;
+            margin: 16pt 0;
+            padding-left: 16pt;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .highlight {
+            background-color: #fffbcc;
+            padding: 2pt;
+        }
+        
+        footer {
+            margin-top: 48pt;
+            padding-top: 16pt;
+            border-top: 1pt solid #dee2e6;
+            font-size: 9pt;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover-page">
+        <h1>Odin: A Graph Intelligence Engine for Autonomous Insight Discovery</h1>
+        <div class="subtitle">White Paper v1.0</div>
+        <div class="authors">Muyukani Kizito, Elizabeth Nyambere</div>
+        <div class="org">Prescott Data<br>https://prescottdata.io</div>
+        <div class="date">January 2026</div>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h1>Executive Summary</h1>
+    <div class="executive-summary">
+        <p><strong>The Challenge:</strong> Organizations are investing heavily in knowledge graphs to represent their data, but struggle to extract actionable insights. Traditional query-based approaches only find patterns analysts already know to look for—they cannot discover the unknown.</p>
+        
+        <p><strong>The Solution:</strong> Odin is a graph intelligence engine that enables AI agents to autonomously explore knowledge graphs and surface meaningful patterns without pre-specification. Unlike systems that answer known questions, Odin tells agents <em>where to look</em>, combining structural importance (PageRank), semantic plausibility (probabilistic logic), and temporal relevance into a unified scoring framework.</p>
+        
+        <p><strong>Key Differentiators:</strong></p>
+        <ul>
+            <li><strong>Discovery, not retrieval:</strong> Finds patterns analysts haven't thought to query</li>
+            <li><strong>Agent-oriented:</strong> Designed for repeated calls during AI exploration loops</li>
+            <li><strong>Explainable:</strong> Every recommendation decomposes into auditable components</li>
+            <li><strong>Evidence-grounded:</strong> No hallucination—every insight traces to source documents</li>
+        </ul>
+        
+        <p><strong>Results:</strong> In production deployments for healthcare and insurance customers, Odin-powered agents have discovered previously unknown cross-department patterns, reduced analyst exploration time significantly, and satisfied regulatory audit requirements through full traceability.</p>
+        
+        <p><strong>For:</strong> CTOs, VP Engineering, AI/ML Leaders, and Data Science teams building intelligent applications on knowledge graphs.</p>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h1>Abstract</h1>
+    <div class="abstract">
+        <p>Knowledge graphs offer rich, interconnected representations of organizational data, yet extracting actionable insights from them remains a significant challenge. Traditional approaches rely on pre-defined queries that can only find patterns analysts already know to look for. We present <strong>Odin</strong>, a graph intelligence engine that enables AI agents to autonomously discover meaningful patterns in knowledge graphs without prior specification of what to find.</p>
+        
+        <p>Odin introduces a novel <strong>multi-signal scoring framework</strong> that combines structural importance, semantic plausibility, and temporal relevance to guide exploration. Unlike retrieval systems that answer known questions, Odin acts as an intelligent compass—telling agents where to look rather than what they'll find. This separation of graph intelligence from natural language reasoning creates a modular, explainable architecture for autonomous insight discovery.</p>
+        
+        <p>We describe the core innovations behind Odin, its architecture, and its application to enterprise domains including healthcare analytics and insurance operations, where it powers real-time insight generation for decision-makers.</p>
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <p style="font-size: 9pt; color: #666; text-align: center; margin-bottom: 24pt;">
+        <em>Note: This HTML document is best viewed by printing to PDF or using a PDF converter for optimal formatting and pagination.</em>
+    </p>
+    
+    <footer>
+        <p>© 2026 Prescott Data. All rights reserved. | For inquiries: https://prescottdata.io</p>
+    </footer>
+    
+    <script>
+        // Add "White Paper" watermark-style text to footer on print
+        window.onbeforeprint = function() {
+            document.title = 'Odin White Paper - Prescott Data';
+        };
+    </script>
+</body>
+</html>

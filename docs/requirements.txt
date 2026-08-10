@@ -1,0 +1,3 @@
+# Documentation build dependencies for the Odin docs site.
+mkdocs-material>=9.5
+pymdown-extensions>=10.7

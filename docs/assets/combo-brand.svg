@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 232 64" width="232" height="64" role="img" aria-label="Odin">
+  <defs>
+    <linearGradient id="odin-combo-mono" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#35B0FE"/>
+      <stop offset="0.5" stop-color="#2457F7"/>
+      <stop offset="1" stop-color="#752CEA"/>
+    </linearGradient>
+    <linearGradient id="odin-combo-word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35B0FE"/>
+      <stop offset="0.55" stop-color="#2457F7"/>
+      <stop offset="1" stop-color="#752CEA"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#odin-combo-mono)"/>
+    <circle cx="32" cy="32" r="17" fill="none" stroke="#ffffff" stroke-width="2.4" opacity="0.55"/>
+    <path d="M32 15 L38 32 L32 29 L26 32 Z" fill="#ffffff"/>
+    <path d="M32 49 L26 32 L32 35 L38 32 Z" fill="#ffffff" opacity="0.6"/>
+    <circle cx="32" cy="32" r="3.2" fill="#ffffff"/>
+  </g>
+  <text x="80" y="43" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="36" font-weight="700" letter-spacing="-1.4" fill="url(#odin-combo-word)">Odin</text>
+</svg>

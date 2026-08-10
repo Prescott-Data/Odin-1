@@ -1,0 +1,137 @@
+site_name: Odin
+site_description: Graph intelligence for autonomous AI agents — Personalized PageRank, NPLL edge scoring, and pattern detection for knowledge-graph navigation.
+site_url: https://odin.developers.prescottdata.io/
+repo_url: https://github.com/Prescott-Data/Odin-1
+repo_name: Prescott-Data/Odin-1
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+site_dir: site
+
+hooks:
+  - hooks/embed_markdown.py
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/wordmark-brand.svg
+  favicon: assets/monogram-brand.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - content.tooltips
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/header.js
+  - javascripts/llm-assist.js
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ['.']
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Welcome:
+      - Overview: index.md
+      - Website: https://developers.prescottdata.io
+      - GitHub: https://github.com/Prescott-Data/Odin-1
+  - Getting Started: getting-started.md
+  - Concepts:
+      - Overview: concepts/index.md
+      - Architecture: concepts/architecture.md
+      - Data Model: concepts/data-model.md
+      - Personalized PageRank: concepts/ppr.md
+      - Beam Search: concepts/beam-search.md
+      - NPLL Edge Scoring: concepts/npll.md
+      - Motifs & Aggregation: concepts/aggregation.md
+      - Triage & Insight Scoring: concepts/scoring.md
+      - Caching: concepts/caching.md
+  - Guides:
+      - Overview: guides/index.md
+      - Connecting ArangoDB: guides/arangodb.md
+      - Your First Retrieval: guides/first-retrieval.md
+      - Scoring Edges: guides/edge-scoring.md
+      - Finding Anchors: guides/anchors.md
+      - Schema Introspection: guides/schema-introspection.md
+      - Model Lifecycle: guides/npll-lifecycle.md
+      - Tuning Retrieval: guides/tuning.md
+      - AI Agent Integration: guides/agent-integration.md
+      - Production Deployment: guides/production.md
+  - Examples:
+      - Overview: examples/index.md
+      - Healthcare Fraud Detection: examples/healthcare-fraud.md
+      - Supply Chain Risk: examples/supply-chain.md
+      - Regulatory Compliance: examples/compliance.md
+  - Reference:
+      - Overview: reference/index.md
+      - OdinEngine API: reference/engine.md
+      - SchemaInspector API: reference/schema.md
+      - Configuration: reference/configuration.md
+      - Result Schema: reference/result-schema.md
+      - Troubleshooting: reference/troubleshooting.md
+  - Changelog: changelog.md
+
+extra:
+  version: "0.2.1"
+  social:
+    - icon: material/web
+      link: https://developers.prescottdata.io
+      name: Prescott Data
+    - icon: fontawesome/brands/github
+      link: https://github.com/Prescott-Data/Odin-1
+      name: Odin on GitHub
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/prescottdata
+      name: Prescott Data on X
