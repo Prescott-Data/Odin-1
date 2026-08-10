@@ -17,7 +17,7 @@ Odin is built as a family, not a single product. Every generation shares one eng
 - **Odin-1 is the open base.** MIT-licensed, free, and built to spread. The community adopts it, builds on it, and takes it in directions no roadmap could plan for. Its path belongs to its users as much as to us, and it stays open.
 - **Odin-2 and the generations after it are the managed tier.** Each new generation adds capabilities that only make sense with an operator behind them, federation, zero-trust security, and domain intelligence, and ships them as a supported platform rather than a library.
 
-The open base and the managed generations reinforce each other rather than compete. Starting on Odin-1 costs you nothing and locks you into nothing; when you are ready for the frontier of what Odin can do, there is a clear road to it.
+The open base and the managed generations reinforce each other rather than compete. Starting on Odin-1 costs you nothing and locks you into nothing, and when you need to run graph intelligence in production at organizational scale, the path onward is already built.
 
 ---
 
@@ -39,7 +39,7 @@ The open base and the managed generations reinforce each other rather than compe
 
 ---
 
-## What Odin-2 Adds
+## What Odin-2 adds
 
 ### Federated multi-graph intelligence
 
@@ -47,7 +47,7 @@ Odin-1 explores one graph at a time. Odin-2 moves from single-graph to **federat
 
 ### Domain Intelligence Service (DIS)
 
-General-purpose scoring treats every domain the same. The **Domain Intelligence Service** layers domain-specific intelligence over retrieval, so the engine understands what "important", "plausible", and "surprising" mean in *your* field, healthcare, finance, supply chain, or compliance, rather than in the abstract. It is the difference between a competent generalist and a specialist.
+General-purpose scoring treats every domain the same. The **Domain Intelligence Service** layers domain-specific intelligence over retrieval, so the engine understands what "important", "plausible", and "surprising" mean in *your* field (healthcare, finance, supply chain, compliance) rather than in the abstract. It is the difference between a competent generalist and a specialist.
 
 ### Zero-trust security with Nexus
 
@@ -88,7 +88,7 @@ We design and build your graph from the ground up: the ontology, the entity and 
 
 ### Ontology design
 
-We work with your domain experts to encode how your field actually thinks, the entities, the relationships, and the rules that make a connection meaningful, so the graph reflects your business rather than a generic template. A good ontology is the difference between a graph that answers real questions and one that merely stores data.
+We work with your domain experts to encode how your field actually thinks: the entities, the relationships, and the rules that make a connection meaningful, so the graph reflects your business rather than a generic template. A good ontology is the difference between a graph that answers real questions and one that merely stores data.
 
 ### Domain tuning
 
@@ -96,7 +96,7 @@ We calibrate the Domain Intelligence Service to your field so that importance, p
 
 ### Onboarding and migration
 
-We move your Odin-1 proof of concept onto Odin-2, connect your data sources, and hand your team a running system rather than a setup guide.
+We move your Odin-1 proof of concept onto Odin-2, connect your data sources, and validate the result against the outcomes you proved in the POC.
 
 ### Architecture review
 
@@ -108,7 +108,7 @@ The deliverable is not just software. It is a working graph-intelligence capabil
 
 ## The upgrade path
 
-The path is intentionally smooth. Prove the value on **Odin-1** with a proof of concept on your own graph, then move that same mental model, seeds, retrieval, triage, agent integration, onto **Odin-2** when you need federation, security, domain tuning, and a managed platform. Nothing you learn with Odin-1 is wasted; Odin-2 is the same engine, scaled up and locked down for production.
+The path is intentionally smooth. Prove the value on **Odin-1** with a proof of concept on your own graph, then move that same mental model (seeds, retrieval, triage, agent integration) onto **Odin-2** when you need federation, security, domain tuning, and a managed platform. Nothing you learn with Odin-1 is wasted; Odin-2 is the same engine, scaled up and hardened for production.
 
 ---
 
