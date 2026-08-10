@@ -2,7 +2,7 @@ name: Publish to PyPI
 
 # Publishes the package to PyPI when a GitHub Release is published.
 #
-# Uses PyPI Trusted Publishing (OIDC) — no API token stored in the repo.
+# Uses PyPI Trusted Publishing (OIDC): no API token stored in the repo.
 # One-time setup on PyPI:
 #   Project "odin-engine" -> Settings -> Publishing -> add a GitHub publisher:
 #     Owner:        Prescott-Data

@@ -7,7 +7,7 @@ Odin is a production-ready Python library that transforms how AI agents navigate
 **Built for:** Healthcare analytics, fraud detection, regulatory compliance, supply chain intelligence, and any domain where autonomous agents need to discover patterns in graphs with 10K-5M entities.
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-62%20passing-green.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/badge/pypi-odin--engine-blue)](https://pypi.org/project/odin-engine/)
 [![Docs](https://img.shields.io/badge/docs-odin.developers.prescottdata.io-1758F5)](https://odin.developers.prescottdata.io)
@@ -413,7 +413,7 @@ Force NPLL model retraining (use after major graph updates).
 ## Testing
 
 ```bash
-# Run all tests (62 passing)
+# Run all tests
 pytest tests/ -v
 
 # Unit tests only
