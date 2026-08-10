@@ -18,27 +18,6 @@ Odin is a Python library that guides AI agents through large knowledge graphs. I
 
 ---
 
-<div class="jc-stats" markdown>
-<div class="jc-stat" markdown>
-<span class="jc-stat-value">10K-5M</span>
-<span class="jc-stat-label">Entities per graph</span>
-</div>
-<div class="jc-stat" markdown>
-<span class="jc-stat-value">300-800ms</span>
-<span class="jc-stat-label">Typical retrieval</span>
-</div>
-<div class="jc-stat" markdown>
-<span class="jc-stat-value">3-signal</span>
-<span class="jc-stat-label">Path scoring</span>
-</div>
-<div class="jc-stat" markdown>
-<span class="jc-stat-value">MIT</span>
-<span class="jc-stat-label">Open source</span>
-</div>
-</div>
-
----
-
 ## What Odin provides
 
 <div class="jc-grid" markdown>
