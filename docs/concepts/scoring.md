@@ -10,17 +10,17 @@ A single retrieval can come back with dozens of paths and a handful of motifs. A
 
 The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0-1` scale:
 
-$$
-\text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
-$$
+```text
+score = 25·provenance + 25·recency + 25·surprise + 15·motif_density + 10·controllability
+```
 
-| Symbol | Component | Weight | Rewards |
-|--------|-----------|--------|---------|
-| $p$ | `provenance` | 25 | Well-sourced edges with references |
-| $r$ | `recency` | 25 | Fresh, recently-updated evidence |
-| $s$ | `surprise` | 25 | Deviation from the baseline / prior |
-| $m$ | `motif_density` | 15 | Concentration into repeated patterns |
-| $c$ | `controllability` | 10 | How actionable the finding is |
+| Component | Weight | Rewards |
+|-----------|--------|---------|
+| `provenance` | 25 | Well-sourced edges with references |
+| `recency` | 25 | Fresh, recently-updated evidence |
+| `surprise` | 25 | Deviation from the baseline / prior |
+| `motif_density` | 15 | Concentration into repeated patterns |
+| `controllability` | 10 | How actionable the finding is |
 
 The weighting is deliberate: provenance, recency, and surprise dominate because a finding that is well-sourced, current, and *unexpected* is the kind worth waking an analyst for. With everything maxed the score reaches 100.
 

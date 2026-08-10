@@ -120,6 +120,7 @@ nav:
       - Result Schema: reference/result-schema.md
       - Troubleshooting: reference/troubleshooting.md
       - Changelog: changelog.md
+  - Enterprise: infrastructure/enterprise.md
 
 extra:
   version: "0.2.1"
