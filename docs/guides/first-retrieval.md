@@ -47,12 +47,13 @@ result.keys()
 #            'triage', 'ics', 'used_budget', 'trace'])
 ```
 
-**The paths** are the primary output, returned best-first, each with `nodes`, `edges`, and a combined `score`:
+**The paths** are the primary output, returned best-first. Each carries a combined `score` and a list of `edges`; there is no separate `nodes` field, so the node sequence is derived from the edges:
 
 ```python
-for path in result["paths"][:5]:
-    nodes = " → ".join(str(n) for n in path["nodes"])
-    print(f"[{path['score']:.2f}] {nodes}")
+for p in result["paths"][:5]:
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
 **The triage score** is the single number most agent loops gate on, along with the breakdown that produced it (see [Triage & Insight Scoring](../concepts/scoring.md)):
@@ -106,7 +107,9 @@ for m in result["aggregates"]["motifs"][:5]:
 
 print("\nTop paths:")
 for p in result["paths"][:5]:
-    print(f"  [{p['score']:.2f}]", " → ".join(str(n) for n in p["nodes"]))
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
 ## Next

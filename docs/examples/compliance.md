@@ -48,7 +48,8 @@ result = engine.retrieve(
 )
 
 for p in result["paths"]:
-    if any("sanctioned" in str(n) for n in p["nodes"]):
+    node_ids = [e["u"] for e in p["edges"]] + [e["v"] for e in p["edges"]]
+    if any("sanctioned" in str(n) for n in node_ids):
         compliance_agent.flag_for_review(p)
 ```
 

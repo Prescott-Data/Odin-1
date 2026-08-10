@@ -95,6 +95,7 @@ nav:
       - Motifs & Aggregation: concepts/aggregation.md
       - Triage & Insight Scoring: concepts/scoring.md
       - Caching: concepts/caching.md
+      - Adapters: concepts/adapters.md
   - Guides:
       - Overview: guides/index.md
       - Connecting ArangoDB: guides/arangodb.md

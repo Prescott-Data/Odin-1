@@ -30,7 +30,7 @@ result = engine.retrieve(
 print(f"Triage: {result['triage']['score']}/100")
 for m in result["aggregates"]["motifs"][:5]:
     print(m)
-# e.g. {"pattern": "CPT_99285 + CPT_office_visit", "count": 34}
+# e.g. {"pattern": "billed_by->has_procedure", "edge_count": 68, "path_count": 34}
 ```
 
 The payoff is that recurring billing pattern, *"CPT_99285 paired with an office visit appears in 34 claims"*, surfaced as a motif, without anyone having written a rule for that specific combination beforehand. That is the three signals working together: [PPR](../concepts/ppr.md) zeroes in on the high-volume providers and central claims worth examining, [NPLL](../concepts/npll.md) throws out clinically nonsensical edges (a procedure is not `diagnosed_by` a patient) so the paths stay coherent, and [motif aggregation](../concepts/aggregation.md) compresses thousands of claims into a handful of repeated patterns you can actually read.

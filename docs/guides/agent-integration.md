@@ -80,7 +80,9 @@ Across all of these, keep the payload you give the model compact and readable: p
 def format_paths(paths):
     lines = []
     for p in paths:
-        chain = " -> ".join(str(n) for n in p["nodes"])
+        edges = p["edges"]
+        nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+        chain = " -> ".join(str(n) for n in nodes)
         lines.append(f"[{p['score']:.2f}] {chain}")
     return "\n".join(lines)
 ```

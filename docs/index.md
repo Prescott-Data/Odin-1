@@ -108,9 +108,10 @@ result = engine.retrieve(
 
 # 4. Read the ranked paths
 print(f"Triage score: {result['triage']['score']}/100")
-for path in result["paths"][:5]:
-    nodes = " → ".join(str(n) for n in path["nodes"])
-    print(f"  [{path['score']:.2f}] {nodes}")
+for p in result["paths"][:5]:
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
 ---

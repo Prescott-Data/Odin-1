@@ -8,11 +8,12 @@ Beam search hands back a list of surviving paths, but a list of paths is rarely 
 
 ## Motifs turn paths into patterns
 
-A motif is a shape that recurs across the returned paths, for instance `Claim → billed_by → Provider → flagged_in → Audit` showing up again and again. That repetition is usually the real finding, so Odin counts it for you:
+A motif is a recurring **relation sequence** across the returned paths, for instance `billed_by -> flagged_in` showing up again and again. That repetition is usually the real finding, so Odin counts it for you:
 
 ```python
 for m in result["aggregates"]["motifs"]:
-    print(m)   # e.g. {"pattern": "A→B→C", "count": 12}
+    print(m)
+    # e.g. {"pattern": "billed_by->flagged_in", "edge_count": 24, "path_count": 12}
 ```
 
 This doubles as lightweight anomaly detection. One suspicious chain is a coincidence; the same chain appearing 47 times is signal. Alongside the motifs, `relation_share` reports how the edges break down by relation type, a quick fingerprint of *what kind* of connections dominate a retrieval, and the strongest one is surfaced separately as `dominant_relation`.
@@ -44,8 +45,10 @@ The whole thing arrives under a single key:
 
 ```python
 result["aggregates"] = {
-    "motifs":          [ {"pattern": "...", "count": N}, ... ],
-    "relation_share":  { "billed_by": 0.42, "has_diagnosis": 0.31, ... },
+    "motifs":          [ {"pattern": "billed_by->flagged_in", "edge_count": N,
+                          "path_count": M, "avg_edge_conf": 0.88,
+                          "median_recency_days": 5.0}, ... ],
+    "relation_share":  { "billed_by": {"count": N, "share": 0.42}, ... },
     "snippet_anchors": [ ... ],
     "summary":         { "total_paths": ..., "provenance": ..., ... },
 }

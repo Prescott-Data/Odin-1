@@ -58,6 +58,12 @@ Odin's job is narrow and deliberate: **given seed entities, return the most rele
 
     [Read more →](caching.md)
 
+-   :material-power-plug: **Adapters**
+
+    Connect Odin to ArangoDB, JanusGraph, or your own backend.
+
+    [Read more →](adapters.md)
+
 </div>
 
 ---

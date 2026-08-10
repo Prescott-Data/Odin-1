@@ -28,7 +28,9 @@ result = engine.retrieve(
 )
 
 for p in result["paths"][:10]:
-    print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in p["nodes"]))
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 # Discovers: a Tier-3 supplier feeds 47 downstream products
 ```
 

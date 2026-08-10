@@ -83,7 +83,7 @@ An `intelligence_mode` of `Constant` means the NPLL model has not trained yet, w
 
 ## Other backends
 
-The accessor layer is an interface (`retrieval/adapters.py`), so backends beyond ArangoDB can be added by implementing the same node and edge access contract. If you build one, [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md) are welcome.
+The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See [Adapters](../concepts/adapters.md) for the full picture.
 
 ## Next
 

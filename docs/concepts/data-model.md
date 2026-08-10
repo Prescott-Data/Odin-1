@@ -53,7 +53,7 @@ Communities are also the natural unit for [NPLL](npll.md): a model learns the ed
 
 Notably, there is a lot you do **not** have to prepare. There is no fixed schema to declare, because Odin discovers collections and fields at runtime via [Schema Introspection](../guides/schema-introspection.md). There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.
 
-The reference backend is **ArangoDB**, but the accessor is an interface, so new backends like Neo4j, Neptune, or other Gremlin-compatible stores can be added by implementing the same node/edge access methods, and [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md) of adapters are welcome.
+The reference backend is **ArangoDB**, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See [Adapters](adapters.md) for the interface and how to plug in a backend.
 
 ---
 

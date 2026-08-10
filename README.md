@@ -98,9 +98,10 @@ result = engine.retrieve(
 print(f"Found {len(result['paths'])} paths")
 print(f"Triage Score: {result['triage']['score']}/100")
 
-for path in result['paths'][:5]:
-    nodes = " → ".join(path['nodes'])
-    print(f"  [{path['score']:.2f}] {nodes}")
+for p in result['paths'][:5]:
+    edges = p['edges']
+    nodes = [edges[0]['u'], *(e['v'] for e in edges)] if edges else []
+    print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 
 # 5. NEW in v0.2.0: Inspect your database schema
 from odin import SchemaInspector
@@ -182,11 +183,11 @@ anchors = engine.find_anchors(
 # Automatic motif extraction
 motifs = result['aggregates']['motifs']
 for motif in motifs:
-    print(f"{motif['pattern']} appears {motif['count']} times")
-    
+    print(f"{motif['pattern']} spans {motif['edge_count']} edges across {motif['path_count']} paths")
+
 # Example output:
-# Claim → has_policyholder → Person (47 instances)
-# Provider → billed_by → Claim → flagged_in → Audit (12 instances)
+# has_policyholder->rare_in spans 47 edges across 23 paths
+# billed_by->flagged_in spans 12 edges across 6 paths
 ```
 
 ### 5. Schema Introspection (v0.2.0+)
@@ -341,23 +342,29 @@ Find and score paths from seed entities.
 - `seeds: List[str]` - Starting entity IDs (e.g., `["entity/123"]`)
 - `max_paths: int = 50` - Maximum paths to return
 - `hop_limit: int = 3` - Maximum hops from seeds
-- `beam_width: int = 10` - Top-K paths to explore at each hop
+- `beam_width: int = 64` - Top-K paths to explore at each hop
 
-**Returns:**
+**Returns:** a dictionary (see the [Result Schema](https://odin.developers.prescottdata.io/reference/result-schema/) for the full shape):
 ```python
 {
+    "topk_ppr": [...],
     "paths": [
         {
-            "nodes": ["entity/A", "entity/B", "entity/C"],
-            "edges": [{"relation": "relates_to", "score": 0.89}],
-            "score": 0.94
+            "id": "path_0",
+            "score": 0.94,
+            "edges": [
+                {"u": "entity/A", "v": "entity/B", "relation": "billed_by",
+                 "confidence": 0.89, "created_at": "...", "provenance": {...}}
+            ]
         }
     ],
-    "triage": {"score": 87, "confidence": "high"},
+    "insight_score": 0.82,
     "aggregates": {
-        "motifs": [{"pattern": "A→B→C", "count": 12}],
-        "node_frequencies": {"entity/A": 47}
-    }
+        "motifs": [{"pattern": "billed_by->flagged_in", "edge_count": 12, "path_count": 6}],
+        "relation_share": {"billed_by": {"count": 42, "share": 0.42}},
+        "summary": {...}
+    },
+    "triage": {"score": 87, "components": {...}, "dominant_relation": {...}}
 }
 ```
 

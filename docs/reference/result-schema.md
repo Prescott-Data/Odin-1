@@ -35,28 +35,39 @@ result.keys()
 
 ## `paths`
 
-Each path is best-first ranked:
+Each path is best-first ranked and described by its **edges**:
 
 ```python
 {
-    "nodes": ["entity/A", "entity/B", "entity/C"],
+    "id": "path_0",
+    "score": 0.94,
     "edges": [
-        {"relation": "billed_by", "score": 0.89},
+        {
+            "u": "entity/A", "v": "entity/B",
+            "relation": "billed_by",
+            "u_label": "Claim 123", "v_label": "Provider 456",
+            "confidence": 0.89,
+            "created_at": "2026-01-04T12:00:00Z",
+            "provenance": {"document_id": "doc_7"},
+        },
         ...
     ],
-    "score": 0.94,
 }
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `nodes` | Ordered entity IDs along the path |
-| `edges` | The relations connecting the nodes, each with a plausibility `score` |
+| `id` | Path identifier |
 | `score` | Combined path score (structural + semantic) |
+| `edges` | Ordered edges. Each carries `u`/`v` node IDs, the `relation`, optional `u_label`/`v_label`, a `confidence`, `created_at`, and `provenance` |
+
+A path has no separate `nodes` field; the node sequence is the first edge's `u` followed by every edge's `v`:
 
 ```python
 for p in result["paths"][:5]:
-    print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in p["nodes"]))
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
 ---
@@ -65,8 +76,12 @@ for p in result["paths"][:5]:
 
 ```python
 {
-    "motifs":          [{"pattern": "A→B→C", "count": 12}, ...],
-    "relation_share":  {"billed_by": 0.42, "has_diagnosis": 0.31, ...},
+    "motifs": [
+        {"pattern": "billed_by->flagged_in", "edge_count": 24,
+         "path_count": 12, "avg_edge_conf": 0.88, "median_recency_days": 5.0},
+        ...
+    ],
+    "relation_share":  {"billed_by": {"count": 42, "share": 0.42}, ...},
     "snippet_anchors": [...],
     "summary": {
         "total_paths": 47,
