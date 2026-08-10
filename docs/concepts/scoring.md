@@ -4,13 +4,11 @@ icon: material/numeric
 
 # Triage & Insight Scoring
 
-A retrieval can return dozens of paths and motifs. To make that actionable, Odin collapses it into a single **triage score** from 0–100 — the number an agent uses to decide *how much attention this result deserves*.
+A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
 
----
+## How the score is built
 
-## The triage score
-
-`result["triage"]["score"]` is an integer in `[0, 100]`, computed from five weighted components:
+The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0–1` scale:
 
 $$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
@@ -24,62 +22,51 @@ $$
 | $m$ | `motif_density` | 15 | Concentration into repeated patterns |
 | $c$ | `controllability` | 10 | How actionable the finding is |
 
-All components are in `[0, 1]`, so the maximum possible score is 100.
+The weighting is deliberate: provenance, recency, and surprise dominate because a finding that is well-sourced, current, and *unexpected* is the kind worth waking an analyst for. With everything maxed the score reaches 100.
 
----
+## Two guards keep it honest
 
-## Guards
+Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted — poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
 
-Two guards keep the score honest:
+## A score is never a black box
 
-- **Low label coverage** — if `label_coverage < 0.8`, `motif_density` is capped at `0.3` and **15 points** are subtracted. Poorly-labeled data cannot earn full pattern credit.
-- **Low support** — if `low_support` is set (too little evidence), the score is reduced by **40%**. Thin results are not allowed to look confident.
+Every triage result carries the breakdown that produced it, so you can always see *why* a number came out the way it did:
 
 ```python
 triage = result["triage"]
-print(triage["score"])        # e.g. 87
-print(triage["components"])   # per-component breakdown, penalties, flags
-print(triage["dominant_relation"])
+triage["score"]        # e.g. 87
+triage["components"]   # each clamped input, the penalty applied, and the flags
+triage["dominant_relation"]
 ```
-
----
-
-## Reading the components
-
-The `components` dict returns each clamped input, the applied `penalty`, and the `low_support` flag — so a score is never a black box. If a score is surprisingly low, inspect the components to see whether provenance, recency, or a guard pulled it down.
 
 ```python
 {
   "provenance": 0.82,
   "recency": 0.74,
   "surprise": 0.61,
-  "motif_density": 0.30,     # possibly capped by the label-coverage guard
+  "motif_density": 0.30,     # capped by the label-coverage guard
   "controllability": 1.0,
   "label_coverage": 0.71,
-  "penalty": 15.0,           # label-coverage guard fired
+  "penalty": 15.0,           # the guard fired here
   "low_support": false
 }
 ```
 
----
+When a score comes back lower than you expected, this is the first thing to read — a `penalty` of 15 or a low `provenance` usually explains it immediately.
 
-## Insight score vs. triage score
+## Triage vs. the other signals
 
-Odin also reports an `insight_score` (a `[0, 1]` float) alongside `evidence_strength` and `community_relevance`. The `ics` field decomposes the insight score into these contributing parts.
+Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0–1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
 
 | Field | Range | Use |
 |-------|-------|-----|
-| `triage["score"]` | 0–100 | Prioritization for agents — "should I look at this?" |
-| `insight_score` | 0.0–1.0 | Overall retrieval quality signal |
+| `triage["score"]` | 0–100 | Prioritization — "should I look at this?" |
+| `insight_score` | 0.0–1.0 | Overall retrieval quality |
 | `evidence_strength` | 0.0–1.0 | Strength of the supporting evidence |
-| `community_relevance` | 0.0–1.0 | How relevant the result is to the community scope |
+| `community_relevance` | 0.0–1.0 | Relevance to the community scope |
 | `ics` | object | Decomposition of `insight_score` |
 
-For most agent loops, the **triage score is the number to gate on**; the others are available when you need finer-grained observability.
-
----
-
-## Using it in an agent
+The rule of thumb is simple: **gate on the triage score**, and reach for the others when you need observability rather than a decision.
 
 ```python
 result = engine.retrieve(seeds=[...])
@@ -89,11 +76,6 @@ else:
     agent.skip(reason="low triage")
 ```
 
-See [AI Agent Integration](../guides/agent-integration.md) for a complete loop.
-
 ---
 
-## Next
-
-- [Result Schema](../reference/result-schema.md) — the exact return shape
-- [Tuning Retrieval](../guides/tuning.md) — how parameters affect the scores
+That gate is the seam between Odin and the agent — [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.

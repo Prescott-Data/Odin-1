@@ -4,19 +4,13 @@ icon: material/truck-delivery
 
 # Supply Chain Risk
 
-**Scenario:** identify cascading supplier dependencies — where a problem at a deep-tier supplier ripples up to many downstream products.
+Suppose you need to identify cascading supplier dependencies — the cases where trouble at a deep-tier supplier ripples all the way up to many downstream products. What makes this different from the [fraud example](healthcare-fraud.md) is *depth*: the risk usually hides several tiers down.
 
----
-
-## The graph
-
-A supply-chain graph contains entities like `Supplier`, `Component`, `Product`, `Facility`, and `Region`, connected by relations such as `supplies`, `depends_on`, `manufactured_at`, and `ships_to`. Risk often hides several tiers deep.
-
----
+The graph holds entities like `Supplier`, `Component`, `Product`, `Facility`, and `Region`, connected by relations such as `supplies`, `depends_on`, `manufactured_at`, and `ships_to`.
 
 ## Explore deep dependencies
 
-Because supply chains are deep, this is a case for a **higher `hop_limit`**:
+Because the interesting chains run deep, this is the case that calls for a **higher `hop_limit`**:
 
 ```python
 from arango import ArangoClient

@@ -4,11 +4,7 @@ icon: material/tune
 
 # Tuning Retrieval
 
-Odin's retrieval behavior is governed by a few parameters. This guide explains what each one does, how they interact, and how to trade recall for latency.
-
----
-
-## The parameters
+Odin's defaults are chosen to work well out of the box, and most of the time you should leave them alone. When you do need to tune, only a few parameters matter — and understanding what each one trades away is more useful than any recommended value.
 
 | Parameter | Where | Default | Trades |
 |-----------|-------|---------|--------|
@@ -18,80 +14,34 @@ Odin's retrieval behavior is governed by a few parameters. This guide explains w
 | `cache_size` | `OdinEngine()` | `5000` | Memory ↔ database round-trips |
 | `community_mode` | `OdinEngine()` | `"none"` | Scope of exploration |
 
----
+## Width and depth
 
-## Beam width
+The two dials that shape a search are `beam_width` and `hop_limit`. `beam_width` controls how many partial paths survive each hop of [beam search](../concepts/beam-search.md): widen it to 128 or 256 for higher recall when you suspect relevant paths are being missed, or narrow it to 16–32 for faster, sharper results. Start at the default `64` and only move once you have a reason to.
 
-`beam_width` is how many partial paths survive each hop of [beam search](../concepts/beam-search.md).
+`hop_limit` sets how far a path can reach. Two hops is enough for direct relationships and immediate context; the default of three covers most retrieval with good depth and no explosion; four or five is for genuinely deep chains, like tracing a multi-tier supply chain. Because each extra hop multiplies work by roughly the beam width, raise it deliberately rather than by default.
 
-- **Wider** (128, 256) → higher recall, finds more of the relevant paths, more compute.
-- **Narrower** (16, 32) → faster, sharper, may miss relevant-but-lower-scored paths.
-
-Start at the default `64`; widen only if you observe that relevant paths are being missed.
-
----
-
-## Hop limit
-
-`hop_limit` is the maximum path length.
-
-| `hop_limit` | Use for |
-|-------------|---------|
-| 2 | Direct relationships and immediate context |
-| 3 (default) | Most retrieval — good depth without explosion |
-| 4–5 | Deep causal chains, e.g. multi-tier supply chains |
-
-Each additional hop increases cost roughly with the beam width, so raise `hop_limit` deliberately.
-
----
-
-## How they interact
-
-Latency is driven primarily by `beam_width × hop_limit`. Two rules of thumb:
-
-- To go **deeper**, consider narrowing the beam so total work stays bounded.
-- To go **broader**, keep hops shallow and widen the beam.
+That multiplication is the key to using them together — latency tracks with `beam_width × hop_limit`, so the two are not independent. To go deeper without paying for it, narrow the beam; to go broader, keep hops shallow and widen it:
 
 ```python
-# Deep but focused
-engine.retrieve(seeds, hop_limit=5, beam_width=24)
-
-# Shallow but thorough
-engine.retrieve(seeds, hop_limit=2, beam_width=128)
+engine.retrieve(seeds, hop_limit=5, beam_width=24)    # deep but focused
+engine.retrieve(seeds, hop_limit=2, beam_width=128)   # shallow but thorough
 ```
 
----
+## The lever most people miss
 
-## Seeds matter most
+Before touching any of that, look at your **seeds** — they are the single biggest influence on quality. Specific, relevant seeds sharpen the [PPR](../concepts/ppr.md) signal and produce high-triage results; broad or generic seeds dilute it and everything downstream feels noisy. When a retrieval disappoints, tighten the seeds first, or run an [anchor-then-retrieve](anchors.md#anchor-then-retrieve-pattern) pass to discover better ones. Parameter tuning cannot rescue a bad starting point.
 
-The single biggest lever is **seed quality**. Specific, relevant seeds produce sharp, high-triage results; broad seeds dilute the [PPR](../concepts/ppr.md) signal. When results feel noisy, tighten the seeds — or run an [anchor-then-retrieve](anchors.md#anchor-then-retrieve-pattern) pass first.
+## Tune with evidence, not guesswork
 
----
-
-## Reading the budget
-
-Every result reports how much exploration budget it consumed and where time went:
+Every result tells you where its time and budget went, so you never have to guess which stage to adjust:
 
 ```python
-result["used_budget"]              # budget consumed
+result["used_budget"]              # exploration budget consumed
 result["trace"]["timings_ms"]      # per-stage timings, including 'total'
 ```
 
-Use these to see whether PPR, beam search, or scoring dominates your latency before changing parameters.
+That turns tuning into a short loop. Start at the defaults and check whether `triage["score"]` is reasonable and the paths you expected showed up. If recall is low, widen the beam or improve the seeds. If latency is high, read `timings_ms` to find the culprit, then narrow the beam or cut a hop. If memory is the problem, lower `cache_size` and accept a few more database round-trips. Change one thing, re-measure, repeat.
 
 ---
 
-## A tuning workflow
-
-1. Start at defaults (`beam_width=64`, `hop_limit=3`).
-2. Check `triage["score"]` and whether expected paths appear.
-3. If recall is low → widen the beam or improve seeds.
-4. If latency is high → inspect `timings_ms`, then narrow the beam or reduce hops.
-5. If memory is high → lower `cache_size` (accepting more DB round-trips).
-
----
-
-## Next
-
-- [Caching](../concepts/caching.md)
-- [Production Deployment](production.md)
+The memory side of that loop is covered in [Caching](../concepts/caching.md), and [Production Deployment](production.md) puts these knobs in the context of a real serving setup.

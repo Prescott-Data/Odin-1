@@ -4,11 +4,7 @@ icon: material/robot
 
 # AI Agent Integration
 
-Odin is built to sit inside an AI agent's reasoning loop. It supplies **structured, scored evidence**; the agent supplies the language reasoning. This guide shows the integration patterns.
-
----
-
-## The division of labor
+Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable — because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.
 
 | Odin (the compass) | The agent (the explorer) |
 |--------------------|--------------------------|
@@ -17,13 +13,11 @@ Odin is built to sit inside an AI agent's reasoning loop. It supplies **structur
 | Scores plausibility ([NPLL](../concepts/npll.md)) | Writes conclusions in natural language |
 | Prioritizes ([triage](../concepts/scoring.md)) | Takes actions / escalates |
 
-Odin never hallucinates a relationship — every path it returns exists in your graph.
+In practice this comes together as a few recurring patterns. Most integrations use two or three of them at once.
 
----
+## Retrieve, then reason
 
-## Pattern 1 — Retrieve, then reason
-
-The core loop: retrieve scored evidence, gate on the triage score, and hand the surviving paths to the LLM.
+The core loop is the one you will reach for most: retrieve scored evidence, gate on the triage score so the agent never burns tokens on a low-signal region, and hand the survivors to the LLM.
 
 ```python
 def investigate(engine, agent, seeds):
@@ -41,11 +35,9 @@ def investigate(engine, agent, seeds):
     )
 ```
 
----
+## Validate the agent's hypotheses
 
-## Pattern 2 — Validate the agent's hypotheses
-
-When an LLM proposes a relationship, check it against the graph before acting with [`score_edge()`](edge-scoring.md):
+Reasoning runs the other way too. When the LLM *proposes* a relationship, check it against the graph before acting on it with [`score_edge()`](edge-scoring.md) — this closes the loop between free-form generation and verifiable structure:
 
 ```python
 hypothesis = agent.propose_relationship()   # (src, rel, dst)
@@ -55,13 +47,9 @@ else:
     agent.reconsider(hypothesis, reason="not supported by the graph")
 ```
 
-This closes the loop between an agent's free-form reasoning and verifiable graph structure.
+## Give the agent graph context
 
----
-
-## Pattern 3 — Give the agent graph context
-
-Use [schema introspection](schema-introspection.md) to prime the agent so it can request the right seeds or write valid queries:
+Both of those work better when the agent knows the shape of the graph in the first place. [Schema introspection](schema-introspection.md) primes it so it can request sensible seeds or write valid queries:
 
 ```python
 from odin import inspect_arango_schema
@@ -70,27 +58,23 @@ inspect_arango_schema(db, output_file="schema.json")
 agent.load_context("schema.json")   # now the agent knows the collections/fields
 ```
 
----
+## Escalate on the margin
 
-## Pattern 4 — Human-in-the-loop on the margin
-
-The triage score gives you a clean three-way gate — act, skip, or escalate:
+Finally, the triage score doubles as a clean three-way gate — a natural place to bring a human in only when it is actually warranted:
 
 ```python
 score = result["triage"]["score"]
 if score >= 75:
-    agent.act(result)
+    agent.act(result)          # strong signal — proceed
 elif score <= 40:
-    agent.skip(result)
+    agent.skip(result)         # weak signal — drop it
 else:
     human_review.enqueue(result)   # uncertain — ask a person
 ```
 
----
+## Handing evidence to the LLM
 
-## Formatting evidence for an LLM
-
-Keep the payload compact and readable — paths as arrows, plus the motifs and the score:
+Across all of these, keep the payload you give the model compact and readable — paths as arrows, plus the motifs and the score:
 
 ```python
 def format_paths(paths):
@@ -101,11 +85,7 @@ def format_paths(paths):
     return "\n".join(lines)
 ```
 
-You can also let the agent pull the raw context itself: Odin returns everything as plain Python data, so it serializes cleanly to JSON for tool calls.
-
----
-
-## Reference architecture
+You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract — Odin sends scored evidence downstream, the agent sends hypotheses back for validation:
 
 ```
         seeds
@@ -117,11 +97,6 @@ You can also let the agent pull the raw context itself: Odin returns everything 
    └──────────────┘   score_edge(hypothesis)   └──────────────┘
 ```
 
-For the full technical write-up, see the [Agent Integration Guide](https://github.com/Prescott-Data/Odin-1/blob/main/whitepaper/AGENT_INTEGRATION_GUIDE.md) in the repository.
-
 ---
 
-## Next
-
-- [Scoring Edges](edge-scoring.md)
-- [Examples](../examples/index.md)
+For the full technical write-up, see the [Agent Integration Guide](https://github.com/Prescott-Data/Odin-1/blob/main/whitepaper/AGENT_INTEGRATION_GUIDE.md) in the repository, or see the patterns applied end-to-end in the [Examples](../examples/index.md).

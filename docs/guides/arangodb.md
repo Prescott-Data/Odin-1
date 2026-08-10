@@ -73,7 +73,7 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities) restricts exploration to a named subset of the graph:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph:
 
 ```python
 # Global exploration (default)

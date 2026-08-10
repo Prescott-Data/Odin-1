@@ -4,19 +4,13 @@ icon: material/scale-balance
 
 # Regulatory Compliance
 
-**Scenario:** validate entity relationships against compliance rules — for example, detecting when a fund is connected, directly or indirectly, to a sanctioned entity.
+Compliance work often comes down to one question: is this entity connected — directly or indirectly — to something it should not be, like a sanctioned entity? Odin is well-suited to it because the prohibited relationships are frequently *indirect*, hidden a few hops from anything an analyst would look at directly.
 
----
+The graph holds entities like `Fund`, `Manager`, `Entity`, `Person`, and `Jurisdiction`, connected by relations such as `managed_by`, `owns`, `affiliated_with`, and `controlled_by`.
 
-## The graph
+## The direct case: check one edge
 
-A compliance graph contains entities like `Fund`, `Manager`, `Entity`, `Person`, and `Jurisdiction`, connected by relations such as `managed_by`, `owns`, `affiliated_with`, and `controlled_by`. Prohibited relationships are often **indirect** — hidden a few hops away.
-
----
-
-## Direct rule check with `score_edge`
-
-For a specific prohibited relationship, score it directly:
+When you have a specific prohibited relationship in mind, score it directly — no traversal needed:
 
 ```python
 from arango import ArangoClient

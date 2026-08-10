@@ -4,13 +4,13 @@ icon: material/rocket-launch
 
 # Getting Started
 
-This guide takes you from a fresh Python environment to your first scored retrieval with Odin. It covers installation, connecting a graph database, and running the engine end to end.
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often — scoring a single edge and finding the important nodes. Ten minutes, start to finish.
 
 ---
 
 ## Requirements
 
-Odin requires **Python 3.9 or later** and a **graph database**. The reference backend is [ArangoDB](https://www.arangodb.com/) 3.10+.
+Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all — there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
 
 | Dependency | Why |
 |------------|-----|
@@ -18,7 +18,7 @@ Odin requires **Python 3.9 or later** and a **graph database**. The reference ba
 | ArangoDB ≥ 3.10 | Stores your knowledge graph and Odin's learned NPLL weights |
 | PyTorch ≥ 2.0 | Powers the NPLL edge-plausibility model |
 
-PyTorch, `python-arango`, NumPy, scikit-learn, and `gremlinpython` are installed automatically with the package.
+PyTorch, `python-arango`, NumPy, scikit-learn, and `gremlinpython` are pulled in automatically with the package.
 
 ---
 
@@ -105,22 +105,26 @@ for path in result["paths"][:5]:
 
 `retrieve()` runs the full pipeline — **PPR → Beam Search → NPLL scoring → aggregation** — and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the [Result Schema](reference/result-schema.md).
 
+Whole-path retrieval is the main event, but the same engine gives you two more focused tools that are worth knowing from day one.
+
 ---
 
 ## Score a single edge
 
-Beyond whole-path retrieval, you can ask Odin how plausible one relationship is:
+Sometimes you do not want a path, just a yes-or-no on one relationship. `score_edge()` answers exactly that:
 
 ```python
 score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
 print(score)   # 0.0 (impossible) … 1.0 (highly plausible)
 ```
 
-This is the same NPLL signal Odin uses internally, exposed for use inside agent decision loops. See [Scoring Edges](guides/edge-scoring.md).
+It is the same NPLL signal Odin uses internally, exposed so you can drop it straight into an agent's decision logic. See [Scoring Edges](guides/edge-scoring.md).
 
 ---
 
 ## Find the important nodes
+
+And when you are not sure *where* to start, ask which nodes matter most around a seed:
 
 ```python
 anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
@@ -128,7 +132,7 @@ for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
 
-`find_anchors()` returns the top-N nodes by Personalized PageRank relative to your seeds — a quick way to locate where to explore. See [Finding Anchors](guides/anchors.md).
+`find_anchors()` returns the top nodes by Personalized PageRank relative to your seeds — a fast way to orient before you retrieve. See [Finding Anchors](guides/anchors.md).
 
 ---
 

@@ -4,13 +4,11 @@ icon: material/hexagon-multiple
 
 # Architecture
 
-Odin is a single library assembled from a small number of well-separated components. The public entry point is [`OdinEngine`](../reference/engine.md), which wires everything together and exposes a handful of methods.
-
----
+Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — [`OdinEngine`](../reference/engine.md), the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
 
 ## The pipeline
 
-A call to `retrieve()` runs four stages in sequence:
+A call to `retrieve()` runs four stages in order, each feeding the next:
 
 ```
 ┌─────────────┐    ┌──────────────────────────────────────┐    ┌─────────────────┐
@@ -19,24 +17,19 @@ A call to `retrieve()` runs four stages in sequence:
 └─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 ```
 
-1. **PPR** — Personalized PageRank scores nodes by structural importance relative to the seeds, producing anchor nodes to explore from.
-2. **Beam Search** — a bounded best-first walk expands the top-K paths at each hop, keeping the search tractable.
-3. **NPLL scoring** — each candidate edge is scored for plausibility; implausible paths are down-weighted or dropped.
-4. **Aggregation** — the surviving paths are summarized into motifs, relation shares, and a triage score.
+[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
 
----
+## The pieces that do the work
 
-## Components
+Behind `OdinEngine`, the `RetrievalOrchestrator` runs that pipeline and assembles the result. Everything else is a component it coordinates:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              OdinEngine                                   │
-│                                                                           │
 │  ┌─────────────────────────────────────────────────────────────────────┐ │
 │  │                    RetrievalOrchestrator                             │ │
 │  │  Coordinates PPR → Beam → NPLL → Aggregation and builds the result  │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │ Cached Graph │  │ APPRAnchors  │  │  NPLLModel   │  │ Aggregators  │  │
 │  │  Accessor    │  │   (PPR)      │  │ (confidence) │  │  (motifs)    │  │
@@ -55,16 +48,9 @@ A call to `retrieve()` runs four stages in sequence:
 | `NPLLModel` / `KnowledgeBootstrapper` | Model and its lifecycle | `npll/` |
 | aggregators | Motifs, relation shares, triage | `retrieval/aggregators.py` |
 
----
+## What happens when you build an engine
 
-## How the engine is wired
-
-When you construct an `OdinEngine`, it:
-
-1. Builds an `ArangoCommunityAccessor` for the given `community_id` and wraps it in a `CachedGraphAccessor`.
-2. Initializes **intelligence** — loads or trains the NPLL model via `KnowledgeBootstrapper` (unless `auto_train=False`), producing either `NPLLConfidence` or a `ConstantConfidence` fallback.
-3. Creates the `RetrievalOrchestrator` with the accessor and the confidence function.
-4. Creates the `APPRAnchors` engine for PPR queries.
+Constructing an `OdinEngine` wires those parts together in one shot. It opens an `ArangoCommunityAccessor` for your `community_id` and wraps it in a `CachedGraphAccessor`; it initializes intelligence by loading or training the NPLL model (unless `auto_train=False`), yielding either `NPLLConfidence` or the `ConstantConfidence` fallback; and it hands both to a fresh `RetrievalOrchestrator` and `APPRAnchors` engine. From then on the engine is ready to serve retrievals.
 
 ```python
 engine = OdinEngine(
@@ -76,23 +62,12 @@ engine = OdinEngine(
 )
 ```
 
-See the [OdinEngine API](../reference/engine.md) for every parameter.
+Every one of these parameters is documented in the [OdinEngine API](../reference/engine.md).
+
+## One deliberate boundary
+
+The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.
 
 ---
 
-## Separation of concerns
-
-Odin deliberately keeps **graph intelligence** separate from **language reasoning**:
-
-- Odin returns *structured, scored evidence* — nodes, edges, motifs, and numbers.
-- The agent (an LLM) interprets that evidence and decides what to do next.
-
-This boundary keeps Odin explainable and testable, and keeps hallucination out of the graph layer: every path Odin returns actually exists in your data.
-
----
-
-## Where to go next
-
-- [Data Model](data-model.md) — how Odin reads your graph
-- [Personalized PageRank](ppr.md) — the structural signal
-- [Result Schema](../reference/result-schema.md) — the exact shape returned by `retrieve()`
+From here, follow the pipeline in order — [Data Model](data-model.md), then [PPR](ppr.md) — or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.
