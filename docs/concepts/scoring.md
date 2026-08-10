@@ -4,11 +4,11 @@ icon: material/numeric
 
 # Triage & Insight Scoring
 
-A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
+A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that; it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
 
 ## How the score is built
 
-The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0–1` scale:
+The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0-1` scale:
 
 $$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
@@ -26,7 +26,7 @@ The weighting is deliberate: provenance, recency, and surprise dominate because 
 
 ## Two guards keep it honest
 
-Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted — poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
+Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted, because poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
 
 ## A score is never a black box
 
@@ -52,18 +52,18 @@ triage["dominant_relation"]
 }
 ```
 
-When a score comes back lower than you expected, this is the first thing to read — a `penalty` of 15 or a low `provenance` usually explains it immediately.
+When a score comes back lower than you expected, this is the first thing to read: a `penalty` of 15 or a low `provenance` usually explains it immediately.
 
 ## Triage vs. the other signals
 
-Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0–1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
+Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0-1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
 
 | Field | Range | Use |
 |-------|-------|-----|
-| `triage["score"]` | 0–100 | Prioritization — "should I look at this?" |
-| `insight_score` | 0.0–1.0 | Overall retrieval quality |
-| `evidence_strength` | 0.0–1.0 | Strength of the supporting evidence |
-| `community_relevance` | 0.0–1.0 | Relevance to the community scope |
+| `triage["score"]` | 0-100 | Prioritization: "should I look at this?" |
+| `insight_score` | 0.0-1.0 | Overall retrieval quality |
+| `evidence_strength` | 0.0-1.0 | Strength of the supporting evidence |
+| `community_relevance` | 0.0-1.0 | Relevance to the community scope |
 | `ics` | object | Decomposition of `insight_score` |
 
 The rule of thumb is simple: **gate on the triage score**, and reach for the others when you need observability rather than a decision.
@@ -78,4 +78,4 @@ else:
 
 ---
 
-That gate is the seam between Odin and the agent — [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.
+That gate is the seam between Odin and the agent: [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.

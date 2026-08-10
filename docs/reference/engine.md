@@ -26,13 +26,13 @@ OdinEngine(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | — | A connected `python-arango` database instance |
+| `db` | `StandardDatabase` | required | A connected `python-arango` database instance |
 | `community_id` | `str` | `"global"` | Scope to explore within |
 | `cache_size` | `int` | `5000` | LRU size for the graph accessor |
 | `auto_train` | `bool` | `True` | Train NPLL if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
-On first construction against a graph, NPLL trains (2–5 min) unless `auto_train=False`. See [Model Lifecycle](../guides/npll-lifecycle.md).
+On first construction against a graph, NPLL trains (2-5 min) unless `auto_train=False`. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
 ---
 
@@ -51,16 +51,16 @@ Runs the full pipeline (PPR → beam search → NPLL scoring → aggregation) an
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `seeds` | `list[str]` | — | Starting entity IDs |
+| `seeds` | `list[str]` | required | Starting entity IDs |
 | `max_paths` | `int` | `50` | Maximum paths to return |
 | `hop_limit` | `int` | `3` | Maximum path length |
 | `beam_width` | `int` | `64` | Paths kept per hop |
 
-**Returns:** a `dict` — see the [Result Schema](result-schema.md).
+**Returns:** a `dict`. See the [Result Schema](result-schema.md).
 
 ```python
 result = engine.retrieve(seeds=["entity/claim_123"], max_paths=50)
-result["triage"]["score"]     # 0–100
+result["triage"]["score"]     # 0-100
 result["paths"]               # ranked paths
 ```
 
@@ -124,7 +124,7 @@ Each neighbor's `direction` is `"out"` or `"in"`.
 retrain_model() -> bool
 ```
 
-Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns `True` on success. Use after **structural** graph changes — see [Model Lifecycle](../guides/npll-lifecycle.md).
+Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns `True` on success. Use after **structural** graph changes; see [Model Lifecycle](../guides/npll-lifecycle.md).
 
 ---
 

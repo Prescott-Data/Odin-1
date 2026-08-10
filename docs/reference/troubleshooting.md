@@ -12,9 +12,9 @@ Common issues and how to resolve them.
 
 `engine.get_status()["intelligence_mode"] == "Constant"` means the NPLL model is not active. Causes:
 
-- **`auto_train=False`** — you disabled training. Set `auto_train=True`.
-- **Empty or tiny graph** — there were not enough edges to train a model.
-- **Training raised** — Odin caught an error and fell back. Check logs under the `odin` logger.
+- **`auto_train=False`**: you disabled training. Set `auto_train=True`.
+- **Empty or tiny graph**: there were not enough edges to train a model.
+- **Training raised**: Odin caught an error and fell back. Check logs under the `odin` logger.
 
 You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
@@ -27,7 +27,7 @@ logging.getLogger("odin").setLevel(logging.INFO)
 
 ## First retrieval is very slow
 
-The first `retrieve()` (or engine construction) trains or loads the NPLL model — **2–5 minutes** to train, **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
+The first `retrieve()` (or engine construction) trains or loads the NPLL model, taking **2-5 minutes** to train or **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
 
 ---
 
@@ -49,7 +49,7 @@ engine.get_neighbors("entity/claim_123")["degree"]   # should be > 0
 
 ## Triage score is surprisingly low
 
-Inspect the components — a guard may have fired:
+Inspect the components, since a guard may have fired:
 
 ```python
 result["triage"]["components"]
@@ -90,7 +90,7 @@ from odin import OdinEngine       # correct
 
 ## Out-of-memory on large graphs
 
-Memory scales with `cache_size` and graph density (~500 MB–2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
+Memory scales with `cache_size` and graph density (~500 MB-2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
 
 ---
 

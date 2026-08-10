@@ -6,11 +6,11 @@ the standards we hold code to, and how to get changes merged.
 
 ## Ways to contribute
 
-- **Bug reports** — open an issue with a minimal reproduction.
-- **Features & algorithms** — PPR variants, new aggregators, scalability work.
-- **Database adapters** — Neo4j, Neptune, or other graph backends.
-- **Benchmarks** — academic dataset comparisons and regression suites.
-- **Documentation** — clarifications, examples, and guides.
+- **Bug reports**: open an issue with a minimal reproduction.
+- **Features & algorithms**: PPR variants, new aggregators, scalability work.
+- **Database adapters**: Neo4j, Neptune, or other graph backends.
+- **Benchmarks**: academic dataset comparisons and regression suites.
+- **Documentation**: clarifications, examples, and guides.
 
 ## Development setup
 

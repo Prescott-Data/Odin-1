@@ -4,7 +4,7 @@ icon: material/hexagon-multiple
 
 # Architecture
 
-Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — [`OdinEngine`](../reference/engine.md), the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
+Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly: [`OdinEngine`](../reference/engine.md), the public entry point. Understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
 
 ## The pipeline
 
@@ -17,7 +17,7 @@ A call to `retrieve()` runs four stages in order, each feeding the next:
 └─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 ```
 
-[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
+[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable: PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
 
 ## The pieces that do the work
 
@@ -66,8 +66,8 @@ Every one of these parameters is documented in the [OdinEngine API](../reference
 
 ## One deliberate boundary
 
-The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.
+The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence (nodes, edges, motifs, numbers) and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships; it only ranks the ones that are already there.
 
 ---
 
-From here, follow the pipeline in order — [Data Model](data-model.md), then [PPR](ppr.md) — or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.
+From here, follow the pipeline in order, [Data Model](data-model.md) then [PPR](ppr.md), or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.

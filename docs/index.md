@@ -8,7 +8,7 @@ icon: material/home
 
 # Graph intelligence for autonomous AI agents
 
-Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths — so agents spend their compute on what matters.
+Odin is a Python library that guides AI agents through large knowledge graphs. It combines Personalized PageRank, learned edge-plausibility scoring (NPLL), and pattern detection to surface high-signal paths, so agents spend their compute on what matters.
 
 <div class="jc-cta-text" markdown>
 [Get started](getting-started.md) [Concepts](concepts/index.md) [API Reference](reference/engine.md)
@@ -20,11 +20,11 @@ Odin is a Python library that guides AI agents through large knowledge graphs. I
 
 <div class="jc-stats" markdown>
 <div class="jc-stat" markdown>
-<span class="jc-stat-value">10K–5M</span>
+<span class="jc-stat-value">10K-5M</span>
 <span class="jc-stat-label">Entities per graph</span>
 </div>
 <div class="jc-stat" markdown>
-<span class="jc-stat-value">300–800ms</span>
+<span class="jc-stat-value">300-800ms</span>
 <span class="jc-stat-label">Typical retrieval</span>
 </div>
 <div class="jc-stat" markdown>
@@ -47,7 +47,7 @@ Odin is a Python library that guides AI agents through large knowledge graphs. I
 
 ### Guided exploration
 
-Odin is the **compass**, not the explorer. Given seed entities, it returns ranked, scored paths through the graph — leaving the agent to interpret what it finds instead of drowning in raw traversal.
+Odin is the **compass**, not the explorer. Given seed entities, it returns ranked, scored paths through the graph, leaving the agent to interpret what it finds instead of drowning in raw traversal.
 </div>
 
 <div class="jc-card" markdown>
@@ -75,7 +75,7 @@ Neural Probabilistic Logic Learning scores how plausible each edge is, filtering
 
 ### Beam search
 
-A bounded, best-first walk keeps multi-hop exploration tractable — top-K paths at each hop instead of exponential blow-up.
+A bounded, best-first walk keeps multi-hop exploration tractable: top-K paths at each hop instead of exponential blow-up.
 
 [Beam search →](concepts/beam-search.md)
 </div>
@@ -85,7 +85,7 @@ A bounded, best-first walk keeps multi-hop exploration tractable — top-K paths
 
 ### Motifs & triage
 
-Aggregation surfaces recurring motifs and produces a 0–100 triage score, giving agents a single prioritization signal per retrieval.
+Aggregation surfaces recurring motifs and produces a 0-100 triage score, giving agents a single prioritization signal per retrieval.
 
 [Aggregation →](concepts/aggregation.md)
 </div>
@@ -140,17 +140,17 @@ for path in result["paths"][:5]:
 
 If you are new to Odin, read in this order:
 
-1. [Getting Started](getting-started.md) — install, connect ArangoDB, and run your first retrieval
-2. [Architecture](concepts/architecture.md) — the mental model for how the pipeline fits together
-3. [Personalized PageRank](concepts/ppr.md) → [Beam Search](concepts/beam-search.md) → [NPLL](concepts/npll.md) — the three scoring signals
-4. [Triage & Insight Scoring](concepts/scoring.md) — how paths become a single prioritization number
+1. [Getting Started](getting-started.md): install, connect ArangoDB, and run your first retrieval
+2. [Architecture](concepts/architecture.md): the mental model for how the pipeline fits together
+3. [Personalized PageRank](concepts/ppr.md) → [Beam Search](concepts/beam-search.md) → [NPLL](concepts/npll.md): the three scoring signals
+4. [Triage & Insight Scoring](concepts/scoring.md): how paths become a single prioritization number
 
 If you are evaluating for a specific use case:
 
-- [AI Agent Integration](guides/agent-integration.md) — wire Odin into an agent loop
-- [Healthcare Fraud Detection](examples/healthcare-fraud.md) — a worked end-to-end example
-- [OdinEngine API](reference/engine.md) — the full method surface
-- [Configuration](reference/configuration.md) — every parameter and its default
+- [AI Agent Integration](guides/agent-integration.md): wire Odin into an agent loop
+- [Healthcare Fraud Detection](examples/healthcare-fraud.md): a worked end-to-end example
+- [OdinEngine API](reference/engine.md): the full method surface
+- [Configuration](reference/configuration.md): every parameter and its default
 
 ---
 
@@ -158,10 +158,10 @@ If you are evaluating for a specific use case:
 
 | | |
 |---|---|
-| **Reference** | Full API surface, parameters, and result schema — [view reference](reference/engine.md) |
-| **Source** | Browse the code, open issues, and submit PRs — [GitHub](https://github.com/Prescott-Data/Odin-1){ target="_blank" rel="noopener" } |
-| **PyPI** | Install the released package — [odin-engine](https://pypi.org/project/odin-engine/){ target="_blank" rel="noopener" } |
-| **Prescott Data** | The team behind Odin — [prescottdata.io](https://prescottdata.io){ target="_blank" rel="noopener" } |
+| **Reference** | Full API surface, parameters, and result schema. [View reference](reference/engine.md) |
+| **Source** | Browse the code, open issues, and submit PRs. [GitHub](https://github.com/Prescott-Data/Odin-1){ target="_blank" rel="noopener" } |
+| **PyPI** | Install the released package: [odin-engine](https://pypi.org/project/odin-engine/){ target="_blank" rel="noopener" } |
+| **Prescott Data** | The team behind Odin: [prescottdata.io](https://prescottdata.io){ target="_blank" rel="noopener" } |
 
 ---
 
@@ -181,7 +181,7 @@ Help more developers discover Odin. Every star makes the project easier to find 
 
 ### Build something
 
-Odin is MIT-licensed and made to be extended — new adapters, aggregators, and PPR variants welcome.
+Odin is MIT-licensed and made to be extended: new adapters, aggregators, and PPR variants welcome.
 
 <div class="jc-cta" markdown>
 [Read the guides](guides/index.md){ .jc-btn }

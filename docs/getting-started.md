@@ -4,13 +4,13 @@ icon: material/rocket-launch
 
 # Getting Started
 
-This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often — scoring a single edge and finding the important nodes. Ten minutes, start to finish.
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
 
 ---
 
 ## Requirements
 
-Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all — there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
+Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
 
 | Dependency | Why |
 |------------|-----|
@@ -63,7 +63,7 @@ docker run -d --name arango -p 8529:8529 \
   -e ARANGO_NO_AUTH=1 arangodb:3.12
 ```
 
-This exposes ArangoDB on `http://localhost:8529` with authentication disabled — fine for local development, never for production. See [Connecting ArangoDB](guides/arangodb.md) for authenticated setups.
+This exposes ArangoDB on `http://localhost:8529` with authentication disabled, which is fine for local development but never for production. See [Connecting ArangoDB](guides/arangodb.md) for authenticated setups.
 
 ---
 
@@ -79,7 +79,7 @@ db = client.db("my_graph", username="root", password="")
 engine = OdinEngine(db=db, community_id="global")
 ```
 
-On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2–5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
+On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
 
 !!! tip "No model? No problem"
     If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check `engine.has_npll` to see which mode you are in.
@@ -103,7 +103,7 @@ for path in result["paths"][:5]:
     print(f"  [{path['score']:.2f}] {nodes}")
 ```
 
-`retrieve()` runs the full pipeline — **PPR → Beam Search → NPLL scoring → aggregation** — and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the [Result Schema](reference/result-schema.md).
+`retrieve()` runs the full pipeline (**PPR → Beam Search → NPLL scoring → aggregation**) and returns a dictionary of ranked paths, motifs, and scores. The full shape is documented in the [Result Schema](reference/result-schema.md).
 
 Whole-path retrieval is the main event, but the same engine gives you two more focused tools that are worth knowing from day one.
 
@@ -132,7 +132,7 @@ for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
 
-`find_anchors()` returns the top nodes by Personalized PageRank relative to your seeds — a fast way to orient before you retrieve. See [Finding Anchors](guides/anchors.md).
+`find_anchors()` returns the top nodes by Personalized PageRank relative to your seeds, a fast way to orient before you retrieve. See [Finding Anchors](guides/anchors.md).
 
 ---
 

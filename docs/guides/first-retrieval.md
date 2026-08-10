@@ -4,9 +4,7 @@ icon: material/play
 
 # Your First Retrieval
 
-This guide runs the full Odin pipeline and walks through **every field** of the result so you know exactly what you are getting back.
-
----
+This guide runs the full Odin pipeline once and then walks through every field of the result, so you know exactly what you are getting back and where to reach for each piece of information.
 
 ## Run a retrieval
 
@@ -27,24 +25,20 @@ result = engine.retrieve(
 )
 ```
 
-`retrieve()` runs **PPR → beam search → NPLL scoring → aggregation** and returns a single dictionary.
-
----
-
-## Parameters
+That single call runs PPR, then beam search, then NPLL scoring, then aggregation, and returns everything as one dictionary. Four parameters shape it:
 
 | Parameter | Type | Default | Meaning |
 |-----------|------|---------|---------|
-| `seeds` | `list[str]` | — | Entity IDs to start from |
+| `seeds` | `list[str]` | required | Entity IDs to start from |
 | `max_paths` | `int` | `50` | Maximum paths to return |
 | `hop_limit` | `int` | `3` | Maximum path length |
 | `beam_width` | `int` | `64` | Paths kept per hop during [beam search](../concepts/beam-search.md) |
 
-See [Tuning Retrieval](tuning.md) for how these interact.
+How they interact is covered in [Tuning Retrieval](tuning.md); for now the defaults are fine.
 
----
+## What comes back
 
-## The result at a glance
+The result dictionary has ten keys, and it helps to see them grouped by purpose:
 
 ```python
 result.keys()
@@ -53,7 +47,7 @@ result.keys()
 #            'triage', 'ics', 'used_budget', 'trace'])
 ```
 
-### Ranked paths
+**The paths** are the primary output, returned best-first, each with `nodes`, `edges`, and a combined `score`:
 
 ```python
 for path in result["paths"][:5]:
@@ -61,52 +55,43 @@ for path in result["paths"][:5]:
     print(f"[{path['score']:.2f}] {nodes}")
 ```
 
-Each path has `nodes`, `edges`, and a combined `score`. Paths are returned best-first.
-
-### Triage score
+**The triage score** is the single number most agent loops gate on, along with the breakdown that produced it (see [Triage & Insight Scoring](../concepts/scoring.md)):
 
 ```python
-result["triage"]["score"]         # 0–100 prioritization number
+result["triage"]["score"]         # 0-100 prioritization number
 result["triage"]["components"]    # per-component breakdown
 ```
 
-This is usually the number you gate on. See [Triage & Insight Scoring](../concepts/scoring.md).
-
-### Anchors (PPR)
+**The aggregates** turn those paths into patterns, and **`topk_ppr`** exposes the anchors the walk started from:
 
 ```python
-result["topk_ppr"]   # the structurally important nodes used as anchors
-```
-
-### Aggregates
-
-```python
+result["topk_ppr"]                      # structurally important anchor nodes
 result["aggregates"]["motifs"]          # recurring patterns
 result["aggregates"]["relation_share"]  # relation-type breakdown
 result["aggregates"]["summary"]         # provenance, recency, coverage, ...
 ```
 
-### Quality signals
+**The quality signals** are there when you want finer-grained observability than the triage score alone:
 
 ```python
-result["insight_score"]         # 0.0–1.0 overall quality
-result["evidence_strength"]     # 0.0–1.0
-result["community_relevance"]   # 0.0–1.0
+result["insight_score"]         # 0.0-1.0 overall quality
+result["evidence_strength"]     # 0.0-1.0
+result["community_relevance"]   # 0.0-1.0
 result["ics"]                   # decomposition of insight_score
 ```
 
-### Observability
+**The trace and budget** are for operability, safe to log or ignore:
 
 ```python
 result["used_budget"]   # how much exploration budget was consumed
 result["trace"]         # ppr/beam traces, params, timings_ms
 ```
 
-The full, authoritative shape is documented in the [Result Schema](../reference/result-schema.md).
+Every field is documented exhaustively in the [Result Schema](../reference/result-schema.md).
 
----
+## Putting it together
 
-## A complete example
+In practice a first look at a retrieval reads like this:
 
 ```python
 result = engine.retrieve(seeds=["entity/claim_123"], max_paths=25)
@@ -124,10 +109,6 @@ for p in result["paths"][:5]:
     print(f"  [{p['score']:.2f}]", " → ".join(str(n) for n in p["nodes"]))
 ```
 
----
-
 ## Next
 
-- [Scoring Edges](edge-scoring.md)
-- [Tuning Retrieval](tuning.md)
-- [AI Agent Integration](agent-integration.md)
+From here, [Scoring Edges](edge-scoring.md) covers the single-edge counterpart to retrieval, [Tuning Retrieval](tuning.md) explains the parameters, and [AI Agent Integration](agent-integration.md) wires the result into an agent loop.

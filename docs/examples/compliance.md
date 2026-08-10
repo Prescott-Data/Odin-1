@@ -4,13 +4,13 @@ icon: material/scale-balance
 
 # Regulatory Compliance
 
-Compliance work often comes down to one question: is this entity connected — directly or indirectly — to something it should not be, like a sanctioned entity? Odin is well-suited to it because the prohibited relationships are frequently *indirect*, hidden a few hops from anything an analyst would look at directly.
+Compliance work often comes down to one question: is this entity connected, directly or indirectly, to something it should not be, like a sanctioned entity? Odin is well-suited to it because the prohibited relationships are frequently *indirect*, hidden a few hops from anything an analyst would look at directly.
 
 The graph holds entities like `Fund`, `Manager`, `Entity`, `Person`, and `Jurisdiction`, connected by relations such as `managed_by`, `owns`, `affiliated_with`, and `controlled_by`.
 
 ## The direct case: check one edge
 
-When you have a specific prohibited relationship in mind, score it directly — no traversal needed:
+When you have a specific prohibited relationship in mind, score it directly, with no traversal needed:
 
 ```python
 from arango import ArangoClient
@@ -32,7 +32,7 @@ if score > 0.5:
     )
 ```
 
-`score_edge()` gives you the NPLL plausibility of a single relationship — a fast gate for rule checks. See [Scoring Edges](../guides/edge-scoring.md).
+`score_edge()` gives you the NPLL plausibility of a single relationship, a fast gate for rule checks. See [Scoring Edges](../guides/edge-scoring.md).
 
 ---
 
@@ -64,7 +64,7 @@ This finds chains like `Fund → managed_by → Manager → affiliated_with → 
 | Hidden, indirect relationships | Multi-hop [beam search](../concepts/beam-search.md) surfaces them |
 | Explainability for auditors | Every flagged path is a real, inspectable chain in the graph |
 
-Because Odin only returns paths that exist in your data, every flag is auditable — there is no hallucinated relationship to defend.
+Because Odin only returns paths that exist in your data, every flag is auditable: there is no hallucinated relationship to defend.
 
 ---
 
@@ -75,7 +75,7 @@ score = result["triage"]["score"]
 if score >= 75:
     compliance_agent.escalate(result)     # strong, well-sourced exposure
 elif score >= 40:
-    human_review.enqueue(result)          # uncertain — needs an analyst
+    human_review.enqueue(result)          # uncertain, needs an analyst
 ```
 
 See [AI Agent Integration](../guides/agent-integration.md) for the human-in-the-loop pattern.

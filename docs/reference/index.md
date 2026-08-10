@@ -50,7 +50,7 @@ from odin import OdinEngine, SchemaInspector, inspect_arango_schema
 
 | Symbol | Purpose |
 |--------|---------|
-| `OdinEngine` | Main entry point — retrieval, scoring, anchors | 
+| `OdinEngine` | Main entry point: retrieval, scoring, anchors |
 | `SchemaInspector` | Runtime ArangoDB schema discovery |
 | `inspect_arango_schema` | One-call schema export helper |
 

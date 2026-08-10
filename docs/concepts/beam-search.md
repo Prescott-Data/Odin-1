@@ -4,7 +4,7 @@ icon: material/magnify-scan
 
 # Beam Search
 
-Once [PPR](ppr.md) has named the anchors worth exploring, beam search is what actually walks the graph. It builds multi-hop paths outward from those anchors while refusing to let the search explode — which, in a real knowledge graph, it very much wants to do.
+Once [PPR](ppr.md) has named the anchors worth exploring, beam search is what actually walks the graph. It builds multi-hop paths outward from those anchors while refusing to let the search explode, which, in a real knowledge graph, it very much wants to do.
 
 ## The problem it solves
 
@@ -14,7 +14,7 @@ Beam search sidesteps the explosion with one rule: at every hop, only the **top-
 
 ## How it works
 
-Each hop repeats the same four steps. Start from the current set of partial paths — the *beam* — and expand each one along its outgoing edges. Score every extended path using both structural importance and semantic plausibility. Keep only the best `beam_width` of them, and carry that set into the next hop. Repeat until paths reach `hop_limit` or naturally terminate.
+Each hop repeats the same four steps. Start from the current set of partial paths (the *beam*) and expand each one along its outgoing edges. Score every extended path using both structural importance and semantic plausibility. Keep only the best `beam_width` of them, and carry that set into the next hop. Repeat until paths reach `hop_limit` or naturally terminate.
 
 ```
 hop 0:  [seed]
@@ -27,7 +27,7 @@ Because the beam is a fixed width, the work per hop is bounded no matter how den
 
 ## Why the scoring signal is the whole game
 
-Beam search is only ever as good as the signal it prunes with — a wide beam over a bad score just keeps more junk. This is why Odin scores each candidate extension with [NPLL edge plausibility](npll.md) *during* the walk, not after it. An implausible edge such as `Patient → diagnosed_by → Medication` gets pruned at the hop it appears, instead of being expanded into thousands of downstream nonsense paths. Coupling the search to semantics this tightly is what keeps the final output high-signal.
+Beam search is only ever as good as the signal it prunes with; a wide beam over a bad score just keeps more junk. This is why Odin scores each candidate extension with [NPLL edge plausibility](npll.md) *during* the walk, not after it. An implausible edge such as `Patient → diagnosed_by → Medication` gets pruned at the hop it appears, instead of being expanded into thousands of downstream nonsense paths. Coupling the search to semantics this tightly is what keeps the final output high-signal.
 
 ## The knobs
 
@@ -39,7 +39,7 @@ Two parameters shape how the beam behaves, and a third caps the output:
 | `hop_limit` | `3` | Maximum path length. Deeper finds longer causal chains, at more cost. |
 | `max_paths` | `50` | How many finished paths to return. |
 
-Latency tracks roughly with `beam_width × hop_limit`, so the two interact — to go deeper without paying for it, narrow the beam. [Tuning Retrieval](../guides/tuning.md) works through the trade-offs. The whole walk also runs under a budget so a single call can never run away; how much of it was consumed comes back in the result as `used_budget`, which is handy for both observability and tuning.
+Latency tracks roughly with `beam_width × hop_limit`, so the two interact: to go deeper without paying for it, narrow the beam. [Tuning Retrieval](../guides/tuning.md) works through the trade-offs. The whole walk also runs under a budget so a single call can never run away; how much of it was consumed comes back in the result as `used_budget`, which is handy for both observability and tuning.
 
 ---
 

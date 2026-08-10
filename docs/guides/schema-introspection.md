@@ -4,17 +4,11 @@ icon: material/table-search
 
 # Schema Introspection
 
-`SchemaInspector` discovers your ArangoDB structure **at runtime** — every collection, its fields, and how edge collections connect. It is designed to give AI agents the context they need to write valid queries, and to auto-generate documentation.
-
----
-
-## Why introspection
-
-Agents that write their own AQL need to know what collections and fields exist. Rather than hard-coding a schema, `SchemaInspector` reads it live, so it stays correct as your graph evolves.
-
----
+`SchemaInspector` discovers your ArangoDB structure at runtime: every collection, its fields, and how edge collections connect. Agents that write their own AQL need that structure, and hard-coding it goes stale the moment the graph changes. Reading it live keeps it correct, which is what makes introspection useful both for priming agents and for generating documentation.
 
 ## Basic usage
+
+Construct an inspector over a connected database and ask for the schema map:
 
 ```python
 from arango import ArangoClient
@@ -31,30 +25,22 @@ print(f"Collections: {len(schema['collections'])}")
 print(f"Edge collections: {len(schema['edges'])}")
 ```
 
-`get_schema_map()` returns a dictionary with `database_name`, `collections`, and `edges`. It is cached after the first call; pass `refresh=True` to rebuild it.
+`get_schema_map()` returns a dictionary with `database_name`, `collections`, and `edges`. It is cached after the first call, so pass `refresh=True` when you want to rebuild it.
 
----
+## Reading collections and edges
 
-## Collection details
+Each document collection reports its `name`, `type`, `count`, and the `fields` discovered by sampling:
 
 ```python
 for col in schema["collections"]:
     print(f"{col['name']}: {col['count']} docs")
     print(f"  fields: {', '.join(col['fields'][:5])}")
-```
 
-Each document collection reports its `name`, `type`, `count`, and discovered `fields`.
-
-```python
 info = inspector.get_collection_info("ExtractedEntities")
 print(info["fields"])
 ```
 
----
-
-## Edge relationships
-
-Edge collections additionally report which collections they connect:
+Edge collections additionally report which collections they connect, which is exactly the `_from`/`_to` mapping an agent needs to construct a valid traversal:
 
 ```python
 edge = inspector.get_edge_info("ExtractedRelationships")
@@ -63,11 +49,9 @@ print("To:  ", edge["to_collections"])
 print("Fields:", edge["fields"])
 ```
 
-This `_from`/`_to` mapping is exactly what an agent needs to construct a valid traversal.
+## Exporting the schema
 
----
-
-## Save schema for agents or docs
+For agents and documentation, export the whole map to a file in one call:
 
 ```python
 from odin import inspect_arango_schema
@@ -75,28 +59,18 @@ from odin import inspect_arango_schema
 inspect_arango_schema(db, output_file="schema.json")
 ```
 
-Use the exported file to:
-
-- **Prime an agent** with graph context in its system prompt.
-- **Auto-generate** database schema documentation.
-- **Validate** that collection structures match across environments.
-- **Track** schema evolution over time in version control.
-
----
+That exported file has several uses: priming an agent with graph context in its system prompt, auto-generating database schema documentation, validating that collection structures match across environments, and tracking schema evolution over time in version control.
 
 ## Sampling behavior
 
-Field discovery samples a small number of documents per collection (`max_sample_docs`, default `5`). Increase it when documents are highly heterogeneous:
+Field discovery samples a small number of documents per collection, set by `max_sample_docs` (default `5`). Raise it when your documents are highly heterogeneous and a small sample would miss fields:
 
 ```python
 inspector = SchemaInspector(db, max_sample_docs=25)
 ```
 
-System collections (names starting with `_`) are skipped automatically.
-
----
+System collections, whose names start with `_`, are skipped automatically.
 
 ## Next
 
-- [SchemaInspector API](../reference/schema.md) — full method reference
-- [AI Agent Integration](agent-integration.md)
+The full method surface is in the [SchemaInspector API](../reference/schema.md), and [AI Agent Integration](agent-integration.md) shows introspection used to give an agent graph context.

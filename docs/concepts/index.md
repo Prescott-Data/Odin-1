@@ -4,9 +4,9 @@ icon: material/brain
 
 # Concepts
 
-The ideas behind Odin — what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.
+The ideas behind Odin: what it does, how the retrieval pipeline is assembled, and how each scoring signal contributes to the final ranking.
 
-Odin's job is narrow and deliberate: **given seed entities, return the most relevant scored paths through a knowledge graph.** It does not answer natural-language questions or generate prose — that is the agent's job. Odin is the *compass*; the agent is the *explorer*.
+Odin's job is narrow and deliberate: **given seed entities, return the most relevant scored paths through a knowledge graph.** It does not answer natural-language questions or generate prose; that is the agent's job. Odin is the *compass*; the agent is the *explorer*.
 
 <div class="grid cards" markdown>
 
@@ -18,7 +18,7 @@ Odin's job is narrow and deliberate: **given seed entities, return the most rele
 
 -   :material-graph: **Data Model**
 
-    Entities, relationships, and communities — how Odin sees your graph.
+    Entities, relationships, and communities: how Odin sees your graph.
 
     [Read more →](data-model.md)
 
@@ -48,7 +48,7 @@ Odin's job is narrow and deliberate: **given seed entities, return the most rele
 
 -   :material-numeric: **Triage & Insight Scoring**
 
-    Collapsing many signals into one 0–100 prioritization number.
+    Collapsing many signals into one 0-100 prioritization number.
 
     [Read more →](scoring.md)
 

@@ -4,7 +4,7 @@ icon: material/book-open-variant
 
 # Guides
 
-Practical, task-focused walkthroughs. Each guide assumes you have installed `odin-engine` and can reach a graph database — see [Getting Started](../getting-started.md) if not.
+Practical, task-focused walkthroughs. Each guide assumes you have installed `odin-engine` and can reach a graph database; see [Getting Started](../getting-started.md) if not.
 
 <div class="grid cards" markdown>
 

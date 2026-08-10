@@ -4,18 +4,18 @@ icon: material/chart-donut
 
 # Motifs & Aggregation
 
-Beam search hands back a list of surviving paths, but a list of paths is rarely what you actually want — patterns are. Aggregation is the final stage of retrieval: it folds the paths into recurring **motifs**, a breakdown of **relation shares**, and a **summary** of quality signals that the [triage score](scoring.md) is computed from.
+Beam search hands back a list of surviving paths, but a list of paths is rarely what you actually want; patterns are. Aggregation is the final stage of retrieval: it folds the paths into recurring **motifs**, a breakdown of **relation shares**, and a **summary** of quality signals that the [triage score](scoring.md) is computed from.
 
 ## Motifs turn paths into patterns
 
-A motif is a shape that recurs across the returned paths — for instance `Claim → billed_by → Provider → flagged_in → Audit` showing up again and again. That repetition is usually the real finding, so Odin counts it for you:
+A motif is a shape that recurs across the returned paths, for instance `Claim → billed_by → Provider → flagged_in → Audit` showing up again and again. That repetition is usually the real finding, so Odin counts it for you:
 
 ```python
 for m in result["aggregates"]["motifs"]:
     print(m)   # e.g. {"pattern": "A→B→C", "count": 12}
 ```
 
-This doubles as lightweight anomaly detection. One suspicious chain is a coincidence; the same chain appearing 47 times is signal. Alongside the motifs, `relation_share` reports how the edges break down by relation type — a quick fingerprint of *what kind* of connections dominate a retrieval — and the strongest one is surfaced separately as `dominant_relation`.
+This doubles as lightweight anomaly detection. One suspicious chain is a coincidence; the same chain appearing 47 times is signal. Alongside the motifs, `relation_share` reports how the edges break down by relation type, a quick fingerprint of *what kind* of connections dominate a retrieval, and the strongest one is surfaced separately as `dominant_relation`.
 
 ## The summary is the raw material for scoring
 
@@ -38,7 +38,7 @@ Read together they tell a story about *trustworthiness*: `provenance` and `recen
 
 ## Surprise comes from a baseline
 
-When a baseline set of paths is available, aggregation compares the current retrieval against it to compute **surprise** — how far the dominant pattern deviates from what the prior distribution led you to expect. Surprise carries real weight in the triage score, because an *unexpected* result is often the one most worth an agent's attention.
+When a baseline set of paths is available, aggregation compares the current retrieval against it to compute **surprise**: how far the dominant pattern deviates from what the prior distribution led you to expect. Surprise carries real weight in the triage score, because an *unexpected* result is often the one most worth an agent's attention.
 
 The whole thing arrives under a single key:
 

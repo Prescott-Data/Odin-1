@@ -4,7 +4,7 @@ icon: material/lightbulb-on
 
 # Examples
 
-Worked, end-to-end examples of Odin applied to real problem shapes. Each one uses the same three-signal pipeline — only the seeds and interpretation change.
+Worked, end-to-end examples of Odin applied to real problem shapes. Each one uses the same three-signal pipeline; only the seeds and interpretation change.
 
 <div class="grid cards" markdown>
 

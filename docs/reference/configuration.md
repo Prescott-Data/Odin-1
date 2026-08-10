@@ -4,19 +4,19 @@ icon: material/cog
 
 # Configuration
 
-All configuration is passed as arguments — there are no global settings or environment variables that Odin reads on its own. This page collects every parameter in one place.
+All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.
 
 ---
 
 ## Engine construction
 
-`OdinEngine(...)` — see the [OdinEngine API](engine.md#constructor).
+`OdinEngine(...)`. See the [OdinEngine API](engine.md#constructor).
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `db` | `StandardDatabase` | — | Connected `python-arango` handle |
+| `db` | `StandardDatabase` | required | Connected `python-arango` handle |
 | `community_id` | `str` | `"global"` | Exploration scope |
-| `cache_size` | `int` | `5000` | Graph-accessor LRU size — see [Caching](../concepts/caching.md) |
+| `cache_size` | `int` | `5000` | Graph-accessor LRU size (see [Caching](../concepts/caching.md)) |
 | `auto_train` | `bool` | `True` | Train NPLL on first run if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = scoped |
 
@@ -24,11 +24,11 @@ All configuration is passed as arguments — there are no global settings or env
 
 ## Retrieval
 
-`retrieve(...)` — see [Tuning Retrieval](../guides/tuning.md).
+`retrieve(...)`. See [Tuning Retrieval](../guides/tuning.md).
 
 | Parameter | Type | Default | Effect |
 |-----------|------|---------|--------|
-| `seeds` | `list[str]` | — | Where exploration starts |
+| `seeds` | `list[str]` | required | Where exploration starts |
 | `max_paths` | `int` | `50` | Output size |
 | `hop_limit` | `int` | `3` | Maximum path length |
 | `beam_width` | `int` | `64` | Paths kept per hop |
@@ -41,7 +41,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `seeds` | `list[str]` | — |
+| `seeds` | `list[str]` | required |
 | `topn` | `int` | `20` |
 
 ---
@@ -52,7 +52,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `db` | `StandardDatabase` | — |
+| `db` | `StandardDatabase` | required |
 | `max_sample_docs` | `int` | `5` |
 
 `inspect_arango_schema(db, output_file="schema.json")`.
@@ -61,7 +61,7 @@ All configuration is passed as arguments — there are no global settings or env
 
 ## Database connection (yours)
 
-Odin does not manage the connection — you construct it with `python-arango`. In production, source these from the environment:
+Odin does not manage the connection; you construct it with `python-arango`. In production, source these from the environment:
 
 | Variable (suggested) | Used for |
 |----------------------|----------|

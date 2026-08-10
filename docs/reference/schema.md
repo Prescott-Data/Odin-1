@@ -20,7 +20,7 @@ SchemaInspector(db, max_sample_docs: int = 5)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | — | A connected `python-arango` database |
+| `db` | `StandardDatabase` | required | A connected `python-arango` database |
 | `max_sample_docs` | `int` | `5` | Documents sampled per collection to discover fields |
 
 ---

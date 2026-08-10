@@ -10,7 +10,7 @@ Getting that answer first is what makes the rest of the pipeline affordable. Ins
 
 ## Why *personalized*
 
-Classic PageRank ranks every node by global importance — the graph's celebrities. That is the wrong question here. You do not care that a node is famous across the whole graph; you care that it is important *to the things you are investigating*.
+Classic PageRank ranks every node by global importance, the graph's celebrities. That is the wrong question here. You do not care that a node is famous across the whole graph; you care that it is important *to the things you are investigating*.
 
 Personalized PageRank fixes this by biasing the random walk toward your seed set. The result is a per-query importance distribution: nodes well-connected to your seeds rise to the top, and everything distant or irrelevant fades toward zero. Change the seeds and the entire ranking shifts, because importance is always measured *relative to* what you asked about.
 
@@ -19,12 +19,12 @@ Personalized PageRank fixes this by biasing the random walk toward your seed set
 The intuition is a crowd of walkers. Release many of them at your seed nodes; each one follows edges at random but, every so often, teleports back to a seed. After enough steps, the share of time spent at each node is its PPR score. Three things fall out of this:
 
 - Nodes tightly connected to your seeds accumulate high scores.
-- Bottleneck nodes that many paths funnel through also score highly — often the most interesting connectors in an investigation.
+- Bottleneck nodes that many paths funnel through also score highly, and are often the most interesting connectors in an investigation.
 - Nodes far from every seed collect almost no walker time and are effectively skipped.
 
 ## Using it directly
 
-Inside `retrieve()` these scores become the **anchors** the pipeline explores from, but you can also ask for them on their own — a fast way to orient yourself in an unfamiliar neighborhood:
+Inside `retrieve()` these scores become the **anchors** the pipeline explores from, but you can also ask for them on their own, a fast way to orient yourself in an unfamiliar neighborhood:
 
 ```python
 anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
@@ -32,7 +32,7 @@ for node_id, ppr_score in anchors:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
 
-`find_anchors()` returns `(node_id, ppr_score)` tuples sorted by importance. The two levers that shape the result are your **seeds** — the personalization vector that decides what "important" is measured against — and **`topn`**, how many anchors you keep. Broad seeds give a wide sense of importance; a few specific seeds produce sharp, targeted anchors. If you are working within a partitioned graph, `community_id` and `community_mode` confine the walk to that scope.
+`find_anchors()` returns `(node_id, ppr_score)` tuples sorted by importance. The two levers that shape the result are your **seeds** (the personalization vector that decides what "important" is measured against) and **`topn`**, how many anchors you keep. Broad seeds give a wide sense of importance; a few specific seeds produce sharp, targeted anchors. If you are working within a partitioned graph, `community_id` and `community_mode` confine the walk to that scope.
 
 Because PPR runs over the [cached graph accessor](caching.md), repeated retrievals against a warm cache stay fast even though a walk touches many nodes.
 
