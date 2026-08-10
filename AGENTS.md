@@ -11,7 +11,7 @@ custom-adapter) graph. Public API: `from odin import OdinEngine, SchemaInspector
 ## Writing Odin code
 
 When writing or reviewing code that uses the engine, follow the Odin skill at
-[`skills/odin/SKILL.md`](skills/odin/SKILL.md). It has the exact API signatures,
+[`odin/skills/odin/SKILL.md`](odin/skills/odin/SKILL.md). It has the exact API signatures,
 the real `retrieve()` result shape, and the mistakes to avoid. In particular:
 
 - Paths have no `nodes` field. Read `path["edges"]` (each edge has `u`, `v`,

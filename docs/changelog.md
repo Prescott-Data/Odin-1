@@ -12,6 +12,26 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 
 <div class="changelog-release" markdown>
 
+## 0.3.0 <span class="changelog-date">2026-08-10</span>
+
+<div class="changelog-meta" markdown>
+<div class="changelog-contributors">
+<a href="https://github.com/ekizito96" title="Muyukani Kizito"><img src="https://github.com/ekizito96.png?size=32" alt="ekizito96"></a>
+</div>
+</div>
+
+Tooling to make AI coding agents write correct Odin.
+
+**Added**
+
+- The `odin` command-line tool. `odin init --skill` installs the packaged AI-editor skill into `.github/skills/odin/` and `.claude/skills/odin/`, where GitHub Copilot and Claude Code load it automatically. Run `odin init --skill --force` to refresh after upgrades.
+- The AI-editor skill is packaged in the wheel, so it is versioned with the code and works offline.
+- An **AI Editor Setup** guide and a served [`llms.txt`](https://odin.developers.prescottdata.io/llms.txt) index of the documentation for AI ingestion.
+
+</div>
+
+<div class="changelog-release" markdown>
+
 ## 0.2.1 <span class="changelog-date">2026-08-10</span>
 
 <div class="changelog-meta" markdown>

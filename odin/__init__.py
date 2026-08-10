@@ -18,4 +18,4 @@ from .engine import OdinEngine
 from .schema import SchemaInspector, inspect_arango_schema
 
 __all__ = ["OdinEngine", "SchemaInspector", "inspect_arango_schema"]
-__version__ = "0.2.1"
+__version__ = "0.3.0"

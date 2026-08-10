@@ -10,14 +10,13 @@ Your AI coding editor writes better Odin code when it knows the library. Odin sh
 
 ## Install the skill
 
-Odin is a library rather than a CLI, so you place the skill by hand, once. From your project root, drop it into the locations Copilot and Claude Code discover automatically:
+After `pip install odin-engine`, run this from your project root:
 
 ```bash
-mkdir -p .github/skills/odin .claude/skills/odin
-curl -sL https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/skills/odin/SKILL.md \
-  -o .github/skills/odin/SKILL.md
-cp .github/skills/odin/SKILL.md .claude/skills/odin/SKILL.md
+odin init --skill
 ```
+
+It writes the skill to the locations editors discover automatically:
 
 | Editor | Location | Loaded |
 |---|---|---|
@@ -25,6 +24,15 @@ cp .github/skills/odin/SKILL.md .claude/skills/odin/SKILL.md
 | Claude Code | `.claude/skills/odin/` | Automatically, same trigger model |
 
 Commit these files. Everyone who opens the project gets an editor that knows Odin.
+
+Prefer not to install the package first? Drop the skill in by hand instead:
+
+```bash
+mkdir -p .github/skills/odin .claude/skills/odin
+curl -sL https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/odin/skills/odin/SKILL.md \
+  -o .github/skills/odin/SKILL.md
+cp .github/skills/odin/SKILL.md .claude/skills/odin/SKILL.md
+```
 
 ## Cursor and other AGENTS.md tools
 
@@ -40,7 +48,11 @@ The documentation site serves [llms.txt](https://odin.developers.prescottdata.io
 
 ## Keeping it current
 
-The skill tracks the library. After upgrading Odin, re-run the download above to refresh it, or pin it to a release by swapping `main` for a tag in the URL.
+The skill is versioned with the package. After upgrading Odin, refresh it:
+
+```bash
+odin init --skill --force
+```
 
 ## What good looks like
 

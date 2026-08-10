@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "odin-engine"
-version = "0.2.1"
+version = "0.3.0"
 description = "Odin: Graph intelligence engine with PPR + NPLL for AI agent navigation"
 authors = [{name = "Prescott Data"}]
 readme = "README.md"
@@ -44,9 +44,15 @@ dev = [
   "psutil",
 ]
 
+[project.scripts]
+odin = "odin.cli:main"
+
 [tool.setuptools.packages.find]
 include = ["odin*", "npll*", "retrieval*", "benchmarks*"]
 exclude = ["tests*", "whitepaper*", "docs*"]
+
+[tool.setuptools.package-data]
+odin = ["skills/**/*.md"]
 
 [project.urls]
 Homepage = "https://odin.developers.prescottdata.io"
