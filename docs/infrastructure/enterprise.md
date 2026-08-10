@@ -10,6 +10,17 @@ icon: material/office-building
 
 ---
 
+## The Odin family
+
+Odin follows the model the frontier AI labs use for their model families: an open base that distributes widely, and successive proprietary generations for teams that need the frontier.
+
+- **Odin-1** is the open base. MIT-licensed, free, and built to spread. The community adopts it, builds on it, and takes it in directions no roadmap could plan for. Its path belongs to its users as much as to us.
+- **Odin-2 and the generations after it** are the managed, proprietary tier. Each new generation adds capabilities that only make sense with an operator behind them, federation, zero-trust security, domain intelligence, and ships them as a supported platform rather than a library.
+
+Odin-1 keeps its own path. The enterprise generations never close it off: the open base stays open, and the two reinforce each other. You lose nothing by starting on Odin-1, and you gain a clear road to production when you are ready for it.
+
+---
+
 ## Odin-1 vs Odin-2
 
 |  | Odin-1 (OSS) | Odin-2 (Enterprise) |
@@ -24,6 +35,7 @@ icon: material/office-building
 | **Priors** | Learned once from your graph | Adaptive priors that learn online from agent feedback |
 | **Operation** | Self-managed | Fully managed by Prescott Data |
 | **Support** | Community (GitHub Issues) | Dedicated engineering with an SLA |
+| **Graph & ontology** | You build it | Engineered for you (professional services) |
 
 ---
 
@@ -63,6 +75,34 @@ With Odin-2, Prescott Data provisions, operates, and supports the full stack on 
 - Patching, upgrades, scaling, backup, and disaster recovery handled for you.
 - Private networking, VPC peering, and on-premises options; your data stays in your environment.
 - Dedicated engineering support with a response-time SLA, plus onboarding, architecture review, and migration help.
+
+---
+
+## Professional services
+
+Most of the value in an enterprise deployment is won or lost before retrieval ever runs, in the work of turning raw data into a knowledge graph worth reasoning over. Prescott Data does that work with you.
+
+### Knowledge graph engineering
+
+We design and build your graph from the ground up: the ontology, the entity and relationship schemas, and the extraction pipelines that populate them from your documents, databases, and systems of record. You bring the domain and the data; we deliver a graph that is ready for Odin to reason over.
+
+### Ontology design
+
+We work with your domain experts to encode how your field actually thinks, the entities, the relationships, and the rules that make a connection meaningful, so the graph reflects your business rather than a generic template. A good ontology is the difference between a graph that answers real questions and one that merely stores data.
+
+### Domain tuning
+
+We calibrate the Domain Intelligence Service to your field so that importance, plausibility, and surprise mean what they should mean in your data, not in the abstract.
+
+### Onboarding and migration
+
+We move your Odin-1 proof of concept onto Odin-2, connect your data sources, and hand your team a running system rather than a setup guide.
+
+### Architecture review
+
+We review your agent and retrieval architecture with you and help you design for scale, security, and cost before they become problems.
+
+The deliverable is not just software. It is a working graph-intelligence capability, built for your domain and operated on your behalf.
 
 ---
 
