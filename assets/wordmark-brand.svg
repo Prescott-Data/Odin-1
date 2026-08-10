@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 44" width="150" height="44" role="img" aria-label="Odin">
+  <defs>
+    <linearGradient id="odin-word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35B0FE"/>
+      <stop offset="0.55" stop-color="#2457F7"/>
+      <stop offset="1" stop-color="#752CEA"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="33" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="34" font-weight="700" letter-spacing="-1.2" fill="url(#odin-word)">Odin</text>
+</svg>
