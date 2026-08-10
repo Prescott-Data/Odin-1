@@ -500,6 +500,8 @@
       
         
       
+        
+      
     
     
     
@@ -783,6 +785,36 @@
     
   
     Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/adapters/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 7V3h-2v4h-4V3H8v4C7 7 6 8 6 9v5.5L9.5 18v3h5v-3l3.5-3.5V9c0-1-1-2-2-2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
   
 
     
@@ -1963,7 +1995,7 @@
 </span></code></pre></div>
 <p>An <code>intelligence_mode</code> of <code>Constant</code> means the NPLL model has not trained yet, which <a href="../npll-lifecycle/">Model Lifecycle</a> explains how to resolve.</p>
 <h2 id="other-backends">Other backends<a class="headerlink" href="#other-backends" title="Permanent link">&para;</a></h2>
-<p>The accessor layer is an interface (<code>retrieval/adapters.py</code>), so backends beyond ArangoDB can be added by implementing the same node and edge access contract. If you build one, <a href="https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md">contributions</a> are welcome.</p>
+<p>The accessor layer is an interface (<code>retrieval/adapters.py</code>). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See <a href="../../concepts/adapters/">Adapters</a> for the full picture.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <p>With a connection in place, run <a href="../first-retrieval/">Your First Retrieval</a>, or let an agent discover the graph's structure with <a href="../schema-introspection/">Schema Introspection</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Connecting ArangoDB
@@ -2047,7 +2079,7 @@ An `intelligence_mode` of `Constant` means the NPLL model has not trained yet, w
 
 ## Other backends
 
-The accessor layer is an interface (`retrieval/adapters.py`), so backends beyond ArangoDB can be added by implementing the same node and edge access contract. If you build one, [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md) are welcome.
+The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See [Adapters](../concepts/adapters.md) for the full picture.
 
 ## Next
 

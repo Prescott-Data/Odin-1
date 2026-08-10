@@ -500,6 +500,8 @@
       
         
       
+        
+      
     
     
     
@@ -783,6 +785,36 @@
     
   
     Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/adapters/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 7V3h-2v4h-4V3H8v4C7 7 6 8 6 9v5.5L9.5 18v3h5v-3l3.5-3.5V9c0-1-1-2-2-2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
   
 
     
@@ -1843,7 +1875,7 @@
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Triage: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;triage&#39;</span><span class="p">][</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/100&quot;</span><span class="p">)</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;aggregates&quot;</span><span class="p">][</span><span class="s2">&quot;motifs&quot;</span><span class="p">][:</span><span class="mi">5</span><span class="p">]:</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># e.g. {&quot;pattern&quot;: &quot;CPT_99285 + CPT_office_visit&quot;, &quot;count&quot;: 34}</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># e.g. {&quot;pattern&quot;: &quot;billed_by-&gt;has_procedure&quot;, &quot;edge_count&quot;: 68, &quot;path_count&quot;: 34}</span>
 </span></code></pre></div>
 <p>The payoff is that recurring billing pattern, <em>"CPT_99285 paired with an office visit appears in 34 claims"</em>, surfaced as a motif, without anyone having written a rule for that specific combination beforehand. That is the three signals working together: <a href="../../concepts/ppr/">PPR</a> zeroes in on the high-volume providers and central claims worth examining, <a href="../../concepts/npll/">NPLL</a> throws out clinically nonsensical edges (a procedure is not <code>diagnosed_by</code> a patient) so the paths stay coherent, and <a href="../../concepts/aggregation/">motif aggregation</a> compresses thousands of claims into a handful of repeated patterns you can actually read.</p>
 <h2 id="validate-a-specific-concern">Validate a specific concern<a class="headerlink" href="#validate-a-specific-concern" title="Permanent link">&para;</a></h2>
@@ -1895,7 +1927,7 @@ result = engine.retrieve(
 print(f"Triage: {result['triage']['score']}/100")
 for m in result["aggregates"]["motifs"][:5]:
     print(m)
-# e.g. {"pattern": "CPT_99285 + CPT_office_visit", "count": 34}
+# e.g. {"pattern": "billed_by-&gt;has_procedure", "edge_count": 68, "path_count": 34}
 ```
 
 The payoff is that recurring billing pattern, *"CPT_99285 paired with an office visit appears in 34 claims"*, surfaced as a motif, without anyone having written a rule for that specific combination beforehand. That is the three signals working together: [PPR](../concepts/ppr.md) zeroes in on the high-volume providers and central claims worth examining, [NPLL](../concepts/npll.md) throws out clinically nonsensical edges (a procedure is not `diagnosed_by` a patient) so the paths stay coherent, and [motif aggregation](../concepts/aggregation.md) compresses thousands of claims into a handful of repeated patterns you can actually read.

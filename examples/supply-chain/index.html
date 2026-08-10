@@ -500,6 +500,8 @@
       
         
       
+        
+      
     
     
     
@@ -783,6 +785,36 @@
     
   
     Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/adapters/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 7V3h-2v4h-4V3H8v4C7 7 6 8 6 9v5.5L9.5 18v3h5v-3l3.5-3.5V9c0-1-1-2-2-2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Adapters
   
 
     
@@ -1885,8 +1917,10 @@
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">][:</span><span class="mi">10</span><span class="p">]:</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="s2">&quot; -&gt; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;nodes&quot;</span><span class="p">]))</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># Discovers: a Tier-3 supplier feeds 47 downstream products</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">edges</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;edges&quot;</span><span class="p">]</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;u&quot;</span><span class="p">],</span> <span class="o">*</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">)]</span> <span class="k">if</span> <span class="n">edges</span> <span class="k">else</span> <span class="p">[]</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="s2">&quot; -&gt; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">))</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># Discovers: a Tier-3 supplier feeds 47 downstream products</span>
 </span></code></pre></div>
 <p>The deep walk reveals chains like <code>Tier-3 supplier → component → sub-assembly → product</code>, quantifying how far a single vendor's disruption propagates.</p>
 <hr />
@@ -1962,7 +1996,9 @@ result = engine.retrieve(
 )
 
 for p in result["paths"][:10]:
-    print(f"[{p['score']:.2f}]", " -&gt; ".join(str(n) for n in p["nodes"]))
+    edges = p["edges"]
+    nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
+    print(f"[{p['score']:.2f}]", " -&gt; ".join(str(n) for n in nodes))
 # Discovers: a Tier-3 supplier feeds 47 downstream products
 ```
 
