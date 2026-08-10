@@ -1993,7 +1993,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="scoping-to-a-community">Scoping to a community<a class="headerlink" href="#scoping-to-a-community" title="Permanent link">&para;</a></h2>
-<p>A <a href="../../concepts/data-model/#communities">community</a> restricts exploration to a named subset of the graph:</p>
+<p>A <a href="../../concepts/data-model/#communities-scope-the-graph">community</a> restricts exploration to a named subset of the graph:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Global exploration (default)</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
@@ -2088,7 +2088,7 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities) restricts exploration to a named subset of the graph:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph:
 
 ```python
 # Global exploration (default)

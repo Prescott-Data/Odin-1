@@ -771,10 +771,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-does" class="md-nav__link">
+  <a href="#learned-from-your-graph-not-from-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it does
+        Learned from your graph, not from rules
       
     </span>
   </a>
@@ -782,10 +782,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-learned-from-your-graph" class="md-nav__link">
+  <a href="#you-never-train-it-by-hand" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why "learned from your graph"
+        You never train it by hand
       
     </span>
   </a>
@@ -793,43 +793,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#self-managing-lifecycle" class="md-nav__link">
+  <a href="#what-happens-when-there-is-no-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Self-managing lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#graceful-fallback" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Graceful fallback
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-the-signal-is-used" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where the signal is used
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        What happens when there is no model
       
     </span>
   </a>
@@ -1770,10 +1737,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-does" class="md-nav__link">
+  <a href="#learned-from-your-graph-not-from-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it does
+        Learned from your graph, not from rules
       
     </span>
   </a>
@@ -1781,10 +1748,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-learned-from-your-graph" class="md-nav__link">
+  <a href="#you-never-train-it-by-hand" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why "learned from your graph"
+        You never train it by hand
       
     </span>
   </a>
@@ -1792,43 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#self-managing-lifecycle" class="md-nav__link">
+  <a href="#what-happens-when-there-is-no-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Self-managing lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#graceful-fallback" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Graceful fallback
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-the-signal-is-used" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where the signal is used
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        What happens when there is no model
       
     </span>
   </a>
@@ -1904,78 +1838,33 @@
 
 
 <h1 id="npll-edge-scoring">NPLL Edge Scoring<a class="headerlink" href="#npll-edge-scoring" title="Permanent link">&para;</a></h1>
-<p>NPLL — <strong>Neural Probabilistic Logic Learning</strong> — is Odin's <strong>semantic</strong> signal. It scores how plausible a given edge is, learned directly from the structure of your graph.</p>
-<hr />
-<h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
-<p>Given a candidate edge <code>(head, relation, tail)</code>, NPLL returns a probability between <code>0.0</code> and <code>1.0</code>:</p>
+<p><a href="../ppr/">PPR</a> finds important nodes and <a href="../beam-search/">beam search</a> reaches them, but neither knows whether an edge <em>makes sense</em>. That is NPLL's job. <strong>Neural Probabilistic Logic Learning</strong> is Odin's semantic signal: it scores how plausible any given edge is, using patterns learned directly from your graph.</p>
+<p>Given a candidate edge <code>(head, relation, tail)</code>, it returns a probability from <code>0.0</code> to <code>1.0</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span><span class="s2">&quot;entity/patient_001&quot;</span><span class="p">,</span> <span class="s2">&quot;treated_by&quot;</span><span class="p">,</span> <span class="s2">&quot;entity/doctor_smith&quot;</span><span class="p">)</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># 0.0  → impossible / contradicts learned patterns</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># 1.0  → highly plausible / matches learned patterns</span>
 </span></code></pre></div>
-<p>During retrieval this signal prunes semantically invalid paths — the ones naive traversal happily follows because the edge simply <em>exists</em> in the data, even when it makes no domain sense.</p>
-<hr />
-<h2 id="why-learned-from-your-graph">Why "learned from your graph"<a class="headerlink" href="#why-learned-from-your-graph" title="Permanent link">&para;</a></h2>
-<p>NPLL does not ship with hand-written rules about medicine, finance, or supply chains. Instead it <strong>learns the plausibility patterns of your specific graph</strong>: which relation types connect which kinds of entities, and in which direction. A relationship that is common and consistent in your data scores high; a rare or contradictory one scores low.</p>
-<p>This makes the same engine work across domains without domain-specific configuration.</p>
-<hr />
-<h2 id="self-managing-lifecycle">Self-managing lifecycle<a class="headerlink" href="#self-managing-lifecycle" title="Permanent link">&para;</a></h2>
-<p>You never train NPLL by hand. On first initialization, <code>OdinEngine</code> bootstraps the model:</p>
-<ol>
-<li><strong>First run</strong> — extract edge patterns from the graph and train the model (~2–5 minutes).</li>
-<li><strong>Persist</strong> — save the learned weights into an ArangoDB collection.</li>
-<li><strong>Subsequent runs</strong> — load the weights and rebuild the model in ~30 seconds.</li>
-</ol>
-<p>There is no separate ML pipeline, no <code>.pt</code> files to ship, and no DevOps overhead. See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a> for the details and how to force a retrain.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Force a retrain after major graph changes</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">retrain_model</span><span class="p">()</span>
+<p>Naive traversal will happily follow an edge just because it <em>exists</em> in the data, even when it is nonsense for the domain. NPLL is what lets Odin down-weight and prune those paths instead.</p>
+<h2 id="learned-from-your-graph-not-from-rules">Learned from your graph, not from rules<a class="headerlink" href="#learned-from-your-graph-not-from-rules" title="Permanent link">&para;</a></h2>
+<p>NPLL ships with no hand-written knowledge about medicine, finance, or supply chains. It learns the plausibility patterns of <em>your</em> graph — which relation types connect which kinds of entities, and in which direction. A relationship that is common and consistent in your data scores high; a rare or contradictory one scores low. The upshot is that the same engine works across wildly different domains with no domain-specific configuration: point it at a claims graph and it learns claims; point it at a supply chain and it learns that instead.</p>
+<h2 id="you-never-train-it-by-hand">You never train it by hand<a class="headerlink" href="#you-never-train-it-by-hand" title="Permanent link">&para;</a></h2>
+<p>The model is self-managing. The first time you construct an <code>OdinEngine</code> against a graph, it bootstraps itself — extracting edge patterns and training the model (2–5 minutes), then persisting the learned weights into an ArangoDB collection. Every run after that just loads those weights and rebuilds in about 30 seconds. There is no separate ML pipeline, no <code>.pt</code> files to ship, and no DevOps overhead; when the graph's structure changes materially you simply ask for a retrain:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">retrain_model</span><span class="p">()</span>   <span class="c1"># re-learn after major graph changes</span>
 </span></code></pre></div>
-<hr />
-<h2 id="graceful-fallback">Graceful fallback<a class="headerlink" href="#graceful-fallback" title="Permanent link">&para;</a></h2>
-<p>If a model cannot be trained or loaded (for example, an empty or brand-new graph), Odin does <strong>not</strong> fail. It falls back to a constant edge-confidence so retrieval keeps working, and reports the mode:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">has_npll</span>        <span class="c1"># True if the NPLL model is active</span>
+<p>The full story — persistence, per-community models, and when to retrain — is in <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
+<h2 id="what-happens-when-there-is-no-model">What happens when there is no model<a class="headerlink" href="#what-happens-when-there-is-no-model" title="Permanent link">&para;</a></h2>
+<p>A model cannot always train — an empty or brand-new graph has nothing to learn from. Rather than fail, Odin falls back to a constant edge-confidence so retrieval keeps working, and it tells you which mode you are in:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">has_npll</span>        <span class="c1"># True when the NPLL model is active</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>    <span class="c1"># {&#39;intelligence_mode&#39;: &#39;NPLL&#39; | &#39;Constant&#39;, ...}</span>
 </span></code></pre></div>
-<p>In constant mode you still get PPR-driven structural exploration; you just lose the semantic pruning until a model is available.</p>
+<p>In constant mode you keep PPR-driven structural exploration; you only lose the semantic pruning until a model becomes available. It is always worth checking the mode before you lean on fine-grained plausibility.</p>
 <hr />
-<h2 id="where-the-signal-is-used">Where the signal is used<a class="headerlink" href="#where-the-signal-is-used" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Use</th>
-<th>How</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Pruning during <a href="../beam-search/">beam search</a></td>
-<td>Implausible extensions are dropped early</td>
-</tr>
-<tr>
-<td>Path scoring</td>
-<td>Contributes to each path's final score</td>
-</tr>
-<tr>
-<td>Direct edge validation</td>
-<td><code>score_edge()</code> in your own agent logic</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../guides/npll-lifecycle/">Model Lifecycle</a> — training, persistence, and retraining</li>
-<li><a href="../../guides/edge-scoring/">Scoring Edges</a> — using <code>score_edge()</code> in agent loops</li>
-<li><a href="../scoring/">Triage &amp; Insight Scoring</a> — how edge scores roll up into path scores</li>
-</ul>
+<p>The same signal shows up in three places: it prunes implausible extensions mid-<a href="../beam-search/">beam-search</a>, it feeds each path's final <a href="../scoring/">score</a>, and it is exposed directly as <code>score_edge()</code> for your own agent logic — see <a href="../../guides/edge-scoring/">Scoring Edges</a>.</p>
 <script type="text/markdown" id="jc-page-source"># NPLL Edge Scoring
 
-NPLL — **Neural Probabilistic Logic Learning** — is Odin's **semantic** signal. It scores how plausible a given edge is, learned directly from the structure of your graph.
+[PPR](ppr.md) finds important nodes and [beam search](beam-search.md) reaches them, but neither knows whether an edge *makes sense*. That is NPLL's job. **Neural Probabilistic Logic Learning** is Odin's semantic signal: it scores how plausible any given edge is, using patterns learned directly from your graph.
 
----
-
-## What it does
-
-Given a candidate edge `(head, relation, tail)`, NPLL returns a probability between `0.0` and `1.0`:
+Given a candidate edge `(head, relation, tail)`, it returns a probability from `0.0` to `1.0`:
 
 ```python
 score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
@@ -1983,63 +1872,36 @@ score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smi
 # 1.0  → highly plausible / matches learned patterns
 ```
 
-During retrieval this signal prunes semantically invalid paths — the ones naive traversal happily follows because the edge simply *exists* in the data, even when it makes no domain sense.
+Naive traversal will happily follow an edge just because it *exists* in the data, even when it is nonsense for the domain. NPLL is what lets Odin down-weight and prune those paths instead.
 
----
+## Learned from your graph, not from rules
 
-## Why "learned from your graph"
+NPLL ships with no hand-written knowledge about medicine, finance, or supply chains. It learns the plausibility patterns of *your* graph — which relation types connect which kinds of entities, and in which direction. A relationship that is common and consistent in your data scores high; a rare or contradictory one scores low. The upshot is that the same engine works across wildly different domains with no domain-specific configuration: point it at a claims graph and it learns claims; point it at a supply chain and it learns that instead.
 
-NPLL does not ship with hand-written rules about medicine, finance, or supply chains. Instead it **learns the plausibility patterns of your specific graph**: which relation types connect which kinds of entities, and in which direction. A relationship that is common and consistent in your data scores high; a rare or contradictory one scores low.
+## You never train it by hand
 
-This makes the same engine work across domains without domain-specific configuration.
-
----
-
-## Self-managing lifecycle
-
-You never train NPLL by hand. On first initialization, `OdinEngine` bootstraps the model:
-
-1. **First run** — extract edge patterns from the graph and train the model (~2–5 minutes).
-2. **Persist** — save the learned weights into an ArangoDB collection.
-3. **Subsequent runs** — load the weights and rebuild the model in ~30 seconds.
-
-There is no separate ML pipeline, no `.pt` files to ship, and no DevOps overhead. See [Model Lifecycle](../guides/npll-lifecycle.md) for the details and how to force a retrain.
+The model is self-managing. The first time you construct an `OdinEngine` against a graph, it bootstraps itself — extracting edge patterns and training the model (2–5 minutes), then persisting the learned weights into an ArangoDB collection. Every run after that just loads those weights and rebuilds in about 30 seconds. There is no separate ML pipeline, no `.pt` files to ship, and no DevOps overhead; when the graph's structure changes materially you simply ask for a retrain:
 
 ```python
-# Force a retrain after major graph changes
-engine.retrain_model()
+engine.retrain_model()   # re-learn after major graph changes
 ```
 
----
+The full story — persistence, per-community models, and when to retrain — is in [Model Lifecycle](../guides/npll-lifecycle.md).
 
-## Graceful fallback
+## What happens when there is no model
 
-If a model cannot be trained or loaded (for example, an empty or brand-new graph), Odin does **not** fail. It falls back to a constant edge-confidence so retrieval keeps working, and reports the mode:
+A model cannot always train — an empty or brand-new graph has nothing to learn from. Rather than fail, Odin falls back to a constant edge-confidence so retrieval keeps working, and it tells you which mode you are in:
 
 ```python
-engine.has_npll        # True if the NPLL model is active
+engine.has_npll        # True when the NPLL model is active
 engine.get_status()    # {'intelligence_mode': 'NPLL' | 'Constant', ...}
 ```
 
-In constant mode you still get PPR-driven structural exploration; you just lose the semantic pruning until a model is available.
+In constant mode you keep PPR-driven structural exploration; you only lose the semantic pruning until a model becomes available. It is always worth checking the mode before you lean on fine-grained plausibility.
 
 ---
 
-## Where the signal is used
-
-| Use | How |
-|-----|-----|
-| Pruning during [beam search](beam-search.md) | Implausible extensions are dropped early |
-| Path scoring | Contributes to each path's final score |
-| Direct edge validation | `score_edge()` in your own agent logic |
-
----
-
-## Next
-
-- [Model Lifecycle](../guides/npll-lifecycle.md) — training, persistence, and retraining
-- [Scoring Edges](../guides/edge-scoring.md) — using `score_edge()` in agent loops
-- [Triage &amp; Insight Scoring](scoring.md) — how edge scores roll up into path scores
+The same signal shows up in three places: it prunes implausible extensions mid-[beam-search](beam-search.md), it feeds each path's final [score](scoring.md), and it is exposed directly as `score_edge()` for your own agent logic — see [Scoring Edges](../guides/edge-scoring.md).
 </script>
 
 

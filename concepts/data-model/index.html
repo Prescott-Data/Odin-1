@@ -681,10 +681,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#entities-and-relationships" class="md-nav__link">
+  <a href="#the-vocabulary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entities and relationships
+        The vocabulary
       
     </span>
   </a>
@@ -692,10 +692,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#edges-carry-weight-and-confidence" class="md-nav__link">
+  <a href="#what-edges-can-carry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Edges carry weight and confidence
+        What edges can carry
       
     </span>
   </a>
@@ -703,10 +703,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#communities" class="md-nav__link">
+  <a href="#communities-scope-the-graph" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Communities
+        Communities scope the graph
       
     </span>
   </a>
@@ -714,32 +714,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-odin-does-not-require" class="md-nav__link">
+  <a href="#what-odin-does-not-need-from-you" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Odin does not require
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#backends" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backends
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        What Odin does not need from you
       
     </span>
   </a>
@@ -1770,10 +1748,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#entities-and-relationships" class="md-nav__link">
+  <a href="#the-vocabulary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entities and relationships
+        The vocabulary
       
     </span>
   </a>
@@ -1781,10 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#edges-carry-weight-and-confidence" class="md-nav__link">
+  <a href="#what-edges-can-carry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Edges carry weight and confidence
+        What edges can carry
       
     </span>
   </a>
@@ -1792,10 +1770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#communities" class="md-nav__link">
+  <a href="#communities-scope-the-graph" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Communities
+        Communities scope the graph
       
     </span>
   </a>
@@ -1803,32 +1781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-odin-does-not-require" class="md-nav__link">
+  <a href="#what-odin-does-not-need-from-you" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Odin does not require
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#backends" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backends
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        What Odin does not need from you
       
     </span>
   </a>
@@ -1904,9 +1860,9 @@
 
 
 <h1 id="data-model">Data Model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h1>
-<p>Odin explores a <strong>directed, labeled knowledge graph</strong>: entities connected by typed relationships. This page describes what Odin expects from your data and the terms used throughout the docs.</p>
-<hr />
-<h2 id="entities-and-relationships">Entities and relationships<a class="headerlink" href="#entities-and-relationships" title="Permanent link">&para;</a></h2>
+<p>Everything Odin does operates on a <strong>directed, labeled knowledge graph</strong> — entities joined by typed relationships. Before the pipeline pages make sense, it helps to pin down what Odin expects from that graph and the handful of terms used throughout these docs.</p>
+<h2 id="the-vocabulary">The vocabulary<a class="headerlink" href="#the-vocabulary" title="Permanent link">&para;</a></h2>
+<p>An <strong>entity</strong> is a thing in your domain, addressed by an ID; a <strong>relationship</strong> is a typed, directed edge between two of them. The label on that edge is its <strong>relation type</strong>. String a few edges together and you have a <strong>path</strong>, and the entity you start a path from is a <strong>seed</strong>.</p>
 <table>
 <thead>
 <tr>
@@ -1943,10 +1899,9 @@
 </tr>
 </tbody>
 </table>
-<p>Node IDs are opaque strings. In ArangoDB they follow the <code>collection/key</code> convention (for example <code>ExtractedEntities/claim_123</code>), and Odin passes them through unchanged.</p>
-<hr />
-<h2 id="edges-carry-weight-and-confidence">Edges carry weight and confidence<a class="headerlink" href="#edges-carry-weight-and-confidence" title="Permanent link">&para;</a></h2>
-<p>Each edge may carry metadata that Odin uses during scoring:</p>
+<p>Node IDs are opaque strings. In ArangoDB they follow the <code>collection/key</code> convention — <code>ExtractedEntities/claim_123</code>, say — and Odin passes them straight through without interpreting them.</p>
+<h2 id="what-edges-can-carry">What edges can carry<a class="headerlink" href="#what-edges-can-carry" title="Permanent link">&para;</a></h2>
+<p>Odin works with a bare <code>_from</code>/<code>_to</code>/relation edge, but it makes use of richer metadata when it is present. A <code>weight</code> gives an edge structural importance; a <code>confidence</code> supplies a pre-existing plausibility (and falls back to <code>weight</code> when absent); <code>created_at</code> feeds the recency signal, and <code>provenance</code> links the edge back to a source document.</p>
 <table>
 <thead>
 <tr>
@@ -1981,44 +1936,28 @@
 </tr>
 </tbody>
 </table>
-<p>If confidence and weight are absent, Odin defaults them sensibly (see <a href="../aggregation/">Aggregation</a>).</p>
-<hr />
-<h2 id="communities">Communities<a class="headerlink" href="#communities" title="Permanent link">&para;</a></h2>
-<p>A <strong>community</strong> is a named scope for exploration. It lets you partition a large graph so retrieval stays relevant to one tenant, dataset, or domain.</p>
-<ul>
-<li><code>community_mode="none"</code> — global exploration across the whole graph (the default).</li>
-<li><code>community_mode="mapping"</code> — scope queries to a specific <code>community_id</code>.</li>
-</ul>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Global</span>
+<p>None of the optional fields are required — Odin defaults them sensibly — but the more of them your edges carry, the more the <a href="../aggregation/">aggregation</a> and <a href="../scoring/">triage</a> signals have to work with. Richer edges simply produce more trustworthy scores.</p>
+<h2 id="communities-scope-the-graph">Communities scope the graph<a class="headerlink" href="#communities-scope-the-graph" title="Permanent link">&para;</a></h2>
+<p>A <strong>community</strong> is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval — and the model behind it — focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with <code>community_mode</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Global exploration across the whole graph (default)</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Scoped to one community</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Scoped to a single community</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;medicare_claims&quot;</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;mapping&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p>Communities are also the natural unit for NPLL: the model learns the edge patterns of the community it is trained on.</p>
+<p>Communities are also the natural unit for <a href="../npll/">NPLL</a>: a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.</p>
+<h2 id="what-odin-does-not-need-from-you">What Odin does <em>not</em> need from you<a class="headerlink" href="#what-odin-does-not-need-from-you" title="Permanent link">&para;</a></h2>
+<p>Notably, there is a lot you do <strong>not</strong> have to prepare. There is no fixed schema to declare — Odin discovers collections and fields at runtime via <a href="../../guides/schema-introspection/">Schema Introspection</a>. There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.</p>
+<p>The reference backend is <strong>ArangoDB</strong>, but the accessor is an interface — new backends like Neo4j, Neptune, or other Gremlin-compatible stores can be added by implementing the same node/edge access methods, and <a href="https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md">contributions</a> of adapters are welcome.</p>
 <hr />
-<h2 id="what-odin-does-not-require">What Odin does <em>not</em> require<a class="headerlink" href="#what-odin-does-not-require" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>No fixed schema.</strong> Odin discovers collections and fields at runtime — see <a href="../../guides/schema-introspection/">Schema Introspection</a>.</li>
-<li><strong>No pre-computed embeddings.</strong> NPLL trains directly from your graph's edge structure.</li>
-<li><strong>No query language on your side.</strong> You pass entity IDs; Odin handles traversal.</li>
-</ul>
-<hr />
-<h2 id="backends">Backends<a class="headerlink" href="#backends" title="Permanent link">&para;</a></h2>
-<p>The reference backend is <strong>ArangoDB</strong> (<code>retrieval/adapters_arango.py</code>). The accessor layer is an interface, so additional backends (Neo4j, Neptune, Gremlin-compatible stores) can be added by implementing the same node/edge access methods. Contributions of new adapters are welcome — see <a href="https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md">Contributing</a>.</p>
-<hr />
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../ppr/">Personalized PageRank</a> — how Odin ranks node importance</li>
-<li><a href="../../guides/arangodb/">Connecting ArangoDB</a> — practical connection setup</li>
-</ul>
+<p>With the graph model in hand, the natural next step is how Odin ranks importance within it — <a href="../ppr/">Personalized PageRank</a> — or the practical side of wiring up a database in <a href="../../guides/arangodb/">Connecting ArangoDB</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Data Model
 
-Odin explores a **directed, labeled knowledge graph**: entities connected by typed relationships. This page describes what Odin expects from your data and the terms used throughout the docs.
+Everything Odin does operates on a **directed, labeled knowledge graph** — entities joined by typed relationships. Before the pipeline pages make sense, it helps to pin down what Odin expects from that graph and the handful of terms used throughout these docs.
 
----
+## The vocabulary
 
-## Entities and relationships
+An **entity** is a thing in your domain, addressed by an ID; a **relationship** is a typed, directed edge between two of them. The label on that edge is its **relation type**. String a few edges together and you have a **path**, and the entity you start a path from is a **seed**.
 
 | Term | Meaning | Example |
 |------|---------|---------|
@@ -2028,13 +1967,11 @@ Odin explores a **directed, labeled knowledge graph**: entities connected by typ
 | **Path** | An ordered sequence of entities joined by edges | `A → B → C` |
 | **Seed** | An entity you start exploration from | `["entity/claim_123"]` |
 
-Node IDs are opaque strings. In ArangoDB they follow the `collection/key` convention (for example `ExtractedEntities/claim_123`), and Odin passes them through unchanged.
+Node IDs are opaque strings. In ArangoDB they follow the `collection/key` convention — `ExtractedEntities/claim_123`, say — and Odin passes them straight through without interpreting them.
 
----
+## What edges can carry
 
-## Edges carry weight and confidence
-
-Each edge may carry metadata that Odin uses during scoring:
+Odin works with a bare `_from`/`_to`/relation edge, but it makes use of richer metadata when it is present. A `weight` gives an edge structural importance; a `confidence` supplies a pre-existing plausibility (and falls back to `weight` when absent); `created_at` feeds the recency signal, and `provenance` links the edge back to a source document.
 
 | Field | Used for |
 |-------|----------|
@@ -2045,47 +1982,31 @@ Each edge may carry metadata that Odin uses during scoring:
 | `created_at` | Optional recency signal in aggregation |
 | `provenance` | Optional source/document reference |
 
-If confidence and weight are absent, Odin defaults them sensibly (see [Aggregation](aggregation.md)).
+None of the optional fields are required — Odin defaults them sensibly — but the more of them your edges carry, the more the [aggregation](aggregation.md) and [triage](scoring.md) signals have to work with. Richer edges simply produce more trustworthy scores.
 
----
+## Communities scope the graph
 
-## Communities
-
-A **community** is a named scope for exploration. It lets you partition a large graph so retrieval stays relevant to one tenant, dataset, or domain.
-
-- `community_mode="none"` — global exploration across the whole graph (the default).
-- `community_mode="mapping"` — scope queries to a specific `community_id`.
+A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval — and the model behind it — focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with `community_mode`:
 
 ```python
-# Global
+# Global exploration across the whole graph (default)
 engine = OdinEngine(db, community_id="global", community_mode="none")
 
-# Scoped to one community
+# Scoped to a single community
 engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
 ```
 
-Communities are also the natural unit for NPLL: the model learns the edge patterns of the community it is trained on.
+Communities are also the natural unit for [NPLL](npll.md): a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.
+
+## What Odin does *not* need from you
+
+Notably, there is a lot you do **not** have to prepare. There is no fixed schema to declare — Odin discovers collections and fields at runtime via [Schema Introspection](../guides/schema-introspection.md). There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.
+
+The reference backend is **ArangoDB**, but the accessor is an interface — new backends like Neo4j, Neptune, or other Gremlin-compatible stores can be added by implementing the same node/edge access methods, and [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md) of adapters are welcome.
 
 ---
 
-## What Odin does *not* require
-
-- **No fixed schema.** Odin discovers collections and fields at runtime — see [Schema Introspection](../guides/schema-introspection.md).
-- **No pre-computed embeddings.** NPLL trains directly from your graph's edge structure.
-- **No query language on your side.** You pass entity IDs; Odin handles traversal.
-
----
-
-## Backends
-
-The reference backend is **ArangoDB** (`retrieval/adapters_arango.py`). The accessor layer is an interface, so additional backends (Neo4j, Neptune, Gremlin-compatible stores) can be added by implementing the same node/edge access methods. Contributions of new adapters are welcome — see [Contributing](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
-
----
-
-## Next
-
-- [Personalized PageRank](ppr.md) — how Odin ranks node importance
-- [Connecting ArangoDB](../guides/arangodb.md) — practical connection setup
+With the graph model in hand, the natural next step is how Odin ranks importance within it — [Personalized PageRank](ppr.md) — or the practical side of wiring up a database in [Connecting ArangoDB](../guides/arangodb.md).
 </script>
 
 

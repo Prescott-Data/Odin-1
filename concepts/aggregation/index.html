@@ -801,10 +801,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#motifs" class="md-nav__link">
+  <a href="#motifs-turn-paths-into-patterns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Motifs
+        Motifs turn paths into patterns
       
     </span>
   </a>
@@ -812,10 +812,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#relation-shares" class="md-nav__link">
+  <a href="#the-summary-is-the-raw-material-for-scoring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Relation shares
+        The summary is the raw material for scoring
       
     </span>
   </a>
@@ -823,43 +823,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-summary-block" class="md-nav__link">
+  <a href="#surprise-comes-from-a-baseline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The summary block
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#baselines-and-surprise" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Baselines and surprise
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-full-aggregates-object" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The full aggregates object
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        Surprise comes from a baseline
       
     </span>
   </a>
@@ -1770,10 +1737,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#motifs" class="md-nav__link">
+  <a href="#motifs-turn-paths-into-patterns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Motifs
+        Motifs turn paths into patterns
       
     </span>
   </a>
@@ -1781,10 +1748,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#relation-shares" class="md-nav__link">
+  <a href="#the-summary-is-the-raw-material-for-scoring" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Relation shares
+        The summary is the raw material for scoring
       
     </span>
   </a>
@@ -1792,43 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-summary-block" class="md-nav__link">
+  <a href="#surprise-comes-from-a-baseline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The summary block
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#baselines-and-surprise" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Baselines and surprise
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-full-aggregates-object" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The full aggregates object
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        Surprise comes from a baseline
       
     </span>
   </a>
@@ -1904,21 +1838,15 @@
 
 
 <h1 id="motifs-aggregation">Motifs &amp; Aggregation<a class="headerlink" href="#motifs-aggregation" title="Permanent link">&para;</a></h1>
-<p>After <a href="../beam-search/">beam search</a> and <a href="../npll/">NPLL scoring</a> produce a set of surviving paths, Odin <strong>aggregates</strong> them into higher-level structure: recurring motifs, relation shares, and the summary statistics that feed the <a href="../scoring/">triage score</a>.</p>
-<hr />
-<h2 id="motifs">Motifs<a class="headerlink" href="#motifs" title="Permanent link">&para;</a></h2>
-<p>A <strong>motif</strong> is a recurring pattern across the returned paths — for example, the shape <code>Claim → billed_by → Provider → flagged_in → Audit</code> appearing many times. Motifs turn a list of individual paths into <em>patterns</em>, which is usually what an agent actually cares about.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">motifs</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;aggregates&quot;</span><span class="p">][</span><span class="s2">&quot;motifs&quot;</span><span class="p">]</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">motifs</span><span class="p">:</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>   <span class="c1"># e.g. {&quot;pattern&quot;: &quot;A→B→C&quot;, &quot;count&quot;: 12}</span>
+<p>Beam search hands back a list of surviving paths, but a list of paths is rarely what you actually want — patterns are. Aggregation is the final stage of retrieval: it folds the paths into recurring <strong>motifs</strong>, a breakdown of <strong>relation shares</strong>, and a <strong>summary</strong> of quality signals that the <a href="../scoring/">triage score</a> is computed from.</p>
+<h2 id="motifs-turn-paths-into-patterns">Motifs turn paths into patterns<a class="headerlink" href="#motifs-turn-paths-into-patterns" title="Permanent link">&para;</a></h2>
+<p>A motif is a shape that recurs across the returned paths — for instance <code>Claim → billed_by → Provider → flagged_in → Audit</code> showing up again and again. That repetition is usually the real finding, so Odin counts it for you:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;aggregates&quot;</span><span class="p">][</span><span class="s2">&quot;motifs&quot;</span><span class="p">]:</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>   <span class="c1"># e.g. {&quot;pattern&quot;: &quot;A→B→C&quot;, &quot;count&quot;: 12}</span>
 </span></code></pre></div>
-<p>Frequent motifs act as lightweight anomaly and pattern detection: if the same suspicious chain shows up 47 times, that is signal.</p>
-<hr />
-<h2 id="relation-shares">Relation shares<a class="headerlink" href="#relation-shares" title="Permanent link">&para;</a></h2>
-<p><code>relation_share</code> reports how the returned edges break down by relation type — a quick fingerprint of <em>what kind</em> of connections dominate this retrieval. The most prominent one is surfaced as the <code>dominant_relation</code>.</p>
-<hr />
-<h2 id="the-summary-block">The summary block<a class="headerlink" href="#the-summary-block" title="Permanent link">&para;</a></h2>
-<p>Aggregation computes a <code>summary</code> of quality signals over the returned paths. These are the inputs to triage:</p>
+<p>This doubles as lightweight anomaly detection. One suspicious chain is a coincidence; the same chain appearing 47 times is signal. Alongside the motifs, <code>relation_share</code> reports how the edges break down by relation type — a quick fingerprint of <em>what kind</em> of connections dominate a retrieval — and the strongest one is surfaced separately as <code>dominant_relation</code>.</p>
+<h2 id="the-summary-is-the-raw-material-for-scoring">The summary is the raw material for scoring<a class="headerlink" href="#the-summary-is-the-raw-material-for-scoring" title="Permanent link">&para;</a></h2>
+<p>Aggregation also computes a <code>summary</code> of quality signals over the paths. These are not just diagnostics; they are the exact inputs the triage score consumes:</p>
 <table>
 <thead>
 <tr>
@@ -1969,12 +1897,10 @@
 </tr>
 </tbody>
 </table>
-<p><code>provenance</code> and <code>recency</code> reward well-sourced, fresh evidence; <code>label_coverage</code> guards against unlabeled noise; <code>low_support</code> flags thin results.</p>
-<hr />
-<h2 id="baselines-and-surprise">Baselines and surprise<a class="headerlink" href="#baselines-and-surprise" title="Permanent link">&para;</a></h2>
-<p>When a baseline set of paths is available, aggregation compares the current retrieval against it to compute <strong>surprise</strong> — how much the dominant pattern deviates from the expected/prior distribution. Surprise is a major component of the triage score: a result that is <em>unexpected</em> is often the most worth an agent's attention.</p>
-<hr />
-<h2 id="the-full-aggregates-object">The full aggregates object<a class="headerlink" href="#the-full-aggregates-object" title="Permanent link">&para;</a></h2>
+<p>Read together they tell a story about <em>trustworthiness</em>: <code>provenance</code> and <code>recency</code> reward well-sourced, fresh evidence, <code>label_coverage</code> guards against unlabeled noise, and <code>low_support</code> flags results too thin to stand behind.</p>
+<h2 id="surprise-comes-from-a-baseline">Surprise comes from a baseline<a class="headerlink" href="#surprise-comes-from-a-baseline" title="Permanent link">&para;</a></h2>
+<p>When a baseline set of paths is available, aggregation compares the current retrieval against it to compute <strong>surprise</strong> — how far the dominant pattern deviates from what the prior distribution led you to expect. Surprise carries real weight in the triage score, because an <em>unexpected</em> result is often the one most worth an agent's attention.</p>
+<p>The whole thing arrives under a single key:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">&quot;aggregates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">&quot;motifs&quot;</span><span class="p">:</span>          <span class="p">[</span> <span class="p">{</span><span class="s2">&quot;pattern&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">N</span><span class="p">},</span> <span class="o">...</span> <span class="p">],</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">&quot;relation_share&quot;</span><span class="p">:</span>  <span class="p">{</span> <span class="s2">&quot;billed_by&quot;</span><span class="p">:</span> <span class="mf">0.42</span><span class="p">,</span> <span class="s2">&quot;has_diagnosis&quot;</span><span class="p">:</span> <span class="mf">0.31</span><span class="p">,</span> <span class="o">...</span> <span class="p">},</span>
@@ -1982,41 +1908,26 @@
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="s2">&quot;summary&quot;</span><span class="p">:</span>         <span class="p">{</span> <span class="s2">&quot;total_paths&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;provenance&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="o">...</span> <span class="p">},</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>See the <a href="../../reference/result-schema/">Result Schema</a> for the complete return shape.</p>
 <hr />
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../scoring/">Triage &amp; Insight Scoring</a> — how these signals collapse into one number</li>
-</ul>
+<p>These summary signals do not stay separate for long. <a href="../scoring/">Triage &amp; Insight Scoring</a> is where they collapse into one number, and the <a href="../../reference/result-schema/">Result Schema</a> documents every field in full.</p>
 <script type="text/markdown" id="jc-page-source"># Motifs &amp; Aggregation
 
-After [beam search](beam-search.md) and [NPLL scoring](npll.md) produce a set of surviving paths, Odin **aggregates** them into higher-level structure: recurring motifs, relation shares, and the summary statistics that feed the [triage score](scoring.md).
+Beam search hands back a list of surviving paths, but a list of paths is rarely what you actually want — patterns are. Aggregation is the final stage of retrieval: it folds the paths into recurring **motifs**, a breakdown of **relation shares**, and a **summary** of quality signals that the [triage score](scoring.md) is computed from.
 
----
+## Motifs turn paths into patterns
 
-## Motifs
-
-A **motif** is a recurring pattern across the returned paths — for example, the shape `Claim → billed_by → Provider → flagged_in → Audit` appearing many times. Motifs turn a list of individual paths into *patterns*, which is usually what an agent actually cares about.
+A motif is a shape that recurs across the returned paths — for instance `Claim → billed_by → Provider → flagged_in → Audit` showing up again and again. That repetition is usually the real finding, so Odin counts it for you:
 
 ```python
-motifs = result["aggregates"]["motifs"]
-for m in motifs:
+for m in result["aggregates"]["motifs"]:
     print(m)   # e.g. {"pattern": "A→B→C", "count": 12}
 ```
 
-Frequent motifs act as lightweight anomaly and pattern detection: if the same suspicious chain shows up 47 times, that is signal.
+This doubles as lightweight anomaly detection. One suspicious chain is a coincidence; the same chain appearing 47 times is signal. Alongside the motifs, `relation_share` reports how the edges break down by relation type — a quick fingerprint of *what kind* of connections dominate a retrieval — and the strongest one is surfaced separately as `dominant_relation`.
 
----
+## The summary is the raw material for scoring
 
-## Relation shares
-
-`relation_share` reports how the returned edges break down by relation type — a quick fingerprint of *what kind* of connections dominate this retrieval. The most prominent one is surfaced as the `dominant_relation`.
-
----
-
-## The summary block
-
-Aggregation computes a `summary` of quality signals over the returned paths. These are the inputs to triage:
+Aggregation also computes a `summary` of quality signals over the paths. These are not just diagnostics; they are the exact inputs the triage score consumes:
 
 | Field | Meaning |
 |-------|---------|
@@ -2031,17 +1942,13 @@ Aggregation computes a `summary` of quality signals over the returned paths. The
 | `has_baseline` | Whether a baseline comparison was available |
 | `low_support` | True when there is too little evidence to be confident |
 
-`provenance` and `recency` reward well-sourced, fresh evidence; `label_coverage` guards against unlabeled noise; `low_support` flags thin results.
+Read together they tell a story about *trustworthiness*: `provenance` and `recency` reward well-sourced, fresh evidence, `label_coverage` guards against unlabeled noise, and `low_support` flags results too thin to stand behind.
 
----
+## Surprise comes from a baseline
 
-## Baselines and surprise
+When a baseline set of paths is available, aggregation compares the current retrieval against it to compute **surprise** — how far the dominant pattern deviates from what the prior distribution led you to expect. Surprise carries real weight in the triage score, because an *unexpected* result is often the one most worth an agent's attention.
 
-When a baseline set of paths is available, aggregation compares the current retrieval against it to compute **surprise** — how much the dominant pattern deviates from the expected/prior distribution. Surprise is a major component of the triage score: a result that is *unexpected* is often the most worth an agent's attention.
-
----
-
-## The full aggregates object
+The whole thing arrives under a single key:
 
 ```python
 result["aggregates"] = {
@@ -2052,13 +1959,9 @@ result["aggregates"] = {
 }
 ```
 
-See the [Result Schema](../reference/result-schema.md) for the complete return shape.
-
 ---
 
-## Next
-
-- [Triage &amp; Insight Scoring](scoring.md) — how these signals collapse into one number
+These summary signals do not stay separate for long. [Triage &amp; Insight Scoring](scoring.md) is where they collapse into one number, and the [Result Schema](../reference/result-schema.md) documents every field in full.
 </script>
 
 

@@ -1337,32 +1337,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-graph" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#explore-from-a-suspicious-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
         Explore from a suspicious provider
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-the-three-signals-matter-here" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why the three signals matter here
       
     </span>
   </a>
@@ -1385,28 +1363,6 @@
     <span class="md-ellipsis">
       
         Hand off to an agent
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tuning-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tuning notes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
       
     </span>
   </a>
@@ -1781,32 +1737,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-graph" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#explore-from-a-suspicious-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
         Explore from a suspicious provider
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-the-three-signals-matter-here" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why the three signals matter here
       
     </span>
   </a>
@@ -1829,28 +1763,6 @@
     <span class="md-ellipsis">
       
         Hand off to an agent
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tuning-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tuning notes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
       
     </span>
   </a>
@@ -1926,12 +1838,10 @@
 
 
 <h1 id="healthcare-fraud-detection">Healthcare Fraud Detection<a class="headerlink" href="#healthcare-fraud-detection" title="Permanent link">&para;</a></h1>
-<p><strong>Scenario:</strong> find providers billing unusual procedure combinations that may indicate fraud, waste, or abuse.</p>
-<hr />
-<h2 id="the-graph">The graph<a class="headerlink" href="#the-graph" title="Permanent link">&para;</a></h2>
-<p>A claims knowledge graph typically contains entities like <code>Provider</code>, <code>Claim</code>, <code>Patient</code>, <code>Diagnosis</code>, <code>Procedure</code> (CPT codes), and <code>Audit</code>, connected by relations such as <code>billed_by</code>, <code>has_diagnosis</code>, <code>has_procedure</code>, and <code>flagged_in</code>.</p>
-<hr />
+<p>Say you want to find providers billing unusual procedure combinations — the kind of pattern that hints at fraud, waste, or abuse. This is Odin's home turf, and it shows how the three signals combine on a real problem.</p>
+<p>The graph you are working with is a claims knowledge graph: entities like <code>Provider</code>, <code>Claim</code>, <code>Patient</code>, <code>Diagnosis</code>, <code>Procedure</code> (CPT codes), and <code>Audit</code>, joined by relations such as <code>billed_by</code>, <code>has_diagnosis</code>, <code>has_procedure</code>, and <code>flagged_in</code>.</p>
 <h2 id="explore-from-a-suspicious-provider">Explore from a suspicious provider<a class="headerlink" href="#explore-from-a-suspicious-provider" title="Permanent link">&para;</a></h2>
+<p>Start from a provider you want to scrutinize and let Odin find the patterns around it:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1951,42 +1861,17 @@
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># e.g. {&quot;pattern&quot;: &quot;CPT_99285 + CPT_office_visit&quot;, &quot;count&quot;: 34}</span>
 </span></code></pre></div>
-<p>Odin surfaces the recurring billing pattern — <em>"CPT_99285 paired with an office visit appears in 34 claims"</em> — as a motif, without anyone writing a rule for that specific combination in advance.</p>
-<hr />
-<h2 id="why-the-three-signals-matter-here">Why the three signals matter here<a class="headerlink" href="#why-the-three-signals-matter-here" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Signal</th>
-<th>In this domain</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="../../concepts/ppr/">PPR</a></td>
-<td>Finds the high-volume providers and central claims worth examining</td>
-</tr>
-<tr>
-<td><a href="../../concepts/npll/">NPLL</a></td>
-<td>Rejects nonsensical edges (a procedure is not <code>diagnosed_by</code> a patient), keeping paths clinically coherent</td>
-</tr>
-<tr>
-<td><a href="../../concepts/aggregation/">Motifs</a></td>
-<td>Turns thousands of claims into a handful of repeated billing patterns</td>
-</tr>
-</tbody>
-</table>
-<hr />
+<p>The payoff is that recurring billing pattern — <em>"CPT_99285 paired with an office visit appears in 34 claims"</em> — surfaced as a motif, without anyone having written a rule for that specific combination beforehand. That is the three signals working together: <a href="../../concepts/ppr/">PPR</a> zeroes in on the high-volume providers and central claims worth examining, <a href="../../concepts/npll/">NPLL</a> throws out clinically nonsensical edges (a procedure is not <code>diagnosed_by</code> a patient) so the paths stay coherent, and <a href="../../concepts/aggregation/">motif aggregation</a> compresses thousands of claims into a handful of repeated patterns you can actually read.</p>
 <h2 id="validate-a-specific-concern">Validate a specific concern<a class="headerlink" href="#validate-a-specific-concern" title="Permanent link">&para;</a></h2>
-<p>If an analyst suspects a particular relationship, score it directly:</p>
+<p>When an analyst already suspects a particular relationship, there is no need to retrieve a whole neighborhood — score the single edge:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">&quot;provider/high_volume_clinic&quot;</span><span class="p">,</span> <span class="s2">&quot;billed&quot;</span><span class="p">,</span> <span class="s2">&quot;procedure/CPT_99285&quot;</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="p">)</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">analyst</span><span class="o">.</span><span class="n">flag</span><span class="p">(</span><span class="s2">&quot;Unusually strong billing tie to high-acuity code&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<hr />
 <h2 id="hand-off-to-an-agent">Hand off to an agent<a class="headerlink" href="#hand-off-to-an-agent" title="Permanent link">&para;</a></h2>
+<p>Once a retrieval clears the triage bar, the evidence goes to an agent to write up:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">70</span><span class="p">:</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">fraud_agent</span><span class="o">.</span><span class="n">reason</span><span class="p">(</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Explain why this provider&#39;s billing pattern is anomalous.&quot;</span><span class="p">,</span>
@@ -1994,33 +1879,19 @@
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="n">motifs</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;aggregates&quot;</span><span class="p">][</span><span class="s2">&quot;motifs&quot;</span><span class="p">][:</span><span class="mi">5</span><span class="p">],</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="p">)</span>
 </span></code></pre></div>
-<p>The agent writes the narrative; Odin guarantees the evidence is real and ranked. See <a href="../../guides/agent-integration/">AI Agent Integration</a>.</p>
+<p>The agent writes the narrative; Odin guarantees the evidence underneath it is real and ranked. See <a href="../../guides/agent-integration/">AI Agent Integration</a> for the full loop.</p>
+<p>A few domain-specific defaults are worth keeping in mind: a <code>hop_limit</code> of 3 fits fraud patterns well because they usually run provider → claim → code/audit in just a few hops; widen <code>beam_width</code> if you suspect patterns are slipping through across many claims; and scope with <code>community_mode="mapping"</code> so NPLL learns <em>this</em> payer's billing norms rather than a global average.</p>
 <hr />
-<h2 id="tuning-notes">Tuning notes<a class="headerlink" href="#tuning-notes" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Keep <code>hop_limit=3</code> — fraud patterns are usually provider → claim → code/audit, a few hops.</li>
-<li>Widen <code>beam_width</code> if you suspect patterns are being missed across many claims.</li>
-<li>Scope with <code>community_mode="mapping"</code> so the NPLL model learns <em>this</em> payer's billing norms.</li>
-</ul>
-<hr />
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../supply-chain/">Supply Chain Risk</a></li>
-<li><a href="../compliance/">Regulatory Compliance</a></li>
-</ul>
+<p>The same shape applies with deeper hops in <a href="../supply-chain/">Supply Chain Risk</a> and with edge-level rule checks in <a href="../compliance/">Regulatory Compliance</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Healthcare Fraud Detection
 
-**Scenario:** find providers billing unusual procedure combinations that may indicate fraud, waste, or abuse.
+Say you want to find providers billing unusual procedure combinations — the kind of pattern that hints at fraud, waste, or abuse. This is Odin's home turf, and it shows how the three signals combine on a real problem.
 
----
-
-## The graph
-
-A claims knowledge graph typically contains entities like `Provider`, `Claim`, `Patient`, `Diagnosis`, `Procedure` (CPT codes), and `Audit`, connected by relations such as `billed_by`, `has_diagnosis`, `has_procedure`, and `flagged_in`.
-
----
+The graph you are working with is a claims knowledge graph: entities like `Provider`, `Claim`, `Patient`, `Diagnosis`, `Procedure` (CPT codes), and `Audit`, joined by relations such as `billed_by`, `has_diagnosis`, `has_procedure`, and `flagged_in`.
 
 ## Explore from a suspicious provider
+
+Start from a provider you want to scrutinize and let Odin find the patterns around it:
 
 ```python
 from arango import ArangoClient
@@ -2043,23 +1914,11 @@ for m in result["aggregates"]["motifs"][:5]:
 # e.g. {"pattern": "CPT_99285 + CPT_office_visit", "count": 34}
 ```
 
-Odin surfaces the recurring billing pattern — *"CPT_99285 paired with an office visit appears in 34 claims"* — as a motif, without anyone writing a rule for that specific combination in advance.
-
----
-
-## Why the three signals matter here
-
-| Signal | In this domain |
-|--------|----------------|
-| [PPR](../concepts/ppr.md) | Finds the high-volume providers and central claims worth examining |
-| [NPLL](../concepts/npll.md) | Rejects nonsensical edges (a procedure is not `diagnosed_by` a patient), keeping paths clinically coherent |
-| [Motifs](../concepts/aggregation.md) | Turns thousands of claims into a handful of repeated billing patterns |
-
----
+The payoff is that recurring billing pattern — *"CPT_99285 paired with an office visit appears in 34 claims"* — surfaced as a motif, without anyone having written a rule for that specific combination beforehand. That is the three signals working together: [PPR](../concepts/ppr.md) zeroes in on the high-volume providers and central claims worth examining, [NPLL](../concepts/npll.md) throws out clinically nonsensical edges (a procedure is not `diagnosed_by` a patient) so the paths stay coherent, and [motif aggregation](../concepts/aggregation.md) compresses thousands of claims into a handful of repeated patterns you can actually read.
 
 ## Validate a specific concern
 
-If an analyst suspects a particular relationship, score it directly:
+When an analyst already suspects a particular relationship, there is no need to retrieve a whole neighborhood — score the single edge:
 
 ```python
 score = engine.score_edge(
@@ -2069,9 +1928,9 @@ if score &gt; 0.7:
     analyst.flag("Unusually strong billing tie to high-acuity code")
 ```
 
----
-
 ## Hand off to an agent
+
+Once a retrieval clears the triage bar, the evidence goes to an agent to write up:
 
 ```python
 if result["triage"]["score"] &gt;= 70:
@@ -2082,22 +1941,13 @@ if result["triage"]["score"] &gt;= 70:
     )
 ```
 
-The agent writes the narrative; Odin guarantees the evidence is real and ranked. See [AI Agent Integration](../guides/agent-integration.md).
+The agent writes the narrative; Odin guarantees the evidence underneath it is real and ranked. See [AI Agent Integration](../guides/agent-integration.md) for the full loop.
+
+A few domain-specific defaults are worth keeping in mind: a `hop_limit` of 3 fits fraud patterns well because they usually run provider → claim → code/audit in just a few hops; widen `beam_width` if you suspect patterns are slipping through across many claims; and scope with `community_mode="mapping"` so NPLL learns *this* payer's billing norms rather than a global average.
 
 ---
 
-## Tuning notes
-
-- Keep `hop_limit=3` — fraud patterns are usually provider → claim → code/audit, a few hops.
-- Widen `beam_width` if you suspect patterns are being missed across many claims.
-- Scope with `community_mode="mapping"` so the NPLL model learns *this* payer's billing norms.
-
----
-
-## Next
-
-- [Supply Chain Risk](supply-chain.md)
-- [Regulatory Compliance](compliance.md)
+The same shape applies with deeper hops in [Supply Chain Risk](supply-chain.md) and with edge-level rule checks in [Regulatory Compliance](compliance.md).
 </script>
 
 

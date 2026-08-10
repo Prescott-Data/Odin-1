@@ -831,10 +831,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-triage-score" class="md-nav__link">
+  <a href="#how-the-score-is-built" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The triage score
+        How the score is built
       
     </span>
   </a>
@@ -842,10 +842,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#guards" class="md-nav__link">
+  <a href="#two-guards-keep-it-honest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Guards
+        Two guards keep it honest
       
     </span>
   </a>
@@ -853,10 +853,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-the-components" class="md-nav__link">
+  <a href="#a-score-is-never-a-black-box" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading the components
+        A score is never a black box
       
     </span>
   </a>
@@ -864,32 +864,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#insight-score-vs-triage-score" class="md-nav__link">
+  <a href="#triage-vs-the-other-signals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Insight score vs. triage score
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-it-in-an-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using it in an agent
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        Triage vs. the other signals
       
     </span>
   </a>
@@ -1770,10 +1748,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-triage-score" class="md-nav__link">
+  <a href="#how-the-score-is-built" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The triage score
+        How the score is built
       
     </span>
   </a>
@@ -1781,10 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#guards" class="md-nav__link">
+  <a href="#two-guards-keep-it-honest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Guards
+        Two guards keep it honest
       
     </span>
   </a>
@@ -1792,10 +1770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-the-components" class="md-nav__link">
+  <a href="#a-score-is-never-a-black-box" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading the components
+        A score is never a black box
       
     </span>
   </a>
@@ -1803,32 +1781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#insight-score-vs-triage-score" class="md-nav__link">
+  <a href="#triage-vs-the-other-signals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Insight score vs. triage score
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-it-in-an-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using it in an agent
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next
+        Triage vs. the other signals
       
     </span>
   </a>
@@ -1904,10 +1860,9 @@
 
 
 <h1 id="triage-insight-scoring">Triage &amp; Insight Scoring<a class="headerlink" href="#triage-insight-scoring" title="Permanent link">&para;</a></h1>
-<p>A retrieval can return dozens of paths and motifs. To make that actionable, Odin collapses it into a single <strong>triage score</strong> from 0–100 — the number an agent uses to decide <em>how much attention this result deserves</em>.</p>
-<hr />
-<h2 id="the-triage-score">The triage score<a class="headerlink" href="#the-triage-score" title="Permanent link">&para;</a></h2>
-<p><code>result["triage"]["score"]</code> is an integer in <code>[0, 100]</code>, computed from five weighted components:</p>
+<p>A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says <em>how much attention this deserves</em>. That number is the <strong>triage score</strong>, an integer from 0 to 100, and it is the value most agent loops gate on.</p>
+<h2 id="how-the-score-is-built">How the score is built<a class="headerlink" href="#how-the-score-is-built" title="Permanent link">&para;</a></h2>
+<p>The score is a weighted blend of five components drawn from the <a href="../aggregation/">aggregation summary</a>, each on a <code>0–1</code> scale:</p>
 <p>$$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
 $$</p>
@@ -1953,36 +1908,30 @@ $$</p>
 </tr>
 </tbody>
 </table>
-<p>All components are in <code>[0, 1]</code>, so the maximum possible score is 100.</p>
-<hr />
-<h2 id="guards">Guards<a class="headerlink" href="#guards" title="Permanent link">&para;</a></h2>
-<p>Two guards keep the score honest:</p>
-<ul>
-<li><strong>Low label coverage</strong> — if <code>label_coverage &lt; 0.8</code>, <code>motif_density</code> is capped at <code>0.3</code> and <strong>15 points</strong> are subtracted. Poorly-labeled data cannot earn full pattern credit.</li>
-<li><strong>Low support</strong> — if <code>low_support</code> is set (too little evidence), the score is reduced by <strong>40%</strong>. Thin results are not allowed to look confident.</li>
-</ul>
+<p>The weighting is deliberate: provenance, recency, and surprise dominate because a finding that is well-sourced, current, and <em>unexpected</em> is the kind worth waking an analyst for. With everything maxed the score reaches 100.</p>
+<h2 id="two-guards-keep-it-honest">Two guards keep it honest<a class="headerlink" href="#two-guards-keep-it-honest" title="Permanent link">&para;</a></h2>
+<p>Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If <code>label_coverage</code> falls below <code>0.8</code>, <code>motif_density</code> is capped at <code>0.3</code> and a flat <strong>15 points</strong> are subtracted — poorly-labeled data cannot earn full pattern credit. And if <code>low_support</code> is set because there simply is not enough evidence, the whole score is cut by <strong>40%</strong>. Together they ensure a confident-looking number is actually backed by confident-looking data.</p>
+<h2 id="a-score-is-never-a-black-box">A score is never a black box<a class="headerlink" href="#a-score-is-never-a-black-box" title="Permanent link">&para;</a></h2>
+<p>Every triage result carries the breakdown that produced it, so you can always see <em>why</em> a number came out the way it did:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">triage</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">]</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">])</span>        <span class="c1"># e.g. 87</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">])</span>   <span class="c1"># per-component breakdown, penalties, flags</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;dominant_relation&quot;</span><span class="p">])</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>        <span class="c1"># e.g. 87</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">]</span>   <span class="c1"># each clamped input, the penalty applied, and the flags</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">triage</span><span class="p">[</span><span class="s2">&quot;dominant_relation&quot;</span><span class="p">]</span>
 </span></code></pre></div>
-<hr />
-<h2 id="reading-the-components">Reading the components<a class="headerlink" href="#reading-the-components" title="Permanent link">&para;</a></h2>
-<p>The <code>components</code> dict returns each clamped input, the applied <code>penalty</code>, and the <code>low_support</code> flag — so a score is never a black box. If a score is surprisingly low, inspect the components to see whether provenance, recency, or a guard pulled it down.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  <span class="s2">&quot;provenance&quot;</span><span class="p">:</span> <span class="mf">0.82</span><span class="p">,</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="s2">&quot;recency&quot;</span><span class="p">:</span> <span class="mf">0.74</span><span class="p">,</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="s2">&quot;surprise&quot;</span><span class="p">:</span> <span class="mf">0.61</span><span class="p">,</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="s2">&quot;motif_density&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>     <span class="c1"># possibly capped by the label-coverage guard</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="s2">&quot;motif_density&quot;</span><span class="p">:</span> <span class="mf">0.30</span><span class="p">,</span>     <span class="c1"># capped by the label-coverage guard</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  <span class="s2">&quot;controllability&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  <span class="s2">&quot;label_coverage&quot;</span><span class="p">:</span> <span class="mf">0.71</span><span class="p">,</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  <span class="s2">&quot;penalty&quot;</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">,</span>           <span class="c1"># label-coverage guard fired</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  <span class="s2">&quot;penalty&quot;</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">,</span>           <span class="c1"># the guard fired here</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  <span class="s2">&quot;low_support&quot;</span><span class="p">:</span> <span class="n">false</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">}</span>
 </span></code></pre></div>
-<hr />
-<h2 id="insight-score-vs-triage-score">Insight score vs. triage score<a class="headerlink" href="#insight-score-vs-triage-score" title="Permanent link">&para;</a></h2>
-<p>Odin also reports an <code>insight_score</code> (a <code>[0, 1]</code> float) alongside <code>evidence_strength</code> and <code>community_relevance</code>. The <code>ics</code> field decomposes the insight score into these contributing parts.</p>
+<p>When a score comes back lower than you expected, this is the first thing to read — a <code>penalty</code> of 15 or a low <code>provenance</code> usually explains it immediately.</p>
+<h2 id="triage-vs-the-other-signals">Triage vs. the other signals<a class="headerlink" href="#triage-vs-the-other-signals" title="Permanent link">&para;</a></h2>
+<p>Triage is the headline, but Odin reports finer-grained signals alongside it. The <code>insight_score</code> is an overall <code>0–1</code> quality measure, and <code>ics</code> decomposes it into the <code>evidence_strength</code> and <code>community_relevance</code> that make it up:</p>
 <table>
 <thead>
 <tr>
@@ -1995,12 +1944,12 @@ $$</p>
 <tr>
 <td><code>triage["score"]</code></td>
 <td>0–100</td>
-<td>Prioritization for agents — "should I look at this?"</td>
+<td>Prioritization — "should I look at this?"</td>
 </tr>
 <tr>
 <td><code>insight_score</code></td>
 <td>0.0–1.0</td>
-<td>Overall retrieval quality signal</td>
+<td>Overall retrieval quality</td>
 </tr>
 <tr>
 <td><code>evidence_strength</code></td>
@@ -2010,7 +1959,7 @@ $$</p>
 <tr>
 <td><code>community_relevance</code></td>
 <td>0.0–1.0</td>
-<td>How relevant the result is to the community scope</td>
+<td>Relevance to the community scope</td>
 </tr>
 <tr>
 <td><code>ics</code></td>
@@ -2019,31 +1968,22 @@ $$</p>
 </tr>
 </tbody>
 </table>
-<p>For most agent loops, the <strong>triage score is the number to gate on</strong>; the others are available when you need finer-grained observability.</p>
-<hr />
-<h2 id="using-it-in-an-agent">Using it in an agent<a class="headerlink" href="#using-it-in-an-agent" title="Permanent link">&para;</a></h2>
+<p>The rule of thumb is simple: <strong>gate on the triage score</strong>, and reach for the others when you need observability rather than a decision.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">])</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;score&quot;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">70</span><span class="p">:</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">investigate</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">])</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">else</span><span class="p">:</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">agent</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;low triage&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p>See <a href="../../guides/agent-integration/">AI Agent Integration</a> for a complete loop.</p>
 <hr />
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../reference/result-schema/">Result Schema</a> — the exact return shape</li>
-<li><a href="../../guides/tuning/">Tuning Retrieval</a> — how parameters affect the scores</li>
-</ul>
+<p>That gate is the seam between Odin and the agent — <a href="../../guides/agent-integration/">AI Agent Integration</a> builds it out into a full loop, and the <a href="../../reference/result-schema/">Result Schema</a> documents every field these scores live in.</p>
 <script type="text/markdown" id="jc-page-source"># Triage &amp; Insight Scoring
 
-A retrieval can return dozens of paths and motifs. To make that actionable, Odin collapses it into a single **triage score** from 0–100 — the number an agent uses to decide *how much attention this result deserves*.
+A single retrieval can come back with dozens of paths and a handful of motifs. An agent cannot act on all of that — it needs one number that says *how much attention this deserves*. That number is the **triage score**, an integer from 0 to 100, and it is the value most agent loops gate on.
 
----
+## How the score is built
 
-## The triage score
-
-`result["triage"]["score"]` is an integer in `[0, 100]`, computed from five weighted components:
+The score is a weighted blend of five components drawn from the [aggregation summary](aggregation.md), each on a `0–1` scale:
 
 $$
 \text{score} = 25\,p + 25\,r + 25\,s + 15\,m + 10\,c
@@ -2057,62 +1997,51 @@ $$
 | $m$ | `motif_density` | 15 | Concentration into repeated patterns |
 | $c$ | `controllability` | 10 | How actionable the finding is |
 
-All components are in `[0, 1]`, so the maximum possible score is 100.
+The weighting is deliberate: provenance, recency, and surprise dominate because a finding that is well-sourced, current, and *unexpected* is the kind worth waking an analyst for. With everything maxed the score reaches 100.
 
----
+## Two guards keep it honest
 
-## Guards
+Raw weighting alone would let flimsy results look impressive, so two guards pull them back down. If `label_coverage` falls below `0.8`, `motif_density` is capped at `0.3` and a flat **15 points** are subtracted — poorly-labeled data cannot earn full pattern credit. And if `low_support` is set because there simply is not enough evidence, the whole score is cut by **40%**. Together they ensure a confident-looking number is actually backed by confident-looking data.
 
-Two guards keep the score honest:
+## A score is never a black box
 
-- **Low label coverage** — if `label_coverage &lt; 0.8`, `motif_density` is capped at `0.3` and **15 points** are subtracted. Poorly-labeled data cannot earn full pattern credit.
-- **Low support** — if `low_support` is set (too little evidence), the score is reduced by **40%**. Thin results are not allowed to look confident.
+Every triage result carries the breakdown that produced it, so you can always see *why* a number came out the way it did:
 
 ```python
 triage = result["triage"]
-print(triage["score"])        # e.g. 87
-print(triage["components"])   # per-component breakdown, penalties, flags
-print(triage["dominant_relation"])
+triage["score"]        # e.g. 87
+triage["components"]   # each clamped input, the penalty applied, and the flags
+triage["dominant_relation"]
 ```
-
----
-
-## Reading the components
-
-The `components` dict returns each clamped input, the applied `penalty`, and the `low_support` flag — so a score is never a black box. If a score is surprisingly low, inspect the components to see whether provenance, recency, or a guard pulled it down.
 
 ```python
 {
   "provenance": 0.82,
   "recency": 0.74,
   "surprise": 0.61,
-  "motif_density": 0.30,     # possibly capped by the label-coverage guard
+  "motif_density": 0.30,     # capped by the label-coverage guard
   "controllability": 1.0,
   "label_coverage": 0.71,
-  "penalty": 15.0,           # label-coverage guard fired
+  "penalty": 15.0,           # the guard fired here
   "low_support": false
 }
 ```
 
----
+When a score comes back lower than you expected, this is the first thing to read — a `penalty` of 15 or a low `provenance` usually explains it immediately.
 
-## Insight score vs. triage score
+## Triage vs. the other signals
 
-Odin also reports an `insight_score` (a `[0, 1]` float) alongside `evidence_strength` and `community_relevance`. The `ics` field decomposes the insight score into these contributing parts.
+Triage is the headline, but Odin reports finer-grained signals alongside it. The `insight_score` is an overall `0–1` quality measure, and `ics` decomposes it into the `evidence_strength` and `community_relevance` that make it up:
 
 | Field | Range | Use |
 |-------|-------|-----|
-| `triage["score"]` | 0–100 | Prioritization for agents — "should I look at this?" |
-| `insight_score` | 0.0–1.0 | Overall retrieval quality signal |
+| `triage["score"]` | 0–100 | Prioritization — "should I look at this?" |
+| `insight_score` | 0.0–1.0 | Overall retrieval quality |
 | `evidence_strength` | 0.0–1.0 | Strength of the supporting evidence |
-| `community_relevance` | 0.0–1.0 | How relevant the result is to the community scope |
+| `community_relevance` | 0.0–1.0 | Relevance to the community scope |
 | `ics` | object | Decomposition of `insight_score` |
 
-For most agent loops, the **triage score is the number to gate on**; the others are available when you need finer-grained observability.
-
----
-
-## Using it in an agent
+The rule of thumb is simple: **gate on the triage score**, and reach for the others when you need observability rather than a decision.
 
 ```python
 result = engine.retrieve(seeds=[...])
@@ -2122,14 +2051,9 @@ else:
     agent.skip(reason="low triage")
 ```
 
-See [AI Agent Integration](../guides/agent-integration.md) for a complete loop.
-
 ---
 
-## Next
-
-- [Result Schema](../reference/result-schema.md) — the exact return shape
-- [Tuning Retrieval](../guides/tuning.md) — how parameters affect the scores
+That gate is the seam between Odin and the agent — [AI Agent Integration](../guides/agent-integration.md) builds it out into a full loop, and the [Result Schema](../reference/result-schema.md) documents every field these scores live in.
 </script>
 
 

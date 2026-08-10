@@ -1397,21 +1397,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-graph" class="md-nav__link">
+  <a href="#the-direct-case-check-one-edge" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#direct-rule-check-with-score_edge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Direct rule check with score_edge
+        The direct case: check one edge
       
     </span>
   </a>
@@ -1770,21 +1759,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-graph" class="md-nav__link">
+  <a href="#the-direct-case-check-one-edge" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#direct-rule-check-with-score_edge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Direct rule check with score_edge
+        The direct case: check one edge
       
     </span>
   </a>
@@ -1904,13 +1882,10 @@
 
 
 <h1 id="regulatory-compliance">Regulatory Compliance<a class="headerlink" href="#regulatory-compliance" title="Permanent link">&para;</a></h1>
-<p><strong>Scenario:</strong> validate entity relationships against compliance rules — for example, detecting when a fund is connected, directly or indirectly, to a sanctioned entity.</p>
-<hr />
-<h2 id="the-graph">The graph<a class="headerlink" href="#the-graph" title="Permanent link">&para;</a></h2>
-<p>A compliance graph contains entities like <code>Fund</code>, <code>Manager</code>, <code>Entity</code>, <code>Person</code>, and <code>Jurisdiction</code>, connected by relations such as <code>managed_by</code>, <code>owns</code>, <code>affiliated_with</code>, and <code>controlled_by</code>. Prohibited relationships are often <strong>indirect</strong> — hidden a few hops away.</p>
-<hr />
-<h2 id="direct-rule-check-with-score_edge">Direct rule check with <code>score_edge</code><a class="headerlink" href="#direct-rule-check-with-score_edge" title="Permanent link">&para;</a></h2>
-<p>For a specific prohibited relationship, score it directly:</p>
+<p>Compliance work often comes down to one question: is this entity connected — directly or indirectly — to something it should not be, like a sanctioned entity? Odin is well-suited to it because the prohibited relationships are frequently <em>indirect</em>, hidden a few hops from anything an analyst would look at directly.</p>
+<p>The graph holds entities like <code>Fund</code>, <code>Manager</code>, <code>Entity</code>, <code>Person</code>, and <code>Jurisdiction</code>, connected by relations such as <code>managed_by</code>, <code>owns</code>, <code>affiliated_with</code>, and <code>controlled_by</code>.</p>
+<h2 id="the-direct-case-check-one-edge">The direct case: check one edge<a class="headerlink" href="#the-direct-case-check-one-edge" title="Permanent link">&para;</a></h2>
+<p>When you have a specific prohibited relationship in mind, score it directly — no traversal needed:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1986,19 +1961,13 @@
 </ul>
 <script type="text/markdown" id="jc-page-source"># Regulatory Compliance
 
-**Scenario:** validate entity relationships against compliance rules — for example, detecting when a fund is connected, directly or indirectly, to a sanctioned entity.
+Compliance work often comes down to one question: is this entity connected — directly or indirectly — to something it should not be, like a sanctioned entity? Odin is well-suited to it because the prohibited relationships are frequently *indirect*, hidden a few hops from anything an analyst would look at directly.
 
----
+The graph holds entities like `Fund`, `Manager`, `Entity`, `Person`, and `Jurisdiction`, connected by relations such as `managed_by`, `owns`, `affiliated_with`, and `controlled_by`.
 
-## The graph
+## The direct case: check one edge
 
-A compliance graph contains entities like `Fund`, `Manager`, `Entity`, `Person`, and `Jurisdiction`, connected by relations such as `managed_by`, `owns`, `affiliated_with`, and `controlled_by`. Prohibited relationships are often **indirect** — hidden a few hops away.
-
----
-
-## Direct rule check with `score_edge`
-
-For a specific prohibited relationship, score it directly:
+When you have a specific prohibited relationship in mind, score it directly — no traversal needed:
 
 ```python
 from arango import ArangoClient

@@ -662,10 +662,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#components" class="md-nav__link">
+  <a href="#the-pieces-that-do-the-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Components
+        The pieces that do the work
       
     </span>
   </a>
@@ -673,10 +673,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-the-engine-is-wired" class="md-nav__link">
+  <a href="#what-happens-when-you-build-an-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How the engine is wired
+        What happens when you build an engine
       
     </span>
   </a>
@@ -684,21 +684,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#separation-of-concerns" class="md-nav__link">
+  <a href="#one-deliberate-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Separation of concerns
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-to-go-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where to go next
+        One deliberate boundary
       
     </span>
   </a>
@@ -1770,10 +1759,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#components" class="md-nav__link">
+  <a href="#the-pieces-that-do-the-work" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Components
+        The pieces that do the work
       
     </span>
   </a>
@@ -1781,10 +1770,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-the-engine-is-wired" class="md-nav__link">
+  <a href="#what-happens-when-you-build-an-engine" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How the engine is wired
+        What happens when you build an engine
       
     </span>
   </a>
@@ -1792,21 +1781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#separation-of-concerns" class="md-nav__link">
+  <a href="#one-deliberate-boundary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Separation of concerns
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-to-go-next" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where to go next
+        One deliberate boundary
       
     </span>
   </a>
@@ -1882,36 +1860,28 @@
 
 
 <h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h1>
-<p>Odin is a single library assembled from a small number of well-separated components. The public entry point is <a href="../../reference/engine/"><code>OdinEngine</code></a>, which wires everything together and exposes a handful of methods.</p>
-<hr />
+<p>Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — <a href="../../reference/engine/"><code>OdinEngine</code></a>, the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.</p>
 <h2 id="the-pipeline">The pipeline<a class="headerlink" href="#the-pipeline" title="Permanent link">&para;</a></h2>
-<p>A call to <code>retrieve()</code> runs four stages in sequence:</p>
+<p>A call to <code>retrieve()</code> runs four stages in order, each feeding the next:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌─────────────┐    ┌──────────────────────────────────────┐    ┌─────────────────┐
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│ Seed        │ -&gt; │ PPR → Beam Search → NPLL → Aggregate │ -&gt; │ Ranked Paths +  │
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│ Entities    │    │            (Odin Engine)             │    │ Motifs + Scores │
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>└─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 </span></code></pre></div>
-<ol>
-<li><strong>PPR</strong> — Personalized PageRank scores nodes by structural importance relative to the seeds, producing anchor nodes to explore from.</li>
-<li><strong>Beam Search</strong> — a bounded best-first walk expands the top-K paths at each hop, keeping the search tractable.</li>
-<li><strong>NPLL scoring</strong> — each candidate edge is scored for plausibility; implausible paths are down-weighted or dropped.</li>
-<li><strong>Aggregation</strong> — the surviving paths are summarized into motifs, relation shares, and a triage score.</li>
-</ol>
-<hr />
-<h2 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h2>
+<p><a href="../ppr/"><strong>PPR</strong></a> goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. <a href="../beam-search/"><strong>Beam search</strong></a> grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, <a href="../npll/"><strong>NPLL</strong></a> scores each candidate edge for plausibility and prunes the nonsense. Finally, <a href="../aggregation/"><strong>aggregation</strong></a> folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.</p>
+<h2 id="the-pieces-that-do-the-work">The pieces that do the work<a class="headerlink" href="#the-pieces-that-do-the-work" title="Permanent link">&para;</a></h2>
+<p>Behind <code>OdinEngine</code>, the <code>RetrievalOrchestrator</code> runs that pipeline and assembles the result. Everything else is a component it coordinates:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>┌─────────────────────────────────────────────────────────────────────────┐
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>│                              OdinEngine                                   │
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│                                                                           │
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│  ┌─────────────────────────────────────────────────────────────────────┐ │
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│  │                    RetrievalOrchestrator                             │ │
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│  │  Coordinates PPR → Beam → NPLL → Aggregation and builds the result  │ │
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│  └─────────────────────────────────────────────────────────────────────┘ │
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│                                                                           │
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│  │ Cached Graph │  │ APPRAnchors  │  │  NPLLModel   │  │ Aggregators  │  │
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│  │  Accessor    │  │   (PPR)      │  │ (confidence) │  │  (motifs)    │  │
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>└─────────────────────────────────────────────────────────────────────────┘
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│  ┌─────────────────────────────────────────────────────────────────────┐ │
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│  │                    RetrievalOrchestrator                             │ │
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│  │  Coordinates PPR → Beam → NPLL → Aggregation and builds the result  │ │
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│  └─────────────────────────────────────────────────────────────────────┘ │
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│  │ Cached Graph │  │ APPRAnchors  │  │  NPLLModel   │  │ Aggregators  │  │
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│  │  Accessor    │  │   (PPR)      │  │ (confidence) │  │  (motifs)    │  │
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>└─────────────────────────────────────────────────────────────────────────┘
 </span></code></pre></div>
 <table>
 <thead>
@@ -1964,15 +1934,8 @@
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="how-the-engine-is-wired">How the engine is wired<a class="headerlink" href="#how-the-engine-is-wired" title="Permanent link">&para;</a></h2>
-<p>When you construct an <code>OdinEngine</code>, it:</p>
-<ol>
-<li>Builds an <code>ArangoCommunityAccessor</code> for the given <code>community_id</code> and wraps it in a <code>CachedGraphAccessor</code>.</li>
-<li>Initializes <strong>intelligence</strong> — loads or trains the NPLL model via <code>KnowledgeBootstrapper</code> (unless <code>auto_train=False</code>), producing either <code>NPLLConfidence</code> or a <code>ConstantConfidence</code> fallback.</li>
-<li>Creates the <code>RetrievalOrchestrator</code> with the accessor and the confidence function.</li>
-<li>Creates the <code>APPRAnchors</code> engine for PPR queries.</li>
-</ol>
+<h2 id="what-happens-when-you-build-an-engine">What happens when you build an engine<a class="headerlink" href="#what-happens-when-you-build-an-engine" title="Permanent link">&para;</a></h2>
+<p>Constructing an <code>OdinEngine</code> wires those parts together in one shot. It opens an <code>ArangoCommunityAccessor</code> for your <code>community_id</code> and wraps it in a <code>CachedGraphAccessor</code>; it initializes intelligence by loading or training the NPLL model (unless <code>auto_train=False</code>), yielding either <code>NPLLConfidence</code> or the <code>ConstantConfidence</code> fallback; and it hands both to a fresh <code>RetrievalOrchestrator</code> and <code>APPRAnchors</code> engine. From then on the engine is ready to serve retrievals.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">community_id</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">,</span>   <span class="c1"># scope of exploration</span>
@@ -1981,31 +1944,18 @@
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">community_mode</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span>    <span class="c1"># &quot;none&quot; = global, &quot;mapping&quot; = scoped</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>See the <a href="../../reference/engine/">OdinEngine API</a> for every parameter.</p>
+<p>Every one of these parameters is documented in the <a href="../../reference/engine/">OdinEngine API</a>.</p>
+<h2 id="one-deliberate-boundary">One deliberate boundary<a class="headerlink" href="#one-deliberate-boundary" title="Permanent link">&para;</a></h2>
+<p>The design keeps <strong>graph intelligence</strong> and <strong>language reasoning</strong> strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.</p>
 <hr />
-<h2 id="separation-of-concerns">Separation of concerns<a class="headerlink" href="#separation-of-concerns" title="Permanent link">&para;</a></h2>
-<p>Odin deliberately keeps <strong>graph intelligence</strong> separate from <strong>language reasoning</strong>:</p>
-<ul>
-<li>Odin returns <em>structured, scored evidence</em> — nodes, edges, motifs, and numbers.</li>
-<li>The agent (an LLM) interprets that evidence and decides what to do next.</li>
-</ul>
-<p>This boundary keeps Odin explainable and testable, and keeps hallucination out of the graph layer: every path Odin returns actually exists in your data.</p>
-<hr />
-<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../data-model/">Data Model</a> — how Odin reads your graph</li>
-<li><a href="../ppr/">Personalized PageRank</a> — the structural signal</li>
-<li><a href="../../reference/result-schema/">Result Schema</a> — the exact shape returned by <code>retrieve()</code></li>
-</ul>
+<p>From here, follow the pipeline in order — <a href="../data-model/">Data Model</a>, then <a href="../ppr/">PPR</a> — or skip to the <a href="../../reference/result-schema/">Result Schema</a> for the exact shape <code>retrieve()</code> hands back.</p>
 <script type="text/markdown" id="jc-page-source"># Architecture
 
-Odin is a single library assembled from a small number of well-separated components. The public entry point is [`OdinEngine`](../reference/engine.md), which wires everything together and exposes a handful of methods.
-
----
+Odin is a single library assembled from a few well-separated parts. You only ever touch one of them directly — [`OdinEngine`](../reference/engine.md), the public entry point — but understanding how it fits together makes the parameters, the result shape, and the performance characteristics all make sense.
 
 ## The pipeline
 
-A call to `retrieve()` runs four stages in sequence:
+A call to `retrieve()` runs four stages in order, each feeding the next:
 
 ```
 ┌─────────────┐    ┌──────────────────────────────────────┐    ┌─────────────────┐
@@ -2014,24 +1964,19 @@ A call to `retrieve()` runs four stages in sequence:
 └─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
 ```
 
-1. **PPR** — Personalized PageRank scores nodes by structural importance relative to the seeds, producing anchor nodes to explore from.
-2. **Beam Search** — a bounded best-first walk expands the top-K paths at each hop, keeping the search tractable.
-3. **NPLL scoring** — each candidate edge is scored for plausibility; implausible paths are down-weighted or dropped.
-4. **Aggregation** — the surviving paths are summarized into motifs, relation shares, and a triage score.
+[**PPR**](ppr.md) goes first, scoring nodes by structural importance relative to your seeds and handing back the anchors worth exploring. [**Beam search**](beam-search.md) grows multi-hop paths outward from those anchors, keeping only the top-K at each hop so the search stays bounded. As it goes, [**NPLL**](npll.md) scores each candidate edge for plausibility and prunes the nonsense. Finally, [**aggregation**](aggregation.md) folds the survivors into motifs, relation shares, and a triage score. Each stage exists to make the next one tractable — PPR shrinks where beam search looks, NPLL keeps the beam clean, and aggregation turns raw paths into something an agent can act on.
 
----
+## The pieces that do the work
 
-## Components
+Behind `OdinEngine`, the `RetrievalOrchestrator` runs that pipeline and assembles the result. Everything else is a component it coordinates:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              OdinEngine                                   │
-│                                                                           │
 │  ┌─────────────────────────────────────────────────────────────────────┐ │
 │  │                    RetrievalOrchestrator                             │ │
 │  │  Coordinates PPR → Beam → NPLL → Aggregation and builds the result  │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │ Cached Graph │  │ APPRAnchors  │  │  NPLLModel   │  │ Aggregators  │  │
 │  │  Accessor    │  │   (PPR)      │  │ (confidence) │  │  (motifs)    │  │
@@ -2050,16 +1995,9 @@ A call to `retrieve()` runs four stages in sequence:
 | `NPLLModel` / `KnowledgeBootstrapper` | Model and its lifecycle | `npll/` |
 | aggregators | Motifs, relation shares, triage | `retrieval/aggregators.py` |
 
----
+## What happens when you build an engine
 
-## How the engine is wired
-
-When you construct an `OdinEngine`, it:
-
-1. Builds an `ArangoCommunityAccessor` for the given `community_id` and wraps it in a `CachedGraphAccessor`.
-2. Initializes **intelligence** — loads or trains the NPLL model via `KnowledgeBootstrapper` (unless `auto_train=False`), producing either `NPLLConfidence` or a `ConstantConfidence` fallback.
-3. Creates the `RetrievalOrchestrator` with the accessor and the confidence function.
-4. Creates the `APPRAnchors` engine for PPR queries.
+Constructing an `OdinEngine` wires those parts together in one shot. It opens an `ArangoCommunityAccessor` for your `community_id` and wraps it in a `CachedGraphAccessor`; it initializes intelligence by loading or training the NPLL model (unless `auto_train=False`), yielding either `NPLLConfidence` or the `ConstantConfidence` fallback; and it hands both to a fresh `RetrievalOrchestrator` and `APPRAnchors` engine. From then on the engine is ready to serve retrievals.
 
 ```python
 engine = OdinEngine(
@@ -2071,26 +2009,15 @@ engine = OdinEngine(
 )
 ```
 
-See the [OdinEngine API](../reference/engine.md) for every parameter.
+Every one of these parameters is documented in the [OdinEngine API](../reference/engine.md).
+
+## One deliberate boundary
+
+The design keeps **graph intelligence** and **language reasoning** strictly apart. Odin returns structured, scored evidence — nodes, edges, motifs, numbers — and stops there; the agent, an LLM, interprets that evidence and decides what to do. Drawing the line here buys two things: the graph layer stays explainable and testable, and hallucination is kept out of it entirely. Every path Odin returns genuinely exists in your data, because Odin never invents relationships — it only ranks the ones that are already there.
 
 ---
 
-## Separation of concerns
-
-Odin deliberately keeps **graph intelligence** separate from **language reasoning**:
-
-- Odin returns *structured, scored evidence* — nodes, edges, motifs, and numbers.
-- The agent (an LLM) interprets that evidence and decides what to do next.
-
-This boundary keeps Odin explainable and testable, and keeps hallucination out of the graph layer: every path Odin returns actually exists in your data.
-
----
-
-## Where to go next
-
-- [Data Model](data-model.md) — how Odin reads your graph
-- [Personalized PageRank](ppr.md) — the structural signal
-- [Result Schema](../reference/result-schema.md) — the exact shape returned by `retrieve()`
+From here, follow the pipeline in order — [Data Model](data-model.md), then [PPR](ppr.md) — or skip to the [Result Schema](../reference/result-schema.md) for the exact shape `retrieve()` hands back.
 </script>
 
 
