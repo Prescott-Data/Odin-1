@@ -6,11 +6,11 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Graph intelligence for autonomous AI agents — Personalized PageRank, NPLL edge scoring, and pattern detection for knowledge-graph navigation.">
+        <meta name="description" content="Teach your AI coding editor Odin. Install the Odin skill for GitHub Copilot and Claude Code, wire up Cursor with AGENTS.md, and point any tool at llms.txt.">
       
       
       
-        <link rel="canonical" href="https://odin.developers.prescottdata.io/guides/ai-editor-setup/">
+        <link rel="canonical" href="https://odin.developers.prescottdata.io/guides/ai-editors/">
       
       
         <link rel="prev" href="../production/">
@@ -27,7 +27,7 @@
     
     
       
-        <title>AI Editor Setup - Odin</title>
+        <title>AI Editor Setup - Copilot, Claude Code, Cursor - Odin</title>
       
     
     
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AI Editor Setup
+              AI Editor Setup - Copilot, Claude Code, Cursor
             
           </span>
         </div>
@@ -1289,10 +1289,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-odin-skill" class="md-nav__link">
+  <a href="#install-the-skill" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Odin skill
+        Install the skill
       
     </span>
   </a>
@@ -1300,10 +1300,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cursor" class="md-nav__link">
+  <a href="#cursor-and-other-agentsmd-tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cursor
+        Cursor and other AGENTS.md tools
       
     </span>
   </a>
@@ -1311,10 +1311,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#claude-code-and-cli-agents" class="md-nav__link">
+  <a href="#any-tool-llmstxt" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Claude Code and CLI agents
+        Any tool: llms.txt
       
     </span>
   </a>
@@ -1322,21 +1322,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#github-copilot" class="md-nav__link">
+  <a href="#keeping-it-current" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GitHub Copilot
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#any-llm-or-chat" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Any LLM or chat
+        Keeping it current
       
     </span>
   </a>
@@ -1877,10 +1866,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-odin-skill" class="md-nav__link">
+  <a href="#install-the-skill" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Odin skill
+        Install the skill
       
     </span>
   </a>
@@ -1888,10 +1877,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cursor" class="md-nav__link">
+  <a href="#cursor-and-other-agentsmd-tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cursor
+        Cursor and other AGENTS.md tools
       
     </span>
   </a>
@@ -1899,10 +1888,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#claude-code-and-cli-agents" class="md-nav__link">
+  <a href="#any-tool-llmstxt" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Claude Code and CLI agents
+        Any tool: llms.txt
       
     </span>
   </a>
@@ -1910,21 +1899,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#github-copilot" class="md-nav__link">
+  <a href="#keeping-it-current" class="md-nav__link">
     <span class="md-ellipsis">
       
-        GitHub Copilot
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#any-llm-or-chat" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Any LLM or chat
+        Keeping it current
       
     </span>
   </a>
@@ -2022,55 +2000,46 @@
 
 
 <h1 id="ai-editor-setup">AI Editor Setup<a class="headerlink" href="#ai-editor-setup" title="Permanent link">&para;</a></h1>
-<p>If you write Odin code with an AI coding agent, Cursor, Claude Code, GitHub Copilot, Windsurf, or a CLI agent, give it Odin context first. Without it, agents fall back on generic graph-library patterns and get the details wrong: inventing a <code>path["nodes"]</code> field, mixing up <code>score_edge</code> arguments, or guessing the result shape. With it, they write correct Odin from the first line.</p>
-<p>Odin ships a ready-made <strong>skill</strong> for exactly this.</p>
-<h2 id="the-odin-skill">The Odin skill<a class="headerlink" href="#the-odin-skill" title="Permanent link">&para;</a></h2>
-<p>The repository includes a self-contained brief for AI agents at <a href="https://github.com/Prescott-Data/Odin-1/blob/main/skills/odin/SKILL.md"><code>skills/odin/SKILL.md</code></a>. It covers the exact API signatures, the real <code>retrieve()</code> result shape, the edge and motif structures, adapters, and the specific mistakes agents make with Odin. It is short by design, so it fits comfortably in an agent's context.</p>
-<p>Point your tool at that file, or paste its contents into whatever rules mechanism your tool uses. The sections below show where.</p>
-<h2 id="cursor">Cursor<a class="headerlink" href="#cursor" title="Permanent link">&para;</a></h2>
-<p>Add the skill as a project rule. Create <code>.cursor/rules/odin.mdc</code> and paste the contents of <code>SKILL.md</code> into it, with a short frontmatter so Cursor applies it when you touch Python:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>---
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>description: How to write correct Odin (odin-engine) code
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>globs: [&quot;**/*.py&quot;]
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>alwaysApply: false
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>---
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>&lt;paste the contents of skills/odin/SKILL.md here&gt;
+<p>Your AI coding editor writes better Odin code when it knows the library. Odin ships that knowledge as a skill: the correct API contracts, the exact <code>retrieve()</code> result shape, and the mistakes we see most, maintained in the same repo as the code it describes. Load it once and your agent stops inventing a <code>path["nodes"]</code> field and starts writing Odin that runs.</p>
+<h2 id="install-the-skill">Install the skill<a class="headerlink" href="#install-the-skill" title="Permanent link">&para;</a></h2>
+<p>Odin is a library rather than a CLI, so you place the skill by hand, once. From your project root, drop it into the locations Copilot and Claude Code discover automatically:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>.github/skills/odin<span class="w"> </span>.claude/skills/odin
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-sL<span class="w"> </span>https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/skills/odin/SKILL.md<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-o<span class="w"> </span>.github/skills/odin/SKILL.md
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>cp<span class="w"> </span>.github/skills/odin/SKILL.md<span class="w"> </span>.claude/skills/odin/SKILL.md
 </span></code></pre></div>
-<p>Alternatively, add the docs site to Cursor's <code>@Docs</code> (URL <code>https://odin.developers.prescottdata.io</code>) so you can reference it inline with <code>@Odin</code>.</p>
-<h2 id="claude-code-and-cli-agents">Claude Code and CLI agents<a class="headerlink" href="#claude-code-and-cli-agents" title="Permanent link">&para;</a></h2>
-<p>Most CLI agents read an <code>AGENTS.md</code> at the repository root. Create one in your project and either paste the skill or point to it:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gh"># AGENTS.md</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="gu">## Odin (odin-engine)</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Follow the Odin skill when writing graph-retrieval code:
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>&lt;paste the contents of skills/odin/SKILL.md here&gt;
+<table>
+<thead>
+<tr>
+<th>Editor</th>
+<th>Location</th>
+<th>Loaded</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub Copilot</td>
+<td><code>.github/skills/odin/</code></td>
+<td>Automatically, when a task matches the skill description</td>
+</tr>
+<tr>
+<td>Claude Code</td>
+<td><code>.claude/skills/odin/</code></td>
+<td>Automatically, same trigger model</td>
+</tr>
+</tbody>
+</table>
+<p>Commit these files. Everyone who opens the project gets an editor that knows Odin.</p>
+<h2 id="cursor-and-other-agentsmd-tools">Cursor and other AGENTS.md tools<a class="headerlink" href="#cursor-and-other-agentsmd-tools" title="Permanent link">&para;</a></h2>
+<p>Tools that read <code>AGENTS.md</code> (Cursor, Codex, and others) get the same knowledge with one line in your project's <code>AGENTS.md</code>:</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>When working with odin (odin-engine) code, read .github/skills/odin/SKILL.md first.
 </span></code></pre></div>
-<p>If your agent supports installable skills, drop the whole <code>skills/odin/</code> folder into its skills directory so it loads on demand.</p>
-<h2 id="github-copilot">GitHub Copilot<a class="headerlink" href="#github-copilot" title="Permanent link">&para;</a></h2>
-<p>Copilot reads <code>.github/copilot-instructions.md</code>. Add an Odin section there:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gh"># Copilot instructions</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>When code imports <span class="sb">`odin`</span> (the odin-engine package), follow these rules:
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>&lt;paste the key rules from skills/odin/SKILL.md here&gt;
-</span></code></pre></div>
-<h2 id="any-llm-or-chat">Any LLM or chat<a class="headerlink" href="#any-llm-or-chat" title="Permanent link">&para;</a></h2>
-<p>Two options that need no setup:</p>
-<ul>
-<li>Every page on the <a href="https://odin.developers.prescottdata.io">documentation site</a> has a <strong>Copy page as Markdown</strong> action (top-right of the content). Copy the pages you need, Getting Started and the Reference section are the highest-signal, and paste them into your chat.</li>
-<li>Point the model directly at the <a href="../../reference/">Reference</a> pages, which carry the authoritative API and result schema.</li>
-</ul>
+<h2 id="any-tool-llmstxt">Any tool: llms.txt<a class="headerlink" href="#any-tool-llmstxt" title="Permanent link">&para;</a></h2>
+<p>The documentation site serves <a href="https://odin.developers.prescottdata.io/llms.txt">llms.txt</a>, a curated index of these docs for AI ingestion. Point research agents or custom tooling at it instead of scraping.</p>
+<h2 id="keeping-it-current">Keeping it current<a class="headerlink" href="#keeping-it-current" title="Permanent link">&para;</a></h2>
+<p>The skill tracks the library. After upgrading Odin, re-run the download above to refresh it, or pin it to a release by swapping <code>main</code> for a tag in the URL.</p>
 <h2 id="what-good-looks-like">What good looks like<a class="headerlink" href="#what-good-looks-like" title="Permanent link">&para;</a></h2>
-<p>Once the skill is loaded, your agent should:</p>
-<ul>
-<li>import from <code>odin</code> and construct <code>OdinEngine(db, ...)</code> with a connected ArangoDB handle,</li>
-<li>call <code>retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)</code> with correct defaults,</li>
-<li>read <code>result["paths"][i]["edges"]</code> and derive nodes from <code>u</code>/<code>v</code> instead of a non-existent <code>nodes</code> field,</li>
-<li>use <code>score_edge(src, rel, dst)</code> in the right order,</li>
-<li>and read motifs as <code>edge_count</code> / <code>path_count</code>, not <code>count</code>.</li>
-</ul>
-<p>If you see an agent reach for <code>path["nodes"]</code> or a bare <code>relation_share</code> float, the skill is not loaded.</p>
+<p>Once the skill is loaded, your agent should construct <code>OdinEngine(db, ...)</code> with a connected ArangoDB handle, call <code>retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)</code>, read <code>result["paths"][i]["edges"]</code> and derive nodes from <code>u</code>/<code>v</code>, use <code>score_edge(src, rel, dst)</code> in the right order, and read motifs as <code>edge_count</code> / <code>path_count</code>. If you see it reach for <code>path["nodes"]</code>, the skill is not loaded.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../first-retrieval/">Your First Retrieval</a> is the code the skill teaches an agent to write.</li>
@@ -2078,76 +2047,45 @@
 </ul>
 <script type="text/markdown" id="jc-page-source"># AI Editor Setup
 
-If you write Odin code with an AI coding agent, Cursor, Claude Code, GitHub Copilot, Windsurf, or a CLI agent, give it Odin context first. Without it, agents fall back on generic graph-library patterns and get the details wrong: inventing a `path["nodes"]` field, mixing up `score_edge` arguments, or guessing the result shape. With it, they write correct Odin from the first line.
+Your AI coding editor writes better Odin code when it knows the library. Odin ships that knowledge as a skill: the correct API contracts, the exact `retrieve()` result shape, and the mistakes we see most, maintained in the same repo as the code it describes. Load it once and your agent stops inventing a `path["nodes"]` field and starts writing Odin that runs.
 
-Odin ships a ready-made **skill** for exactly this.
+## Install the skill
 
-## The Odin skill
+Odin is a library rather than a CLI, so you place the skill by hand, once. From your project root, drop it into the locations Copilot and Claude Code discover automatically:
 
-The repository includes a self-contained brief for AI agents at [`skills/odin/SKILL.md`](https://github.com/Prescott-Data/Odin-1/blob/main/skills/odin/SKILL.md). It covers the exact API signatures, the real `retrieve()` result shape, the edge and motif structures, adapters, and the specific mistakes agents make with Odin. It is short by design, so it fits comfortably in an agent's context.
-
-Point your tool at that file, or paste its contents into whatever rules mechanism your tool uses. The sections below show where.
-
-## Cursor
-
-Add the skill as a project rule. Create `.cursor/rules/odin.mdc` and paste the contents of `SKILL.md` into it, with a short frontmatter so Cursor applies it when you touch Python:
-
-```mdc
----
-description: How to write correct Odin (odin-engine) code
-globs: ["**/*.py"]
-alwaysApply: false
----
-
-&lt;paste the contents of skills/odin/SKILL.md here&gt;
+```bash
+mkdir -p .github/skills/odin .claude/skills/odin
+curl -sL https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/skills/odin/SKILL.md \
+  -o .github/skills/odin/SKILL.md
+cp .github/skills/odin/SKILL.md .claude/skills/odin/SKILL.md
 ```
 
-Alternatively, add the docs site to Cursor's `@Docs` (URL `https://odin.developers.prescottdata.io`) so you can reference it inline with `@Odin`.
+| Editor | Location | Loaded |
+|---|---|---|
+| GitHub Copilot | `.github/skills/odin/` | Automatically, when a task matches the skill description |
+| Claude Code | `.claude/skills/odin/` | Automatically, same trigger model |
 
-## Claude Code and CLI agents
+Commit these files. Everyone who opens the project gets an editor that knows Odin.
 
-Most CLI agents read an `AGENTS.md` at the repository root. Create one in your project and either paste the skill or point to it:
+## Cursor and other AGENTS.md tools
+
+Tools that read `AGENTS.md` (Cursor, Codex, and others) get the same knowledge with one line in your project's `AGENTS.md`:
 
 ```markdown
-# AGENTS.md
-
-## Odin (odin-engine)
-
-Follow the Odin skill when writing graph-retrieval code:
-&lt;paste the contents of skills/odin/SKILL.md here&gt;
+When working with odin (odin-engine) code, read .github/skills/odin/SKILL.md first.
 ```
 
-If your agent supports installable skills, drop the whole `skills/odin/` folder into its skills directory so it loads on demand.
+## Any tool: llms.txt
 
-## GitHub Copilot
+The documentation site serves [llms.txt](https://odin.developers.prescottdata.io/llms.txt), a curated index of these docs for AI ingestion. Point research agents or custom tooling at it instead of scraping.
 
-Copilot reads `.github/copilot-instructions.md`. Add an Odin section there:
+## Keeping it current
 
-```markdown
-# Copilot instructions
-
-When code imports `odin` (the odin-engine package), follow these rules:
-&lt;paste the key rules from skills/odin/SKILL.md here&gt;
-```
-
-## Any LLM or chat
-
-Two options that need no setup:
-
-- Every page on the [documentation site](https://odin.developers.prescottdata.io) has a **Copy page as Markdown** action (top-right of the content). Copy the pages you need, Getting Started and the Reference section are the highest-signal, and paste them into your chat.
-- Point the model directly at the [Reference](../reference/index.md) pages, which carry the authoritative API and result schema.
+The skill tracks the library. After upgrading Odin, re-run the download above to refresh it, or pin it to a release by swapping `main` for a tag in the URL.
 
 ## What good looks like
 
-Once the skill is loaded, your agent should:
-
-- import from `odin` and construct `OdinEngine(db, ...)` with a connected ArangoDB handle,
-- call `retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)` with correct defaults,
-- read `result["paths"][i]["edges"]` and derive nodes from `u`/`v` instead of a non-existent `nodes` field,
-- use `score_edge(src, rel, dst)` in the right order,
-- and read motifs as `edge_count` / `path_count`, not `count`.
-
-If you see an agent reach for `path["nodes"]` or a bare `relation_share` float, the skill is not loaded.
+Once the skill is loaded, your agent should construct `OdinEngine(db, ...)` with a connected ArangoDB handle, call `retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)`, read `result["paths"][i]["edges"]` and derive nodes from `u`/`v`, use `score_edge(src, rel, dst)` in the right order, and read motifs as `edge_count` / `path_count`. If you see it reach for `path["nodes"]`, the skill is not loaded.
 
 ## Next
 
