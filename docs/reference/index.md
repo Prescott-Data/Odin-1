@@ -38,6 +38,12 @@ The complete API surface, parameters, and data shapes.
 
     [Read more →](troubleshooting.md)
 
+-   :material-history: **Changelog**
+
+    Release history and version notes.
+
+    [Read more →](../changelog.md)
+
 </div>
 
 ---

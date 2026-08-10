@@ -118,7 +118,7 @@ nav:
       - Configuration: reference/configuration.md
       - Result Schema: reference/result-schema.md
       - Troubleshooting: reference/troubleshooting.md
-  - Changelog: changelog.md
+      - Changelog: changelog.md
 
 extra:
   version: "0.2.1"
