@@ -1,0 +1,54 @@
+# Odin
+
+> Open-source Python library for guided knowledge-graph retrieval. Given seed entities, Odin returns ranked, scored paths through a graph using Personalized PageRank, beam search, and learned edge-plausibility scoring (NPLL). It is the compass for AI agents navigating knowledge graphs: structured, explainable evidence rather than hallucinated relationships.
+
+Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB backend, with JanusGraph and custom adapters supported.
+
+## Start here
+
+- [Overview](https://odin.developers.prescottdata.io/): what Odin is and where to begin
+- [Getting Started](https://odin.developers.prescottdata.io/getting-started/): install, connect ArangoDB, first retrieval
+- [Architecture](https://odin.developers.prescottdata.io/concepts/architecture/): the retrieval pipeline end to end
+
+## Concepts
+
+- [Data Model](https://odin.developers.prescottdata.io/concepts/data-model/): entities, relationships, communities
+- [Personalized PageRank](https://odin.developers.prescottdata.io/concepts/ppr/): the structural signal
+- [Beam Search](https://odin.developers.prescottdata.io/concepts/beam-search/): bounded multi-hop exploration
+- [NPLL Edge Scoring](https://odin.developers.prescottdata.io/concepts/npll/): learned edge plausibility
+- [Motifs & Aggregation](https://odin.developers.prescottdata.io/concepts/aggregation/): patterns and summaries
+- [Triage & Insight Scoring](https://odin.developers.prescottdata.io/concepts/scoring/): the 0-100 prioritization score
+- [Caching](https://odin.developers.prescottdata.io/concepts/caching/): LRU graph access
+- [Adapters](https://odin.developers.prescottdata.io/concepts/adapters/): ArangoDB, JanusGraph, custom backends
+
+## Guides
+
+- [Connecting ArangoDB](https://odin.developers.prescottdata.io/guides/arangodb/)
+- [Your First Retrieval](https://odin.developers.prescottdata.io/guides/first-retrieval/): the full result shape
+- [Scoring Edges](https://odin.developers.prescottdata.io/guides/edge-scoring/)
+- [Finding Anchors](https://odin.developers.prescottdata.io/guides/anchors/)
+- [Schema Introspection](https://odin.developers.prescottdata.io/guides/schema-introspection/)
+- [Model Lifecycle](https://odin.developers.prescottdata.io/guides/npll-lifecycle/)
+- [Tuning Retrieval](https://odin.developers.prescottdata.io/guides/tuning/)
+- [AI Agent Integration](https://odin.developers.prescottdata.io/guides/agent-integration/)
+- [Production Deployment](https://odin.developers.prescottdata.io/guides/production/)
+- [AI Editor Setup](https://odin.developers.prescottdata.io/guides/ai-editors/): skill for Copilot, Claude Code, Cursor
+
+## Examples
+
+- [Healthcare Fraud Detection](https://odin.developers.prescottdata.io/examples/healthcare-fraud/)
+- [Supply Chain Risk](https://odin.developers.prescottdata.io/examples/supply-chain/)
+- [Regulatory Compliance](https://odin.developers.prescottdata.io/examples/compliance/)
+
+## Reference
+
+- [OdinEngine API](https://odin.developers.prescottdata.io/reference/engine/): every method and signature
+- [SchemaInspector API](https://odin.developers.prescottdata.io/reference/schema/)
+- [Configuration](https://odin.developers.prescottdata.io/reference/configuration/): every parameter and default
+- [Result Schema](https://odin.developers.prescottdata.io/reference/result-schema/): the exact shape `retrieve()` returns
+- [Troubleshooting](https://odin.developers.prescottdata.io/reference/troubleshooting/)
+- [Changelog](https://odin.developers.prescottdata.io/changelog/)
+
+## Enterprise
+
+- [Odin Enterprise](https://odin.developers.prescottdata.io/infrastructure/enterprise/): Odin-2, federation, zero-trust security, domain intelligence, and professional services

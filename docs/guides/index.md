@@ -66,6 +66,6 @@ Practical, task-focused walkthroughs. Each guide assumes you have installed `odi
 
     Give Cursor, Claude Code, or Copilot an Odin skill so they write correct Odin.
 
-    [Read more →](ai-editor-setup.md)
+    [Read more →](ai-editors.md)
 
 </div>

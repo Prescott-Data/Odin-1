@@ -107,7 +107,7 @@ nav:
       - Tuning Retrieval: guides/tuning.md
       - AI Agent Integration: guides/agent-integration.md
       - Production Deployment: guides/production.md
-      - AI Editor Setup: guides/ai-editor-setup.md
+      - AI Editor Setup: guides/ai-editors.md
   - Examples:
       - Overview: examples/index.md
       - Healthcare Fraud Detection: examples/healthcare-fraud.md
