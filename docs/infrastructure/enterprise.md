@@ -12,12 +12,12 @@ icon: material/office-building
 
 ## The Odin family
 
-Odin follows the model the frontier AI labs use for their model families: an open base that distributes widely, and successive proprietary generations for teams that need the frontier.
+Odin is built as a family, not a single product. Every generation shares one engine and one way of thinking; what changes is how far it reaches and who operates it.
 
-- **Odin-1** is the open base. MIT-licensed, free, and built to spread. The community adopts it, builds on it, and takes it in directions no roadmap could plan for. Its path belongs to its users as much as to us.
-- **Odin-2 and the generations after it** are the managed, proprietary tier. Each new generation adds capabilities that only make sense with an operator behind them, federation, zero-trust security, domain intelligence, and ships them as a supported platform rather than a library.
+- **Odin-1 is the open base.** MIT-licensed, free, and built to spread. The community adopts it, builds on it, and takes it in directions no roadmap could plan for. Its path belongs to its users as much as to us, and it stays open.
+- **Odin-2 and the generations after it are the managed tier.** Each new generation adds capabilities that only make sense with an operator behind them, federation, zero-trust security, and domain intelligence, and ships them as a supported platform rather than a library.
 
-Odin-1 keeps its own path. The enterprise generations never close it off: the open base stays open, and the two reinforce each other. You lose nothing by starting on Odin-1, and you gain a clear road to production when you are ready for it.
+The open base and the managed generations reinforce each other rather than compete. Starting on Odin-1 costs you nothing and locks you into nothing; when you are ready for the frontier of what Odin can do, there is a clear road to it.
 
 ---
 
