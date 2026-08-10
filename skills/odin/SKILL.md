@@ -133,4 +133,4 @@ inspect_arango_schema(db, output_file="schema.json")
 
 ## Reference
 
-Full documentation: https://odin.developers.prescottdata.io — the Reference section (`/reference/`) has the authoritative API and result schema.
+Full documentation: https://odin.developers.prescottdata.io. The Reference section (`/reference/`) has the authoritative API and result schema.
