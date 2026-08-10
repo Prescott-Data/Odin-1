@@ -62,4 +62,10 @@ Practical, task-focused walkthroughs. Each guide assumes you have installed `odi
 
     [Read more →](production.md)
 
+-   :material-robot-happy: **AI Editor Setup**
+
+    Give Cursor, Claude Code, or Copilot an Odin skill so they write correct Odin.
+
+    [Read more →](ai-editor-setup.md)
+
 </div>
