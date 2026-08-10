@@ -64,9 +64,37 @@ pytest tests/ --cov=odin --cov=npll --cov=retrieval --cov-report=term-missing
 
 ## Versioning & releases
 
-We follow [Semantic Versioning](https://semver.org/). Maintainers cut releases
-by tagging `vX.Y.Z`; the publish workflow builds and uploads to PyPI via
-trusted publishing.
+We follow [Semantic Versioning](https://semver.org/): patch for backward-compatible
+fixes, minor for backward-compatible features, major for breaking changes.
+
+### Cutting a release (maintainers)
+
+1. Bump the version in `pyproject.toml` **and** `odin/__init__.py` (`__version__`),
+   and in `mkdocs.yml` (`extra.version`). Keep them in sync.
+2. Move the `[Unreleased]` notes in `CHANGELOG.md` under a new `## [X.Y.Z]` heading,
+   add a matching entry to `docs/changelog.md`, and update the compare links at the
+   bottom of `CHANGELOG.md`.
+3. Merge to `main` with CI green.
+4. Tag and push:
+
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+
+5. Create a GitHub **Release** for `vX.Y.Z` (use the changelog section as the notes).
+   Publishing the release triggers `.github/workflows/publish.yml`, which builds the
+   distributions and uploads them to PyPI via trusted publishing.
+
+### One-time setup
+
+- **PyPI trusted publisher**: on the `odin-engine` PyPI project, add a GitHub
+  publisher for owner `Prescott-Data`, repository `Odin-1`, workflow `publish.yml`,
+  environment `pypi`. No API tokens are stored in the repo.
+- **Docs / GitHub Pages**: enable Pages from the `gh-pages` branch. The
+  `.github/workflows/docs.yml` workflow deploys the site on every push to `main`
+  that touches the docs, and the `docs/CNAME` file points it at
+  `odin.developers.prescottdata.io`.
 
 ## License
 
