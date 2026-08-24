@@ -1,18 +1,58 @@
-# Odin KG Engine
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/brand-assets/svg/combo-brand.svg" alt="Odin" width="260" />
+</p>
 
-**Graph Intelligence for Autonomous AI Agents**
+<h1 align="center">Graph intelligence for AI agents</h1>
 
-Odin is a production-ready Python library that transforms how AI agents navigate knowledge graphs. It combines structural graph algorithms (Personalized PageRank), semantic plausibility scoring (NPLL), and pattern detection to guide agents toward high-signal discoveries in complex, multi-domain graphs.
+Odin is an open-source Python library for navigating connected evidence in
+knowledge graphs. Given seed entities, it uses Personalized PageRank, bounded
+beam search, learned edge-plausibility scoring, and pattern aggregation to
+return ranked, inspectable paths.
 
-**Built for:** Healthcare analytics, fraud detection, regulatory compliance, supply chain intelligence, and any domain where autonomous agents need to discover patterns in graphs with 10K-5M entities.
+Odin navigates and ranks graph evidence. The consuming agent interprets that
+evidence, decides what is missing, and chooses the next seed or action.
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+[![CI](https://github.com/Prescott-Data/Odin-1/actions/workflows/ci.yml/badge.svg)](https://github.com/Prescott-Data/Odin-1/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PyPI](https://img.shields.io/badge/pypi-odin--engine-blue)](https://pypi.org/project/odin-engine/)
 [![Docs](https://img.shields.io/badge/docs-odin.developers.prescottdata.io-1758F5)](https://odin.developers.prescottdata.io)
 
 > **Odin-1** is the open-source edition of the Odin graph-intelligence engine, published by Prescott Data under the MIT license so the community can build on it.
+
+---
+
+## See Odin Navigate Connected Evidence
+
+This observed run uses Odin `0.3.0` with a synthetic insurance graph containing
+66 entities and 190 recorded relationships. Claim 1042 is the selected seed.
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/docs/assets/demo/odin-demo-full.gif" alt="Animated Odin 0.3.0 retrieval from a raw synthetic insurance graph to ranked, inspectable evidence paths" width="760" />
+</p>
+
+The request asked for 12 paths, a 10-hop limit, and a beam width of 32. Odin's
+adaptive pass returned 24 ranked paths with an effective 4-hop limit and beam
+width of 64. One retained route connects:
+
+```text
+Claim 1042
+-> submitted_by -> Ana Torres
+-> owns_vehicle -> Vehicle V-204
+-> serviced_at -> Central Repairs
+```
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/docs/assets/demo/odin-ranked-evidence.png" alt="Odin 0.3.0 ranked path from Claim 1042 to Central Repairs with PPR, NPLL, inactive signals, and three source records" width="760" />
+</p>
+
+The interface labels requested and effective bounds, shows inactive signals as
+inactive, and traces every edge in the selected path to a source record. The
+complete raw result is preserved in the
+[canonical run artifact](https://github.com/Prescott-Data/Odin-1/blob/main/docs/assets/demo/odin-retrieve-52e74681-8344-438e-b9ee-4fde3173a24f.json).
+This is a deterministic demonstration dataset, not a scale or accuracy
+benchmark. Odin ranks the connected evidence; the consuming agent or
+investigator interprets it and chooses the next action.
 
 ---
 
@@ -45,13 +85,11 @@ Odin provides a **guided exploration framework** that acts as a navigation compa
 
 | Component | Purpose | Impact |
 |-----------|---------|--------|
-| **Personalized PageRank (PPR)** | Identifies structurally important nodes as starting points | Reduces search space by 80% |
-| **Beam Search** | Efficiently explores top-K paths at each hop | Prevents exponential explosion |
-| **NPLL (Neural Probabilistic Logic)** | Scores edge plausibility using learned rules from your graph | Filters 60-90% of semantically invalid paths |
-| **Motif Detection** | Surfaces recurring patterns (e.g., "A→B→C appears 47 times") | Automatic anomaly detection |
-| **Triage Scoring** | 0-100 importance ranking for agent prioritization | Focuses agent compute on high-signal areas |
-
-**Results:** 10x faster exploration, 5x more relevant discoveries, agents focus on high-signal regions.
+| **Personalized PageRank (PPR)** | Identifies structurally important nodes relative to the selected seeds | Directs attention within the current graph context |
+| **Beam Search** | Explores a bounded number of paths at each hop | Keeps multi-hop navigation within an explicit budget |
+| **NPLL (Neural Probabilistic Logic)** | Scores edge plausibility using patterns learned from the graph | Adds a semantic signal to path ranking |
+| **Motif Detection** | Surfaces recurring relationship sequences | Makes repeated graph structure inspectable |
+| **Triage Scoring** | Produces a 0-100 prioritization signal | Helps an agent decide what to inspect next |
 
 ---
 
@@ -71,10 +109,14 @@ pip install -e .
 
 **Requirements:**
 - Python 3.9+
-- ArangoDB 3.10+ (or compatible graph database)
+- ArangoDB 3.10+ with a populated knowledge graph (reference backend)
 - PyTorch 2.0+ (for NPLL)
 
-### 5-Minute Integration
+The example below assumes that the referenced entity IDs already exist in your
+graph. Follow the [Getting Started guide](https://odin.developers.prescottdata.io/getting-started/)
+for local ArangoDB setup and data-model requirements.
+
+### Minimal Integration
 
 ```python
 from arango import ArangoClient
@@ -124,9 +166,9 @@ Triage Score: 87/100
 
 Odin automatically manages its NPLL model lifecycle:
 
-1. **First Run**: Extracts edge patterns from your graph, trains NPLL model (~2-5 minutes)
+1. **First Run**: Extracts edge patterns from your graph and trains the NPLL model
 2. **Stores Weights**: Saves learned parameters in ArangoDB collection (`NPLLWeights`)
-3. **Subsequent Runs**: Loads weights from DB and rebuilds model in ~30 seconds
+3. **Subsequent Runs**: Loads weights from the database and rebuilds the model
 
 **No separate ML pipeline, no .pt files, no DevOps overhead.** Just initialize `OdinEngine` and it handles everything.
 
@@ -254,15 +296,13 @@ Odin is composed of four layers working in concert:
 
 **Component Details:**
 
-| Layer | Responsibility | Performance |
-|-------|----------------|-------------|
-| **Graph Accessor** | LRU-cached graph queries | <10ms avg per node fetch |
-| **PPR Engine** | Compute importance scores | ~200ms for 1K nodes |
-| **Beam Search** | Multi-hop path exploration | 50-500ms depending on beam width |
-| **NPLL Confidence** | Semantic edge filtering | ~5ms per edge (cached) |
-| **Aggregators** | Pattern extraction | ~100ms post-retrieval |
-
-**Typical End-to-End Latency:** 300-800ms for 50-path retrieval
+| Layer | Responsibility |
+|-------|----------------|
+| **Graph Accessor** | Read and cache graph neighborhoods |
+| **PPR Engine** | Compute seed-relative structural importance |
+| **Beam Search** | Explore bounded multi-hop paths |
+| **NPLL Confidence** | Add learned edge-plausibility signals |
+| **Aggregators** | Summarize motifs, relation shares, and triage signals |
 
 ---
 
@@ -394,19 +434,11 @@ Force NPLL model retraining (use after major graph updates).
 
 ## Performance
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Graph Scale** | 10K-5M entities | Tested on healthcare, insurance, supply chain |
-| **Typical Latency** | 300-800ms | For 50-path retrieval with 3-hop limit |
-| **Cache Hit Rate** | >80% | After warm-up period |
-| **NPLL Training** | 2-5 minutes | First run, then cached |
-| **NPLL Loading** | ~30 seconds | Subsequent runs |
-| **Memory** | ~500MB-2GB | Depends on cache size and graph density |
-
-**Tested Deployments:**
-- Healthcare KG: 2.3M entities, 8.7M edges (avg 450ms retrieval)
-- Insurance Claims: 850K entities, 4.1M edges (avg 320ms retrieval)
-- Supply Chain: 450K entities, 2.3M edges (avg 280ms retrieval)
+Runtime depends on graph density, database latency, retrieval bounds, cache
+state, and whether NPLL weights are already available. The repository includes
+performance and memory regression tests in [`tests/performance`](tests/performance/)
+and benchmark utilities in [`benchmarks`](benchmarks/). Publish workload-specific
+measurements with the dataset, parameters, hardware, and Odin version used.
 
 ---
 

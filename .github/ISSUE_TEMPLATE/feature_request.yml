@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose an improvement to Odin's graph-navigation capabilities
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: graph-problem
+    attributes:
+      label: Graph problem
+      description: What graph-navigation or evidence-retrieval problem should Odin solve?
+    validations:
+      required: true
+  - type: textarea
+    id: current-approach
+    attributes:
+      label: Current approach
+      description: How do you handle this problem today, and where does that approach fail?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the desired inputs, outputs, and observable behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example graph
+      description: Provide a small illustrative topology or path when useful. Remove sensitive data.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues for related proposals.
+          required: true

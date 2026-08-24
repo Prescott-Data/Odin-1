@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Prescott-Data/Odin-1/security/advisories/new
+    about: Report security vulnerabilities privately. Do not open a public issue.
+  - name: Documentation
+    url: https://odin.developers.prescottdata.io
+    about: Read the guides, concepts, examples, and API reference.

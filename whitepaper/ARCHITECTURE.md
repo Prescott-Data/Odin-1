@@ -854,7 +854,7 @@ Odin is a **graph intelligence engine** that guides AI agents through knowledge 
 
 **It doesn't work for:** Natural language understanding, insight generation (use LLM), massive scale (needs optimization), real-time (<100ms).
 
-For production deployment, use the production fixes (caching, memory management) documented in `PRODUCTION_FIXES.md`.
+For deployment guidance, including caching and memory management, see the [Production Deployment guide](../docs/guides/production.md).
 
 ---
 
@@ -863,10 +863,10 @@ For production deployment, use the production fixes (caching, memory management)
 | Document | Description |
 |----------|-------------|
 | [Agent Integration Guide](AGENT_INTEGRATION_GUIDE.md) | How agents should use Odin's tools |
-| [Production Fixes](../PRODUCTION_FIXES.md) | Production optimizations applied |
+| [Production Deployment](../docs/guides/production.md) | Operational guidance for caching, memory, and security |
 | [Testing Guide](../tests/README.md) | Test suite documentation |
 | [NPLL Paper](2407.03704v1.pdf) | Academic paper on NPLL |
 
 ---
 
-**Questions?** Check the test suite in `tests/` or the production fixes in `PRODUCTION_FIXES.md`.
+**Questions?** Check the test suite in `tests/` or the [Production Deployment guide](../docs/guides/production.md).

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Reworked the README to distinguish Odin's graph-navigation role from the
+  consuming agent's interpretation role and removed performance claims that
+  were not linked to reproducible repository evidence.
+- Replaced the static test badge with the GitHub Actions CI badge.
+- Clarified that the quickstart requires a populated graph and linked to the
+  complete setup guide.
+- Modernized the package's MIT license metadata.
+- Removed the no-op Docker image, which implied a deployable service even
+  though Odin is distributed as a Python library.
+
+### Added
+- Security reporting guidance and GitHub issue and pull-request templates.
+- Brand Studio-aligned Odin `0.3.0` demo visuals and the complete canonical
+  retrieval artifact behind the README example.
+
+### Fixed
+- Replaced stale `PRODUCTION_FIXES.md` references in the architecture guide
+  with the current production deployment guide.
+
 ## [0.3.0] - 2026-08-10
 
 ### Added
