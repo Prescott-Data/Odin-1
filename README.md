@@ -28,7 +28,7 @@ This observed run uses Odin `0.3.0` with a synthetic insurance graph containing
 66 entities and 190 recorded relationships. Claim 1042 is the selected seed.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/docs/assets/demo/odin-demo-full.gif" alt="Animated Odin 0.3.0 retrieval from a raw synthetic insurance graph to ranked, inspectable evidence paths" width="760" />
+    <img src="docs/assets/demo/odin-demo-full.gif" alt="Animated Odin 0.3.0 retrieval from a raw synthetic insurance graph to ranked, inspectable evidence paths" width="760" />
 </p>
 
 The request asked for 12 paths, a 10-hop limit, and a beam width of 32. Odin's
@@ -43,13 +43,13 @@ Claim 1042
 ```
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/docs/assets/demo/odin-ranked-evidence.png" alt="Odin 0.3.0 ranked path from Claim 1042 to Central Repairs with PPR, NPLL, inactive signals, and three source records" width="760" />
+    <img src="docs/assets/demo/odin-ranked-evidence.png" alt="Odin 0.3.0 ranked path from Claim 1042 to Central Repairs with PPR, NPLL, inactive signals, and three source records" width="760" />
 </p>
 
 The interface labels requested and effective bounds, shows inactive signals as
 inactive, and traces every edge in the selected path to a source record. The
 complete raw result is preserved in the
-[canonical run artifact](https://github.com/Prescott-Data/Odin-1/blob/main/docs/assets/demo/odin-retrieve-52e74681-8344-438e-b9ee-4fde3173a24f.json).
+[canonical run artifact](docs/assets/demo/odin-retrieve-52e74681-8344-438e-b9ee-4fde3173a24f.json).
 This is a deterministic demonstration dataset, not a scale or accuracy
 benchmark. Odin ranks the connected evidence; the consuming agent or
 investigator interprets it and chooses the next action.
