@@ -275,24 +275,14 @@ inspect_arango_schema(db, output_file='schema.json')
 
 ## Architecture
 
-Odin is composed of four layers working in concert:
+Odin turns seed entities into ranked, inspectable graph evidence:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              ODIN ENGINE                                    │
-│                                                                             │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                    RETRIEVAL ORCHESTRATOR                             │  │
-│  │  Coordinates PPR → Beam Search → NPLL → Aggregation pipeline         │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │ Graph        │  │ PPR Engine   │  │ NPLL Model   │  │ Aggregators  │   │
-│  │ Accessor     │  │ (Anchors)    │  │ (Confidence) │  │ (Motifs)     │   │
-│  │ + Cache      │  │              │  │              │  │              │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+    <img src="docs/assets/architecture/odin-engine-architecture.svg" alt="Odin architecture: an agent selects seed entities, Odin ranks nodes with PPR, navigates with beam search, scores edges with NPLL, and returns ranked paths with provenance for the agent to interpret" width="900" />
+</p>
+
+Odin navigates and ranks connected evidence. The consuming agent interprets the
+returned paths and either acts on them or selects another seed for retrieval.
 
 **Component Details:**
 

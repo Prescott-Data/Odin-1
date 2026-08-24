@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security reporting guidance and GitHub issue and pull-request templates.
 - Brand Studio-aligned Odin `0.3.0` demo visuals and the complete canonical
   retrieval artifact behind the README example.
+- A compact architecture visual showing the seed-to-evidence retrieval loop and
+  the responsibility boundary between Odin and the consuming agent.
 
 ### Fixed
 - Replaced stale `PRODUCTION_FIXES.md` references in the architecture guide
