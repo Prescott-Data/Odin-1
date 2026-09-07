@@ -53,7 +53,7 @@ autonomous agents face a different question:
 
 Answering it by traversal alone fails in three ways:
 
-1. **Exponential Path Growth** - A 3-hop exploration from a single node in a densely connected graph can generate 100K+ paths, most of which are noise
+1. **Combinatorial Path Growth** - Multi-hop exploration in densely connected graphs grows combinatorially, producing large numbers of candidate paths, most of which are irrelevant to the investigation
 2. **Semantic Invalidity** - Naive traversal follows edges that violate domain logic (e.g., `Patient → diagnosed_by → Medication`)
 3. **No Prioritization** - Without ranking, agents waste turns analyzing low-value paths while missing critical patterns
 
