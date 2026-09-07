@@ -54,3 +54,15 @@ npll_checkpoints/
 
 # docs build venv
 .docs-venv/
+
+# internal brand kit — only the assets referenced by README/docs are published
+brand-assets/svg/*
+!brand-assets/svg/combo-brand.svg
+docs/assets/combo-*.svg
+!docs/assets/combo-brand.svg
+!docs/assets/combo-white.svg
+docs/assets/monogram-*.svg
+docs/assets/wordmark-*.svg
+!docs/assets/wordmark-brand.svg
+!docs/assets/wordmark-white.svg
+docs/assets/demo/odin-demo-full.gif
