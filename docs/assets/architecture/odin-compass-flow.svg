@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" role="img" aria-label="An agent chooses seed entities, Odin scores structural, semantic, temporal, and community signals with COMPASS, and returns ranked evidence paths for the agent to reason over">
+  <rect x="0" y="0" width="800" height="640" fill="#E8E6E0"/>
+
+  <!-- Seed entities (ink card, matches agent card in architecture diagram) -->
+  <rect x="300" y="28" width="200" height="44" rx="8" fill="#0B1220"/>
+  <text x="400" y="55" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#FFFFFF">Seed entities</text>
+
+  <line x1="400" y1="76" x2="400" y2="106" stroke="#0B1220" stroke-width="1.5"/>
+  <polygon points="395,106 405,106 400,116" fill="#0B1220"/>
+
+  <!-- Odin box -->
+  <rect x="120" y="124" width="560" height="296" rx="10" fill="#FFFFFF" stroke="#0B1220" stroke-width="1.5"/>
+  <text x="400" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="6" fill="#0B1220">ODIN</text>
+
+  <!-- Signal chips -->
+  <rect x="150" y="180" width="240" height="46" rx="6" fill="#F4F5F7" stroke="#667085"/>
+  <text x="270" y="208" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#0B1220">Structural &#183; Personalized PageRank</text>
+
+  <rect x="410" y="180" width="240" height="46" rx="6" fill="#F4F5F7" stroke="#667085"/>
+  <text x="530" y="208" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#0B1220">Semantic &#183; NPLL</text>
+
+  <rect x="150" y="240" width="240" height="46" rx="6" fill="#F4F5F7" stroke="#667085"/>
+  <text x="270" y="268" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#0B1220">Temporal &#183; recency decay</text>
+
+  <rect x="410" y="240" width="240" height="46" rx="6" fill="#F4F5F7" stroke="#667085"/>
+  <text x="530" y="268" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#0B1220">Community &#183; bridges &amp; affinity</text>
+
+  <!-- COMPASS band (ink emphasis) -->
+  <rect x="150" y="314" width="500" height="74" rx="8" fill="#0B1220"/>
+  <path d="M196,328 L203,344 L219,351 L203,358 L196,374 L189,358 L173,351 L189,344 Z" fill="#FFFFFF"/>
+  <text x="420" y="348" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="4" fill="#FFFFFF">COMPASS</text>
+  <text x="420" y="372" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#E8E6E0">Composite Oriented Multi-signal Path Assessment</text>
+
+  <line x1="400" y1="424" x2="400" y2="454" stroke="#0B1220" stroke-width="1.5"/>
+  <polygon points="395,454 405,454 400,464" fill="#0B1220"/>
+
+  <!-- Ranked evidence paths -->
+  <rect x="285" y="472" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#0B1220" stroke-width="1.5"/>
+  <text x="400" y="499" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#0B1220">Ranked evidence paths</text>
+
+  <line x1="400" y1="520" x2="400" y2="550" stroke="#0B1220" stroke-width="1.5"/>
+  <polygon points="395,550 405,550 400,560" fill="#0B1220"/>
+
+  <!-- Agent -->
+  <text x="400" y="588" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#0B1220">AI agent</text>
+  <text x="400" y="610" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#667085">reasons over the evidence, chooses the next seed</text>
+</svg>

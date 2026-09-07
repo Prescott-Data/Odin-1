@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="brand-assets/svg/combo-white.svg">
-    <img src="brand-assets/svg/combo-trimmed.svg" alt="Odin" height="56">
-  </picture>
+  <img src="brand-assets/svg/combo-brand.svg" alt="Odin" height="56">
 </p>
 
 <p align="center">
@@ -68,27 +65,9 @@ Answering it by traversal alone fails in three ways:
 
 Odin treats graph exploration as a ranking problem:
 
-```text
-     Agent chooses seeds
-             |
-             v
-  +------------------------+
-  |          Odin          |
-  |                        |
-  |   Structural signal    |
-  |   Semantic signal      |
-  |   Temporal signal      |
-  |   Community signal     |
-  |            |           |
-  |         COMPASS        |
-  +------------+-----------+
-               |
-               v
-     Ranked evidence paths
-               |
-               v
-  Agent reasons over evidence
-```
+<p align="center">
+    <img src="docs/assets/architecture/odin-compass-flow.svg" alt="An agent chooses seed entities, Odin scores structural, semantic, temporal, and community signals with COMPASS, and returns ranked evidence paths for the agent to reason over" width="720" />
+</p>
 
 The engine ranks connected evidence. The agent decides what that evidence means.
 
@@ -100,6 +79,10 @@ At the center of Odin is **COMPASS (Composite Oriented Multi-signal Path
 Assessment)**, the scoring framework introduced in the
 [Odin research paper](https://arxiv.org/abs/2603.03097). Beam search keeps
 exploration bounded; COMPASS decides which candidate paths survive each hop.
+
+<p align="center">
+    <img src="docs/assets/architecture/odin-compass-rose.svg" alt="COMPASS compass rose: structural importance, semantic plausibility, temporal relevance, and community awareness" width="380" />
+</p>
 
 | Signal | Role |
 |--------|------|
@@ -132,7 +115,7 @@ Claim 1042
 ```
 
 <p align="center">
-    <img src="docs/assets/demo/odin-ranked-evidence.png" alt="Odin 0.3.0 ranked path from Claim 1042 to Central Repairs with PPR, NPLL, inactive signals, and three source records" width="760" />
+    <img src="docs/assets/demo/odin-ranked-evidence.png" alt="Odin 0.3.0 ranked path from Claim 1042 to Central Repairs with PPR, NPLL, inactive signals, and three source records" width="600" />
 </p>
 
 The interface labels requested and effective bounds, shows inactive signals as
@@ -249,94 +232,22 @@ for the full shape):
 }
 ```
 
-Beyond `retrieve()`, four companion capabilities:
-
-### Edge Plausibility Scoring
-
-```python
-# Validate specific relationships
-score = engine.score_edge(
-    head="entity/patient_001",
-    relation="treated_by",
-    tail="entity/doctor_smith"
-)
-# Returns: 0.0 (impossible) to 1.0 (highly plausible)
-
-# Use in agent decision loops
-if score > 0.7:
-    agent.investigate_further(path)
-```
-
-### Anchor Node Discovery
-
-```python
-# Find most important nodes in your graph
-anchors = engine.find_anchors(
-    seeds=["community/insurance_claims"],
-    topn=20
-)
-# Returns top-N nodes by PageRank for targeted exploration
-```
-
-### Pattern Detection
-
-```python
-# Automatic motif extraction
-motifs = result['aggregates']['motifs']
-for motif in motifs:
-    print(f"{motif['pattern']} spans {motif['edge_count']} edges across {motif['path_count']} paths")
-
-# Example output:
-# has_policyholder->rare_in spans 47 edges across 23 paths
-# billed_by->flagged_in spans 12 edges across 6 paths
-```
-
-### Schema Introspection
-
-```python
-from arango import ArangoClient
-from odin import SchemaInspector
-
-# Connect to ArangoDB (same as step 1 above)
-client = ArangoClient(hosts="http://localhost:8529")
-db = client.db("my_database", username="user", password="pass")
-
-# Inspect your ArangoDB schema at runtime
-inspector = SchemaInspector(db)
-schema = inspector.get_schema_map()
-
-# Get all collections and their fields
-for collection in schema['collections']:
-    print(f"{collection['name']}: {collection['count']} docs")
-    print(f"  Fields: {', '.join(collection['fields'][:5])}")
-
-# Get specific collection info
-entities_info = inspector.get_collection_info('ExtractedEntities')
-print(f"Entity fields: {entities_info['fields']}")
-
-# Get edge collection relationships
-edge_info = inspector.get_edge_info('ExtractedRelationships')
-print(f"From: {edge_info['from_collections']}")
-print(f"To: {edge_info['to_collections']}")
-
-# Save schema to file for documentation or agent context
-from odin import inspect_arango_schema
-inspect_arango_schema(db, output_file='schema.json')
-```
-
-**Use Cases:**
-- **AI Agents**: Provide schema context to agents for writing valid AQL queries
-- **Documentation**: Auto-generate database schema documentation
-- **Validation**: Verify collection structures across environments
-- **Schema Evolution**: Track changes to your graph structure over time
+Beyond `retrieve()`, the engine exposes companion capabilities — edge
+plausibility scoring, anchor discovery, motif aggregates, and runtime schema
+introspection — summarized in [API at a Glance](#api-at-a-glance) and fully
+documented on the [docs site](https://odin.developers.prescottdata.io).
 
 ---
 
 ## Research
 
-**Odin: Multi-Signal Graph Intelligence for Autonomous Discovery in Knowledge Graphs**
-Muyukani Kizito · Elizabeth Nyambere · Prescott Data · 2026
-[arXiv:2603.03097](https://arxiv.org/abs/2603.03097) · [DOI: 10.48550/arXiv.2603.03097](https://doi.org/10.48550/arXiv.2603.03097)
+> 📄 **[Odin: Multi-Signal Graph Intelligence for Autonomous Discovery in Knowledge Graphs](https://arxiv.org/abs/2603.03097)**
+>
+> Muyukani Kizito · Elizabeth Nyambere
+>
+> Prescott Data · 2026
+>
+> [arXiv:2603.03097](https://arxiv.org/abs/2603.03097) · [DOI: 10.48550/arXiv.2603.03097](https://doi.org/10.48550/arXiv.2603.03097)
 
 The paper introduces:
 
@@ -446,6 +357,7 @@ engine = OdinEngine(
 | `score_edge(src, rel, dst)` | Score plausibility of a single edge (0.0-1.0) |
 | `find_anchors(seeds, topn=20)` | Top-N nodes by Personalized PageRank |
 | `retrain_model(force_retrain=True)` | Force NPLL retraining after major graph updates |
+| `SchemaInspector(db)` | Inspect collections, fields, and edge relationships at runtime |
 
 Full parameter and result documentation lives in the
 [API reference](https://odin.developers.prescottdata.io).
