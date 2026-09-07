@@ -57,10 +57,10 @@ Answering it by traversal alone fails in three ways:
 2. **Semantic Invalidity** - Naive traversal follows edges that violate domain logic (e.g., `Patient → diagnosed_by → Medication`)
 3. **No Prioritization** - Without ranking, agents waste turns analyzing low-value paths while missing critical patterns
 
-**Traditional approaches fail:**
+**Where common approaches fall short:**
 - **BFS/DFS**: Exponential explosion, no signal filtering
 - **Fixed Cypher Queries**: Only finds patterns you already know exist
-- **Random Walk**: No convergence guarantees, wasted compute
+- **Random Walks**: Stochastic exploration can spend budget on low-value regions without task-aware ranking
 - **LLM Prompting Alone**: Hallucinates relationships, can't verify graph structure
 
 Odin treats graph exploration as a ranking problem:
@@ -190,7 +190,7 @@ Triage Score: 87/100
   [0.82] provider_456 → prescribed → medication_999 → contraindicated_with → patient_history
 ```
 
-### Self-Managing Intelligence
+### Automatic NPLL Lifecycle
 
 Odin automatically manages its NPLL model lifecycle:
 
@@ -198,7 +198,8 @@ Odin automatically manages its NPLL model lifecycle:
 2. **Stores Weights**: Saves learned parameters in ArangoDB collection (`NPLLWeights`)
 3. **Subsequent Runs**: Loads weights from the database and rebuilds the model
 
-**No separate ML pipeline, no .pt files, no DevOps overhead.** Just initialize `OdinEngine` and it handles everything.
+For the default setup, Odin manages training and weight persistence without
+requiring a separate model-serving pipeline.
 
 ---
 
@@ -285,7 +286,9 @@ returned paths and either acts on them or selects another seed for retrieval.
 
 ---
 
-## Use Cases
+## Illustrative Use Cases
+
+The entity IDs and outputs below are illustrative, not measured results.
 
 ### 1. Healthcare Fraud Detection
 **Scenario:** Find providers billing unusual procedure combinations
@@ -296,7 +299,7 @@ result = engine.retrieve(
     seeds=["provider/high_volume_clinic"],
     max_paths=100,
 )
-# Odin surfaces: "CPT_99285 + CPT_office_visit" pattern in 34 claims
+# Illustrative: Odin surfaces recurring procedure-combination motifs
 ```
 
 ### 2. Supply Chain Risk Analysis
@@ -307,7 +310,7 @@ result = engine.retrieve(
     seeds=["supplier/critical_vendor"],
     hop_limit=5,  # Deep supply chain exploration
 )
-# Discovers: Tier-3 supplier affects 47 downstream products
+# Illustrative: surfaces multi-hop dependencies on downstream products
 ```
 
 ### 3. Regulatory Compliance Checks
@@ -333,7 +336,7 @@ if score > 0.5:
 | [**Research Paper**](https://arxiv.org/abs/2603.03097) | COMPASS and the autonomous discovery problem (arXiv:2603.03097) |
 | [**Architecture**](whitepaper/ARCHITECTURE.md) | Complete technical design |
 | [**Agent Integration Guide**](whitepaper/AGENT_INTEGRATION_GUIDE.md) | How to integrate with AI agents |
-| [**Whitepaper**](whitepaper/ODIN_WHITEPAPER.md) | Research background and evaluation |
+| [**Technical Whitepaper**](whitepaper/ODIN_WHITEPAPER.md) | Extended engineering background; the arXiv paper is the canonical research reference |
 
 ---
 
