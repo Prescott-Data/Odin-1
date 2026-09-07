@@ -2077,7 +2077,7 @@
 </ul>
 <p>You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;odin&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"odin"</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="first-retrieval-is-very-slow">First retrieval is very slow<a class="headerlink" href="#first-retrieval-is-very-slow" title="Permanent link">&para;</a></h2>
@@ -2091,12 +2091,12 @@
 <li>The scope (<code>community_id</code> / <code>community_mode</code>) <strong>excludes</strong> the relevant subgraph.</li>
 </ul>
 <p>Verify a seed exists and inspect its neighborhood:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">&quot;entity/claim_123&quot;</span><span class="p">)[</span><span class="s2">&quot;degree&quot;</span><span class="p">]</span>   <span class="c1"># should be &gt; 0</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">"entity/claim_123"</span><span class="p">)[</span><span class="s2">"degree"</span><span class="p">]</span>   <span class="c1"># should be &gt; 0</span>
 </span></code></pre></div>
 <hr />
 <h2 id="triage-score-is-surprisingly-low">Triage score is surprisingly low<a class="headerlink" href="#triage-score-is-surprisingly-low" title="Permanent link">&para;</a></h2>
 <p>Inspect the components, since a guard may have fired:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">&quot;triage&quot;</span><span class="p">][</span><span class="s2">&quot;components&quot;</span><span class="p">]</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"triage"</span><span class="p">][</span><span class="s2">"components"</span><span class="p">]</span>
 </span></code></pre></div>
 <ul>
 <li><code>penalty == 15.0</code> → <strong>label coverage below 0.8</strong>; improve node/edge labeling.</li>
@@ -2126,7 +2126,7 @@
 <hr />
 <h2 id="high-latency">High latency<a class="headerlink" href="#high-latency" title="Permanent link">&para;</a></h2>
 <p>Inspect where time goes before changing parameters:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">&quot;trace&quot;</span><span class="p">][</span><span class="s2">&quot;timings_ms&quot;</span><span class="p">]</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"trace"</span><span class="p">][</span><span class="s2">"timings_ms"</span><span class="p">]</span>
 </span></code></pre></div>
 <p>Then, per <a href="../../guides/tuning/">Tuning Retrieval</a>: narrow <code>beam_width</code>, reduce <code>hop_limit</code>, or tighten seeds.</p>
 <hr />

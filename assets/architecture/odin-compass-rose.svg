@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" role="img" aria-label="COMPASS combines four signals: structural importance, semantic plausibility, temporal relevance, and community awareness">
+  <rect x="0" y="0" width="460" height="460" fill="#E8E6E0"/>
+
+  <circle cx="230" cy="230" r="118" fill="none" stroke="#667085" stroke-width="1"/>
+  <circle cx="230" cy="230" r="82" fill="none" stroke="#667085" stroke-width="1" stroke-dasharray="3 5"/>
+
+  <!-- Compass star -->
+  <path d="M230,138 L250,210 L322,230 L250,250 L230,322 L210,250 L138,230 L210,210 Z" fill="#0B1220"/>
+  <circle cx="230" cy="230" r="10" fill="#FFFFFF"/>
+
+  <!-- Labels -->
+  <text x="230" y="72" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3" fill="#0B1220">STRUCTURAL</text>
+  <text x="230" y="92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#667085">Personalized PageRank</text>
+
+  <text x="230" y="392" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3" fill="#0B1220">TEMPORAL</text>
+  <text x="230" y="412" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#667085">recency decay</text>
+
+  <text x="392" y="222" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3" fill="#0B1220">SEMANTIC</text>
+  <text x="392" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#667085">NPLL</text>
+
+  <text x="68" y="222" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3" fill="#0B1220">COMMUNITY</text>
+  <text x="68" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#667085">bridges &#183; affinity</text>
+</svg>

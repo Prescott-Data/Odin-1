@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title description">
+  <title id="title">Odin Engine architecture</title>
+  <desc id="description">An AI agent selects seed entities. Odin uses Personalized PageRank, beam search, NPLL relationship scoring, and evidence ranking to return ranked paths with provenance. The agent interprets the evidence and may choose another seed.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#0B1220"/>
+    </marker>
+    <style>
+      .title { font: 700 54px "Avenir Next", Helvetica, Arial, sans-serif; fill: #0B1220; }
+      .subtitle { font: 500 15px "SFMono-Regular", Menlo, monospace; letter-spacing: 5px; fill: #0B1220; }
+      .section { font: 700 16px "Avenir Next", Helvetica, Arial, sans-serif; letter-spacing: 2px; fill: #0B1220; }
+      .label { font: 600 18px "Avenir Next", Helvetica, Arial, sans-serif; fill: #0B1220; text-anchor: middle; }
+      .label-light { font: 600 18px "Avenir Next", Helvetica, Arial, sans-serif; fill: #FFFFFF; text-anchor: middle; }
+      .small { font: 500 14px "Avenir Next", Helvetica, Arial, sans-serif; fill: #0B1220; }
+      .footer { font: 500 11px "SFMono-Regular", Menlo, monospace; letter-spacing: 2px; fill: #667085; }
+      .line { fill: none; stroke: #0B1220; stroke-width: 2; marker-end: url(#arrow); }
+      .support { fill: none; stroke: #667085; stroke-width: 1.5; stroke-dasharray: 5 5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="#E8E6E0"/>
+
+  <text class="title" x="64" y="82">Odin Engine</text>
+  <text class="subtitle" x="66" y="116">EVIDENCE LAYER FOR AI AGENTS</text>
+
+  <rect x="64" y="150" width="1072" height="420" rx="18" fill="none" stroke="#0B1220" stroke-opacity="0.24" stroke-width="1.5"/>
+
+  <rect x="92" y="286" width="138" height="82" rx="4" fill="#0B1220"/>
+  <text class="label-light" x="161" y="320">
+    <tspan x="161">Agent selects</tspan>
+    <tspan x="161" dy="24">seed entities</tspan>
+  </text>
+
+  <g aria-label="Knowledge graph">
+    <path d="M105 420 C105 404 205 404 205 420 L205 490 C205 506 105 506 105 490 Z" fill="#F4F5F7" stroke="#667085" stroke-width="2"/>
+    <ellipse cx="155" cy="420" rx="50" ry="13" fill="#F4F5F7" stroke="#667085" stroke-width="2"/>
+    <text class="label" x="155" y="454">
+      <tspan x="155">Knowledge</tspan>
+      <tspan x="155" dy="23">graph</tspan>
+    </text>
+  </g>
+
+  <rect x="270" y="210" width="590" height="230" rx="8" fill="none" stroke="#0B1220" stroke-width="1.5"/>
+  <rect x="490" y="195" width="150" height="30" fill="#E8E6E0"/>
+  <text class="section" x="565" y="216" text-anchor="middle">ODIN</text>
+
+  <g aria-label="Personalized PageRank">
+    <rect x="300" y="277" width="120" height="96" rx="4" fill="#FFFFFF" stroke="#0B1220" stroke-width="2"/>
+    <text class="label" x="360" y="313">
+      <tspan x="360">PPR</tspan>
+      <tspan x="360" dy="24">rank nodes</tspan>
+    </text>
+  </g>
+
+  <g aria-label="Beam search">
+    <rect x="445" y="277" width="120" height="96" rx="4" fill="#FFFFFF" stroke="#0B1220" stroke-width="2"/>
+    <text class="label" x="505" y="313">
+      <tspan x="505">Beam search</tspan>
+      <tspan x="505" dy="24">navigate</tspan>
+    </text>
+  </g>
+
+  <g aria-label="NPLL scoring">
+    <rect x="590" y="277" width="120" height="96" rx="4" fill="#FFFFFF" stroke="#0B1220" stroke-width="2"/>
+    <text class="label" x="650" y="313">
+      <tspan x="650">NPLL</tspan>
+      <tspan x="650" dy="24">score edges</tspan>
+    </text>
+  </g>
+
+  <g aria-label="Evidence ranking">
+    <rect x="735" y="277" width="95" height="96" rx="4" fill="#FFFFFF" stroke="#0B1220" stroke-width="2"/>
+    <text class="label" x="782.5" y="313">
+      <tspan x="782.5">Rank</tspan>
+      <tspan x="782.5" dy="24">evidence</tspan>
+    </text>
+  </g>
+
+  <rect x="900" y="277" width="130" height="96" rx="4" fill="#F4F5F7" stroke="#667085" stroke-width="2"/>
+  <text class="label" x="965" y="313">
+    <tspan x="965">Ranked paths</tspan>
+    <tspan x="965" dy="24">+ provenance</tspan>
+  </text>
+
+  <rect x="1050" y="286" width="62" height="82" rx="4" fill="#0B1220"/>
+  <text class="label-light" x="1081" y="320">
+    <tspan x="1081">Agent</tspan>
+    <tspan x="1081" dy="24">uses</tspan>
+  </text>
+
+  <path class="line" d="M230 327 H300"/>
+  <path class="line" d="M420 325 H445"/>
+  <path class="line" d="M565 325 H590"/>
+  <path class="line" d="M710 325 H735"/>
+  <path class="line" d="M830 325 H900"/>
+  <path class="line" d="M1030 325 H1050"/>
+
+  <path class="line" d="M205 442 C245 442 258 390 318 367"/>
+  <path class="support" d="M205 470 C450 520 760 520 920 373"/>
+  <text class="small" x="560" y="508" text-anchor="middle">source records preserve provenance</text>
+
+  <path class="support" d="M1081 368 C1081 535 220 535 161 368"/>
+  <rect x="570" y="520" width="78" height="22" fill="#E8E6E0"/>
+  <text class="small" x="609" y="536" text-anchor="middle">next seed</text>
+
+  <line x1="64" y1="606" x2="1136" y2="606" stroke="#0B1220" stroke-opacity="0.28"/>
+  <text x="64" y="638" font-family="Avenir Next, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#0B1220">ODIN</text>
+  <text class="footer" x="1136" y="638" text-anchor="end">© 2026 PRESCOTT DATA</text>
+</svg>

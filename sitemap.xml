@@ -2,142 +2,142 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://odin.developers.prescottdata.io/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/changelog/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/getting-started/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/adapters/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/aggregation/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/architecture/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/beam-search/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/caching/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/data-model/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/npll/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/ppr/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/concepts/scoring/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/examples/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/examples/compliance/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/examples/healthcare-fraud/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/examples/supply-chain/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/agent-integration/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/ai-editors/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/anchors/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/arangodb/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/edge-scoring/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/first-retrieval/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/npll-lifecycle/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/production/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/schema-introspection/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/guides/tuning/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/infrastructure/enterprise/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/configuration/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/engine/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/result-schema/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/schema/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
     <url>
          <loc>https://odin.developers.prescottdata.io/reference/troubleshooting/</loc>
-         <lastmod>2026-08-10</lastmod>
+         <lastmod>2026-09-07</lastmod>
     </url>
 </urlset>

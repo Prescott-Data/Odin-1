@@ -1,0 +1,2610 @@
+{
+  "call_id": "52e74681-8344-438e-b9ee-4fde3173a24f",
+  "captured_at": "2026-08-24T13:38:08.344626+00:00",
+  "effective": {
+    "beam_width": 64,
+    "early_stop_reason": "max_paths",
+    "hop_limit": 4,
+    "max_paths": 24
+  },
+  "navigation": {
+    "paths": [
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_004",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "repaired_at",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_004",
+            "source_title": "Operational record record_004",
+            "target": "ExtractedEntities/garage_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          }
+        ],
+        "rank": 1,
+        "score": 0.07129563766009675,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.13780214368371324,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          }
+        ],
+        "rank": 2,
+        "score": 0.07060878877801019,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.13647458352092276,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_002",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "covers_vehicle",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_002",
+            "source_title": "Operational record record_002",
+            "target": "ExtractedEntities/vehicle_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          }
+        ],
+        "rank": 3,
+        "score": 0.06896963142385733,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.1333063756943223,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_003",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "under_policy",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_003",
+            "source_title": "Operational record record_003",
+            "target": "ExtractedEntities/policy_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/policy_00",
+            "ppr": 0.04454891769670699,
+            "ppr_rank": 5
+          }
+        ],
+        "rank": 4,
+        "score": 0.06696524001019405,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.1294322335637636,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_006",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.96,
+            "relation": "filed_from",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_006",
+            "source_title": "Operational record record_006",
+            "target": "ExtractedEntities/device_02"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/device_02",
+            "ppr": 0.03575531926128811,
+            "ppr_rank": 6
+          }
+        ],
+        "rank": 5,
+        "score": 0.06293731450419476,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.12164694981370797,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_007",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "settled_to",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_007",
+            "source_title": "Operational record record_007",
+            "target": "ExtractedEntities/account_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/account_00",
+            "ppr": 0.033001193661306584,
+            "ppr_rank": 8
+          }
+        ],
+        "rank": 6,
+        "score": 0.06160398360334288,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.11906985165725285,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_005",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "assessed_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_005",
+            "source_title": "Operational record record_005",
+            "target": "ExtractedEntities/assessor_02"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/assessor_02",
+            "ppr": 0.031214250389093805,
+            "ppr_rank": 9
+          }
+        ],
+        "rank": 7,
+        "score": 0.060716921441367415,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.5173768401145935,
+          "structural_ppr": 0.11735531383260074,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_002",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "covers_vehicle",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_002",
+            "source_title": "Operational record record_002",
+            "target": "ExtractedEntities/vehicle_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_125",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "serviced_at",
+            "source": "ExtractedEntities/vehicle_00",
+            "source_document": "Documents/record_125",
+            "source_title": "Operational record record_125",
+            "target": "ExtractedEntities/garage_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          }
+        ],
+        "rank": 8,
+        "score": 0.027650068319464937,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.10329569942886381,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_087",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "owns_vehicle",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_087",
+            "source_title": "Operational record record_087",
+            "target": "ExtractedEntities/vehicle_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          }
+        ],
+        "rank": 9,
+        "score": 0.02744484263222012,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.10252901304459187,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_086",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "holds_policy",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_086",
+            "source_title": "Operational record record_086",
+            "target": "ExtractedEntities/policy_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/policy_00",
+            "ppr": 0.04454891769670699,
+            "ppr_rank": 5
+          }
+        ],
+        "rank": 10,
+        "score": 0.02683745847731369,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.10025993470532059,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_002",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "covers_vehicle",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_002",
+            "source_title": "Operational record record_002",
+            "target": "ExtractedEntities/vehicle_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_126",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "registered_at",
+            "source": "ExtractedEntities/vehicle_00",
+            "source_document": "Documents/record_126",
+            "source_title": "Operational record record_126",
+            "target": "ExtractedEntities/address_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          },
+          {
+            "id": "ExtractedEntities/address_01",
+            "ppr": 0.034470947194233346,
+            "ppr_rank": 7
+          }
+        ],
+        "rank": 11,
+        "score": 0.024949090709890296,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.09320533118459062,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_004",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "repaired_at",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_004",
+            "source_title": "Operational record record_004",
+            "target": "ExtractedEntities/garage_01"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_159",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "located_at",
+            "source": "ExtractedEntities/garage_01",
+            "source_document": "Documents/record_159",
+            "source_title": "Operational record record_159",
+            "target": "ExtractedEntities/address_03"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          },
+          {
+            "id": "ExtractedEntities/address_03",
+            "ppr": 0.02999594468477656,
+            "ppr_rank": 11
+          }
+        ],
+        "rank": 12,
+        "score": 0.024934990408455763,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.09315265498567459,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_004",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "repaired_at",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_004",
+            "source_title": "Operational record record_004",
+            "target": "ExtractedEntities/garage_01"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_160",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "paid_to",
+            "source": "ExtractedEntities/garage_01",
+            "source_document": "Documents/record_160",
+            "source_title": "Operational record record_160",
+            "target": "ExtractedEntities/account_04"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          },
+          {
+            "id": "ExtractedEntities/account_04",
+            "ppr": 0.025447600980107614,
+            "ppr_rank": 14
+          }
+        ],
+        "rank": 13,
+        "score": 0.024195989109224346,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.09039187858537868,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_006",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.96,
+            "relation": "filed_from",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_006",
+            "source_title": "Operational record record_006",
+            "target": "ExtractedEntities/device_02"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_183",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.96,
+            "relation": "registered_to",
+            "source": "ExtractedEntities/device_02",
+            "source_document": "Documents/record_183",
+            "source_title": "Operational record record_183",
+            "target": "ExtractedEntities/person_07"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/device_02",
+            "ppr": 0.03575531926128811,
+            "ppr_rank": 6
+          },
+          {
+            "id": "ExtractedEntities/person_07",
+            "ppr": 0.030655034360350858,
+            "ppr_rank": 10
+          }
+        ],
+        "rank": 14,
+        "score": 0.022648837647178236,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08461199802421793,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_085",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "lives_at",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_085",
+            "source_title": "Operational record record_085",
+            "target": "ExtractedEntities/address_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/address_00",
+            "ppr": 0.015502403090311015,
+            "ppr_rank": 19
+          }
+        ],
+        "rank": 15,
+        "score": 0.022169365904031388,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08282077752911832,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_003",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "under_policy",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_003",
+            "source_title": "Operational record record_003",
+            "target": "ExtractedEntities/policy_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_141",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "insures_vehicle",
+            "source": "ExtractedEntities/policy_00",
+            "source_document": "Documents/record_141",
+            "source_title": "Operational record record_141",
+            "target": "ExtractedEntities/vehicle_02"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/policy_00",
+            "ppr": 0.04454891769670699,
+            "ppr_rank": 5
+          },
+          {
+            "id": "ExtractedEntities/vehicle_02",
+            "ppr": 0.02054077527369646,
+            "ppr_rank": 16
+          }
+        ],
+        "rank": 16,
+        "score": 0.02214350981708739,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08272418382256701,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_003",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "under_policy",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_003",
+            "source_title": "Operational record record_003",
+            "target": "ExtractedEntities/policy_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_142",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "billed_to",
+            "source": "ExtractedEntities/policy_00",
+            "source_document": "Documents/record_142",
+            "source_title": "Operational record record_142",
+            "target": "ExtractedEntities/account_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/policy_00",
+            "ppr": 0.04454891769670699,
+            "ppr_rank": 5
+          },
+          {
+            "id": "ExtractedEntities/account_01",
+            "ppr": 0.020238037705147916,
+            "ppr_rank": 17
+          }
+        ],
+        "rank": 17,
+        "score": 0.02208913358444284,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08252104396343794,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_007",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "settled_to",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_007",
+            "source_title": "Operational record record_007",
+            "target": "ExtractedEntities/account_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_186",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "controlled_by",
+            "source": "ExtractedEntities/account_00",
+            "source_document": "Documents/record_186",
+            "source_title": "Operational record record_186",
+            "target": "ExtractedEntities/person_02"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/account_00",
+            "ppr": 0.033001193661306584,
+            "ppr_rank": 8
+          },
+          {
+            "id": "ExtractedEntities/person_02",
+            "ppr": 0.028298632986868848,
+            "ppr_rank": 13
+          }
+        ],
+        "rank": 18,
+        "score": 0.02191302190935144,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08186312231037104,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_005",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "assessed_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_005",
+            "source_title": "Operational record record_005",
+            "target": "ExtractedEntities/assessor_02"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_173",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "works_from",
+            "source": "ExtractedEntities/assessor_02",
+            "source_document": "Documents/record_173",
+            "source_title": "Operational record record_173",
+            "target": "ExtractedEntities/address_05"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/assessor_02",
+            "ppr": 0.031214250389093805,
+            "ppr_rank": 9
+          },
+          {
+            "id": "ExtractedEntities/address_05",
+            "ppr": 0.02953334923239421,
+            "ppr_rank": 12
+          }
+        ],
+        "rank": 19,
+        "score": 0.021843839702896193,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08160466998680857,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_088",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.95,
+            "relation": "uses_device",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_088",
+            "source_title": "Operational record record_088",
+            "target": "ExtractedEntities/device_00"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/device_00",
+            "ppr": 0.012307750640980938,
+            "ppr_rank": 22
+          }
+        ],
+        "rank": 20,
+        "score": 0.021478023643482724,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.08023804675525496,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_005",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "assessed_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_005",
+            "source_title": "Operational record record_005",
+            "target": "ExtractedEntities/assessor_02"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_174",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.95,
+            "relation": "uses_device",
+            "source": "ExtractedEntities/assessor_02",
+            "source_document": "Documents/record_174",
+            "source_title": "Operational record record_174",
+            "target": "ExtractedEntities/device_03"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/assessor_02",
+            "ppr": 0.031214250389093805,
+            "ppr_rank": 9
+          },
+          {
+            "id": "ExtractedEntities/device_03",
+            "ppr": 0.014369108418627978,
+            "ppr_rank": 20
+          }
+        ],
+        "rank": 21,
+        "score": 0.019274308857330686,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.26767879468696165,
+          "structural_ppr": 0.0720053632932378,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_087",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "owns_vehicle",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_087",
+            "source_title": "Operational record record_087",
+            "target": "ExtractedEntities/vehicle_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_125",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "serviced_at",
+            "source": "ExtractedEntities/vehicle_00",
+            "source_document": "Documents/record_125",
+            "source_title": "Operational record record_125",
+            "target": "ExtractedEntities/garage_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          }
+        ],
+        "rank": 22,
+        "score": 0.012351649896140552,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.13849080896082325,
+          "structural_ppr": 0.08918750629606495,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_001",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "submitted_by",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_001",
+            "source_title": "Operational record record_001",
+            "target": "ExtractedEntities/person_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_087",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "owns_vehicle",
+            "source": "ExtractedEntities/person_00",
+            "source_document": "Documents/record_087",
+            "source_title": "Operational record record_087",
+            "target": "ExtractedEntities/vehicle_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_126",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.99,
+            "relation": "registered_at",
+            "source": "ExtractedEntities/vehicle_00",
+            "source_document": "Documents/record_126",
+            "source_title": "Operational record record_126",
+            "target": "ExtractedEntities/address_01"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/person_00",
+            "ppr": 0.0530757024512563,
+            "ppr_rank": 3
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          },
+          {
+            "id": "ExtractedEntities/address_01",
+            "ppr": 0.034470947194233346,
+            "ppr_rank": 7
+          }
+        ],
+        "rank": 23,
+        "score": 0.01137295642200694,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.13849080896082325,
+          "structural_ppr": 0.08212065845628905,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      },
+      {
+        "edges": [
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_002",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.98,
+            "relation": "covers_vehicle",
+            "source": "ExtractedEntities/claim_00",
+            "source_document": "Documents/record_002",
+            "source_title": "Operational record record_002",
+            "target": "ExtractedEntities/vehicle_00"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_125",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 0.97,
+            "relation": "serviced_at",
+            "source": "ExtractedEntities/vehicle_00",
+            "source_document": "Documents/record_125",
+            "source_title": "Operational record record_125",
+            "target": "ExtractedEntities/garage_01"
+          },
+          {
+            "created_at": "2026-08-01T12:00:00Z",
+            "graph_edge_id": "ExtractedRelationships/relationship_159",
+            "npll": 0.5173768401145935,
+            "raw_confidence": 1,
+            "relation": "located_at",
+            "source": "ExtractedEntities/garage_01",
+            "source_document": "Documents/record_159",
+            "source_title": "Operational record record_159",
+            "target": "ExtractedEntities/address_03"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "ExtractedEntities/claim_00",
+            "ppr": 0.25853938760236594,
+            "ppr_rank": 1
+          },
+          {
+            "id": "ExtractedEntities/vehicle_00",
+            "ppr": 0.049175380779623065,
+            "ppr_rank": 4
+          },
+          {
+            "id": "ExtractedEntities/garage_01",
+            "ppr": 0.05474034024821812,
+            "ppr_rank": 2
+          },
+          {
+            "id": "ExtractedEntities/address_03",
+            "ppr": 0.02999594468477656,
+            "ppr_rank": 11
+          }
+        ],
+        "rank": 24,
+        "score": 0.011197325420936481,
+        "signals": {
+          "community_bridge": {
+            "factor": 1.0,
+            "status": "not_configured"
+          },
+          "semantic_npll": 0.13849080896082325,
+          "structural_ppr": 0.08085248042780961,
+          "temporal": {
+            "factor": 1.0,
+            "status": "inactive"
+          }
+        }
+      }
+    ],
+    "retained_edge_ids": [
+      "ExtractedRelationships/relationship_001",
+      "ExtractedRelationships/relationship_002",
+      "ExtractedRelationships/relationship_003",
+      "ExtractedRelationships/relationship_004",
+      "ExtractedRelationships/relationship_005",
+      "ExtractedRelationships/relationship_006",
+      "ExtractedRelationships/relationship_007",
+      "ExtractedRelationships/relationship_085",
+      "ExtractedRelationships/relationship_086",
+      "ExtractedRelationships/relationship_087",
+      "ExtractedRelationships/relationship_088",
+      "ExtractedRelationships/relationship_125",
+      "ExtractedRelationships/relationship_126",
+      "ExtractedRelationships/relationship_141",
+      "ExtractedRelationships/relationship_142",
+      "ExtractedRelationships/relationship_159",
+      "ExtractedRelationships/relationship_160",
+      "ExtractedRelationships/relationship_173",
+      "ExtractedRelationships/relationship_174",
+      "ExtractedRelationships/relationship_183",
+      "ExtractedRelationships/relationship_186"
+    ],
+    "retained_node_ids": [
+      "ExtractedEntities/account_00",
+      "ExtractedEntities/account_01",
+      "ExtractedEntities/account_04",
+      "ExtractedEntities/address_00",
+      "ExtractedEntities/address_01",
+      "ExtractedEntities/address_03",
+      "ExtractedEntities/address_05",
+      "ExtractedEntities/assessor_02",
+      "ExtractedEntities/claim_00",
+      "ExtractedEntities/device_00",
+      "ExtractedEntities/device_02",
+      "ExtractedEntities/device_03",
+      "ExtractedEntities/garage_01",
+      "ExtractedEntities/person_00",
+      "ExtractedEntities/person_02",
+      "ExtractedEntities/person_07",
+      "ExtractedEntities/policy_00",
+      "ExtractedEntities/vehicle_00",
+      "ExtractedEntities/vehicle_02"
+    ],
+    "summary": {
+      "beam_ms": 0.16133299504872411,
+      "edges_examined": 41,
+      "graph_edges": 190,
+      "graph_nodes": 66,
+      "node_expansions": 22,
+      "paths_retained": 24,
+      "ppr_ms": 0.03766699228435755,
+      "retained_edges": 21,
+      "retained_nodes": 19,
+      "scoring_ms": 0.3321249969303608,
+      "total_ms": 0
+    }
+  },
+  "observations": {
+    "deepest_path": 3,
+    "depth_counts": {
+      "1": 7,
+      "2": 14,
+      "3": 3
+    },
+    "path_depths": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3
+    ],
+    "returned_paths": 24
+  },
+  "requested": {
+    "beam_width": 32,
+    "hop_limit": 10,
+    "max_paths": 12,
+    "seeds": [
+      "ExtractedEntities/claim_00"
+    ]
+  },
+  "result": {
+    "aggregates": {
+      "dominant_relation": {
+        "relation": "submitted_by",
+        "share": 0.1591
+      },
+      "motifs": [
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 3,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->owns_vehicle->serviced_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 3,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->owns_vehicle->registered_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 3,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "covers_vehicle->serviced_at->located_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "covers_vehicle->serviced_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->owns_vehicle"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->holds_policy"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "covers_vehicle->registered_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "repaired_at->located_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "repaired_at->paid_to"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "filed_from->registered_to"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->lives_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "under_policy->insures_vehicle"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "under_policy->billed_to"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "settled_to->controlled_by"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "assessed_by->works_from"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by->uses_device"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 2,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "assessed_by->uses_device"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "repaired_at"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "submitted_by"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "covers_vehicle"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "under_policy"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "filed_from"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "settled_to"
+        },
+        {
+          "avg_edge_conf": 1.0,
+          "edge_count": 1,
+          "median_recency_days": null,
+          "path_count": 1,
+          "pattern": "assessed_by"
+        }
+      ],
+      "relation_share": {
+        "assessed_by": {
+          "count": 3,
+          "share": 0.0682
+        },
+        "billed_to": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "controlled_by": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "covers_vehicle": {
+          "count": 4,
+          "share": 0.0909
+        },
+        "filed_from": {
+          "count": 2,
+          "share": 0.0455
+        },
+        "holds_policy": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "insures_vehicle": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "lives_at": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "located_at": {
+          "count": 2,
+          "share": 0.0455
+        },
+        "owns_vehicle": {
+          "count": 3,
+          "share": 0.0682
+        },
+        "paid_to": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "registered_at": {
+          "count": 2,
+          "share": 0.0455
+        },
+        "registered_to": {
+          "count": 1,
+          "share": 0.0227
+        },
+        "repaired_at": {
+          "count": 3,
+          "share": 0.0682
+        },
+        "serviced_at": {
+          "count": 3,
+          "share": 0.0682
+        },
+        "settled_to": {
+          "count": 2,
+          "share": 0.0455
+        },
+        "submitted_by": {
+          "count": 7,
+          "share": 0.1591
+        },
+        "under_policy": {
+          "count": 3,
+          "share": 0.0682
+        },
+        "uses_device": {
+          "count": 2,
+          "share": 0.0455
+        },
+        "works_from": {
+          "count": 1,
+          "share": 0.0227
+        }
+      },
+      "snippet_anchors": [],
+      "summary": {
+        "has_baseline": false,
+        "label_coverage": 0.0,
+        "low_support": false,
+        "motif_density": 0.1364,
+        "provenance": 0.0,
+        "recency": 0.0,
+        "total_edges": 44,
+        "total_paths": 24,
+        "unique_motifs": 24,
+        "unique_relations": 20
+      }
+    },
+    "community_relevance": 0.8214100766573547,
+    "evidence_strength": 0.29740288554444394,
+    "ics": {
+      "drivers": {
+        "community_relevance_f": 0.821,
+        "edge_conf_strength": 1.0,
+        "evidence_strength_f": 0.297,
+        "insight_score_f": 0.463,
+        "path_strength": 1.0,
+        "ppr_strength": 0.0
+      },
+      "label": "Medium",
+      "quality_gate": {
+        "has_strong_paths": true,
+        "meets_evidence_floor": false,
+        "recommendation": "proceed"
+      },
+      "value": 0.46
+    },
+    "insight_score": 0.462983458103693,
+    "paths": [
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "repaired_at",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.07129563766009675
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.07060878877801019
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "covers_vehicle",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.06896963142385733
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "under_policy",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/policy_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.06696524001019405
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "filed_from",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/device_02",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.06293731450419476
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "settled_to",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/account_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.06160398360334288
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "assessed_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/assessor_02",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.060716921441367415
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "covers_vehicle",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "serviced_at",
+            "u": "ExtractedEntities/vehicle_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.027650068319464937
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "owns_vehicle",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.02744484263222012
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "holds_policy",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/policy_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.02683745847731369
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "covers_vehicle",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "registered_at",
+            "u": "ExtractedEntities/vehicle_00",
+            "u_label": null,
+            "v": "ExtractedEntities/address_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.024949090709890296
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "repaired_at",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "located_at",
+            "u": "ExtractedEntities/garage_01",
+            "u_label": null,
+            "v": "ExtractedEntities/address_03",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.024934990408455763
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "repaired_at",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "paid_to",
+            "u": "ExtractedEntities/garage_01",
+            "u_label": null,
+            "v": "ExtractedEntities/account_04",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.024195989109224346
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "filed_from",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/device_02",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "registered_to",
+            "u": "ExtractedEntities/device_02",
+            "u_label": null,
+            "v": "ExtractedEntities/person_07",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.022648837647178236
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "lives_at",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/address_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.022169365904031388
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "under_policy",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/policy_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "insures_vehicle",
+            "u": "ExtractedEntities/policy_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_02",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.02214350981708739
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "under_policy",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/policy_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "billed_to",
+            "u": "ExtractedEntities/policy_00",
+            "u_label": null,
+            "v": "ExtractedEntities/account_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.02208913358444284
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "settled_to",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/account_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "controlled_by",
+            "u": "ExtractedEntities/account_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_02",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.02191302190935144
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "assessed_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/assessor_02",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "works_from",
+            "u": "ExtractedEntities/assessor_02",
+            "u_label": null,
+            "v": "ExtractedEntities/address_05",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.021843839702896193
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "uses_device",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/device_00",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.021478023643482724
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "assessed_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/assessor_02",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "uses_device",
+            "u": "ExtractedEntities/assessor_02",
+            "u_label": null,
+            "v": "ExtractedEntities/device_03",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.019274308857330686
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "owns_vehicle",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "serviced_at",
+            "u": "ExtractedEntities/vehicle_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.012351649896140552
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "submitted_by",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/person_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "owns_vehicle",
+            "u": "ExtractedEntities/person_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "registered_at",
+            "u": "ExtractedEntities/vehicle_00",
+            "u_label": null,
+            "v": "ExtractedEntities/address_01",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.01137295642200694
+      },
+      {
+        "edges": [
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "covers_vehicle",
+            "u": "ExtractedEntities/claim_00",
+            "u_label": null,
+            "v": "ExtractedEntities/vehicle_00",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "serviced_at",
+            "u": "ExtractedEntities/vehicle_00",
+            "u_label": null,
+            "v": "ExtractedEntities/garage_01",
+            "v_label": null
+          },
+          {
+            "_id": null,
+            "confidence": 1.0,
+            "created_at": null,
+            "provenance": null,
+            "relation": "located_at",
+            "u": "ExtractedEntities/garage_01",
+            "u_label": null,
+            "v": "ExtractedEntities/address_03",
+            "v_label": null
+          }
+        ],
+        "id": null,
+        "score": 0.011197325420936481
+      }
+    ],
+    "topk_ppr": [
+      [
+        "ExtractedEntities/claim_00",
+        0.25853938760236594
+      ],
+      [
+        "ExtractedEntities/garage_01",
+        0.05474034024821812
+      ],
+      [
+        "ExtractedEntities/person_00",
+        0.0530757024512563
+      ],
+      [
+        "ExtractedEntities/vehicle_00",
+        0.049175380779623065
+      ],
+      [
+        "ExtractedEntities/policy_00",
+        0.04454891769670699
+      ],
+      [
+        "ExtractedEntities/device_02",
+        0.03575531926128811
+      ],
+      [
+        "ExtractedEntities/address_01",
+        0.034470947194233346
+      ],
+      [
+        "ExtractedEntities/account_00",
+        0.033001193661306584
+      ],
+      [
+        "ExtractedEntities/assessor_02",
+        0.031214250389093805
+      ],
+      [
+        "ExtractedEntities/person_07",
+        0.030655034360350858
+      ],
+      [
+        "ExtractedEntities/address_03",
+        0.02999594468477656
+      ],
+      [
+        "ExtractedEntities/address_05",
+        0.02953334923239421
+      ],
+      [
+        "ExtractedEntities/person_02",
+        0.028298632986868848
+      ],
+      [
+        "ExtractedEntities/account_04",
+        0.025447600980107614
+      ],
+      [
+        "ExtractedEntities/person_08",
+        0.02114554151585657
+      ],
+      [
+        "ExtractedEntities/vehicle_02",
+        0.02054077527369646
+      ],
+      [
+        "ExtractedEntities/account_01",
+        0.020238037705147916
+      ],
+      [
+        "ExtractedEntities/person_06",
+        0.01761502934063948
+      ],
+      [
+        "ExtractedEntities/address_00",
+        0.015502403090311015
+      ],
+      [
+        "ExtractedEntities/device_03",
+        0.014369108418627978
+      ],
+      [
+        "ExtractedEntities/device_04",
+        0.01329372365819252
+      ],
+      [
+        "ExtractedEntities/device_00",
+        0.012307750640980938
+      ],
+      [
+        "ExtractedEntities/address_02",
+        0.011033273172799962
+      ],
+      [
+        "ExtractedEntities/person_03",
+        0.010527483642188593
+      ],
+      [
+        "ExtractedEntities/person_01",
+        0.010102961920596676
+      ],
+      [
+        "ExtractedEntities/vehicle_05",
+        0.009454254903925239
+      ],
+      [
+        "ExtractedEntities/garage_03",
+        0.008918147522380376
+      ],
+      [
+        "ExtractedEntities/account_02",
+        0.008704129022283857
+      ],
+      [
+        "ExtractedEntities/person_04",
+        0.008419582352889858
+      ],
+      [
+        "ExtractedEntities/vehicle_06",
+        0.0072543643337574905
+      ],
+      [
+        "ExtractedEntities/policy_07",
+        0.00635943331735065
+      ],
+      [
+        "ExtractedEntities/policy_02",
+        0.006086532333939422
+      ],
+      [
+        "ExtractedEntities/device_01",
+        0.005249966313675898
+      ],
+      [
+        "ExtractedEntities/account_03",
+        0.005064649175974701
+      ],
+      [
+        "ExtractedEntities/garage_00",
+        0.003981778679508009
+      ],
+      [
+        "ExtractedEntities/policy_06",
+        0.003797112603978142
+      ],
+      [
+        "ExtractedEntities/vehicle_04",
+        0.003741249243629125
+      ],
+      [
+        "ExtractedEntities/vehicle_01",
+        0.002898571444045088
+      ],
+      [
+        "ExtractedEntities/policy_03",
+        0.0027398964560181307
+      ],
+      [
+        "ExtractedEntities/address_04",
+        0.002712163939617575
+      ],
+      [
+        "ExtractedEntities/policy_01",
+        0.0021646499188197467
+      ],
+      [
+        "ExtractedEntities/policy_04",
+        0.00185768743936032
+      ],
+      [
+        "ExtractedEntities/vehicle_03",
+        0.0015456039819241234
+      ],
+      [
+        "ExtractedEntities/garage_05",
+        0.0013578887022065193
+      ],
+      [
+        "ExtractedEntities/vehicle_07",
+        0.0011005312804262823
+      ],
+      [
+        "ExtractedEntities/garage_02",
+        0.0009822317831303243
+      ],
+      [
+        "ExtractedEntities/garage_04",
+        0.0004814853435306591
+      ]
+    ],
+    "trace": {
+      "beam": {
+        "beam_width": 64,
+        "early_stop_reason": "max_paths",
+        "hop_limit": 4
+      },
+      "linker_cfg": null,
+      "params": {
+        "alpha": 0.15,
+        "beam_width": 64,
+        "community_id": "global",
+        "eps": 0.0001,
+        "hop_limit": 4,
+        "insight_cfg": {
+          "alpha": 0.5,
+          "beta": 0.2,
+          "delta": 0.1,
+          "gamma": 0.2
+        },
+        "max_paths": 24,
+        "num_walks": 5000,
+        "path_cfg": {
+          "affinity_boost": 1.5,
+          "bridge_boost": 1.5,
+          "power_mean_rho": 0.5,
+          "recency_clamp": [
+            0.5,
+            1.0
+          ],
+          "recency_tau_days": 30.0,
+          "relation_type_prior": null,
+          "use_bridge_scoring": true
+        },
+        "topn": 200,
+        "walk_len": 40
+      },
+      "ppr": {
+        "cache_hit": true,
+        "engine": "cache"
+      },
+      "timings_ms": {
+        "beam_done": 0.16133299504872411,
+        "ppr_done": 0.03766699228435755,
+        "scoring_done": 0.3321249969303608,
+        "total": 0
+      }
+    },
+    "triage": {
+      "components": {
+        "controllability": 1.0,
+        "label_coverage": 0.0,
+        "low_support": false,
+        "motif_density": 0.1364,
+        "penalty": 15.0,
+        "provenance": 0.0,
+        "recency": 0.0,
+        "surprise": 0.0
+      },
+      "dominant_relation": {
+        "relation": "submitted_by",
+        "share": 0.1591
+      },
+      "score": 0
+    },
+    "used_budget": {
+      "beam": {
+        "edges": 41,
+        "ms": 0,
+        "nodes": 22,
+        "paths": 24
+      },
+      "edges": 0,
+      "ms": 0,
+      "nodes": 0,
+      "paths": 0
+    }
+  },
+  "runtime": {
+    "odin_version": "0.3.0"
+  }
+}
