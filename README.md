@@ -1,24 +1,117 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Prescott-Data/Odin-1/main/brand-assets/svg/combo-brand.svg" alt="Odin" width="260" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand-assets/svg/combo-white.svg">
+    <img src="brand-assets/svg/combo-trimmed.svg" alt="Odin" height="56">
+  </picture>
 </p>
 
-<h1 align="center">Graph intelligence for AI agents</h1>
+<p align="center">
+  <strong>Graph intelligence that tells AI agents where to look next.</strong>
+</p>
+
+<p align="center">
+  Multi-signal graph exploration for autonomous AI agents.
+</p>
+
+<p align="center">
+  <a href="https://arxiv.org/abs/2603.03097">Paper</a> •
+  <a href="https://odin.developers.prescottdata.io">Documentation</a> •
+  <a href="https://pypi.org/project/odin-engine/">PyPI</a> •
+  <a href="#quick-start">Quick Start</a>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/odin-engine/"><img src="https://img.shields.io/pypi/v/odin-engine?style=flat-square&color=1758F5" alt="PyPI" /></a>
+  <a href="https://pypi.org/project/odin-engine/"><img src="https://img.shields.io/pypi/pyversions/odin-engine?style=flat-square" alt="Python" /></a>
+  <a href="https://arxiv.org/abs/2603.03097"><img src="https://img.shields.io/badge/arXiv-2603.03097-b31b1b?style=flat-square" alt="arXiv" /></a>
+  <a href="https://github.com/Prescott-Data/Odin-1/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Prescott-Data/Odin-1/ci.yml?style=flat-square" alt="CI" /></a>
+  <a href="https://github.com/Prescott-Data/Odin-1/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Prescott-Data/Odin-1?style=flat-square" alt="License" /></a>
+  <a href="https://odin.developers.prescottdata.io/"><img src="https://img.shields.io/badge/docs-odin-blue?style=flat-square" alt="Docs" /></a>
+</p>
+
+---
+
+## What is Odin?
 
 Odin is an open-source Python library for navigating connected evidence in
 knowledge graphs. Given seed entities, it uses Personalized PageRank, bounded
 beam search, learned edge-plausibility scoring, and pattern aggregation to
-return ranked, inspectable paths.
+return ranked, inspectable paths. Odin navigates and ranks graph evidence; the
+consuming agent interprets that evidence, decides what is missing, and chooses
+the next seed or action.
 
-Odin navigates and ranks graph evidence. The consuming agent interprets that
-evidence, decides what is missing, and chooses the next seed or action.
-
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![CI](https://github.com/Prescott-Data/Odin-1/actions/workflows/ci.yml/badge.svg)](https://github.com/Prescott-Data/Odin-1/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![PyPI](https://img.shields.io/badge/pypi-odin--engine-blue)](https://pypi.org/project/odin-engine/)
-[![Docs](https://img.shields.io/badge/docs-odin.developers.prescottdata.io-1758F5)](https://odin.developers.prescottdata.io)
-
+> **Research:** Odin is described in [*Odin: Multi-Signal Graph Intelligence for Autonomous Discovery in Knowledge Graphs*](https://arxiv.org/abs/2603.03097) by Muyukani Kizito and Elizabeth Nyambere, arXiv:2603.03097 (2026).
+>
 > **Odin-1** is the open-source edition of the Odin graph-intelligence engine, published by Prescott Data under the MIT license so the community can build on it.
+
+---
+
+## Why Odin?
+
+Knowledge graphs are powerful when you already know what you are looking for.
+You can write an AQL, Cypher, or SPARQL query for a known relationship. But
+autonomous agents face a different question:
+
+> Given these entities, where should I investigate next?
+
+Answering it by traversal alone fails in three ways:
+
+1. **Exponential Path Growth** - A 3-hop exploration from a single node in a densely connected graph can generate 100K+ paths, most of which are noise
+2. **Semantic Invalidity** - Naive traversal follows edges that violate domain logic (e.g., `Patient → diagnosed_by → Medication`)
+3. **No Prioritization** - Without ranking, agents waste turns analyzing low-value paths while missing critical patterns
+
+**Traditional approaches fail:**
+- **BFS/DFS**: Exponential explosion, no signal filtering
+- **Fixed Cypher Queries**: Only finds patterns you already know exist
+- **Random Walk**: No convergence guarantees, wasted compute
+- **LLM Prompting Alone**: Hallucinates relationships, can't verify graph structure
+
+Odin treats graph exploration as a ranking problem:
+
+```text
+     Agent chooses seeds
+             |
+             v
+  +------------------------+
+  |          Odin          |
+  |                        |
+  |   Structural signal    |
+  |   Semantic signal      |
+  |   Temporal signal      |
+  |   Community signal     |
+  |            |           |
+  |         COMPASS        |
+  +------------+-----------+
+               |
+               v
+     Ranked evidence paths
+               |
+               v
+  Agent reasons over evidence
+```
+
+The engine ranks connected evidence. The agent decides what that evidence means.
+
+---
+
+## How Odin Works — COMPASS
+
+At the center of Odin is **COMPASS (Composite Oriented Multi-signal Path
+Assessment)**, the scoring framework introduced in the
+[Odin research paper](https://arxiv.org/abs/2603.03097). Beam search keeps
+exploration bounded; COMPASS decides which candidate paths survive each hop.
+
+| Signal | Role |
+|--------|------|
+| **Structural importance** | Personalized PageRank identifies graph regions relevant to the selected seeds |
+| **Semantic plausibility** | Neural Probabilistic Logic Learning (NPLL), used as a discriminative filter, scores whether observed relationships are plausible |
+| **Temporal relevance** | Configurable recency decay prefers evidence relevant to the investigation window |
+| **Community awareness** | Bridge entities and inter-community affinity scores keep exploration from getting trapped in dense local clusters (the "echo chamber" problem) |
+
+After ranking, aggregators summarize recurring relationship sequences (motifs),
+relation shares, and a 0-100 triage signal that helps an agent decide what to
+inspect next. Signals that are not active for a deployment are reported as
+inactive in the result rather than silently defaulted.
 
 ---
 
@@ -26,10 +119,6 @@ evidence, decides what is missing, and chooses the next seed or action.
 
 This observed run uses Odin `0.3.0` with a synthetic insurance graph containing
 66 entities and 190 recorded relationships. Claim 1042 is the selected seed.
-
-<p align="center">
-    <img src="docs/assets/demo/odin-demo-full.gif" alt="Animated Odin 0.3.0 retrieval from a raw synthetic insurance graph to ranked, inspectable evidence paths" width="760" />
-</p>
 
 The request asked for 12 paths, a 10-hop limit, and a beam width of 32. Odin's
 adaptive pass returned 24 ranked paths with an effective 4-hop limit and beam
@@ -53,43 +142,6 @@ complete raw result is preserved in the
 This is a deterministic demonstration dataset, not a scale or accuracy
 benchmark. Odin ranks the connected evidence; the consuming agent or
 investigator interprets it and chooses the next action.
-
----
-
-## The Problem
-
-AI agents exploring knowledge graphs face three critical challenges:
-
-1. **Exponential Path Growth** - A 3-hop exploration from a single node in a densely connected graph can generate 100K+ paths, most of which are noise
-2. **Semantic Invalidity** - Naive traversal follows edges that violate domain logic (e.g., `Patient → diagnosed_by → Medication`)
-3. **No Prioritization** - Without ranking, agents waste turns analyzing low-value paths while missing critical patterns
-
-**Traditional approaches fail:**
-- **BFS/DFS**: Exponential explosion, no signal filtering
-- **Fixed Cypher Queries**: Only finds patterns you already know exist
-- **Random Walk**: No convergence guarantees, wasted compute
-- **LLM Prompting Alone**: Hallucinates relationships, can't verify graph structure
-
-## The Solution
-
-Odin provides a **guided exploration framework** that acts as a navigation compass for agents:
-
-```
-┌─────────────┐    ┌──────────────────────────────────────┐    ┌─────────────────┐
-│ Seed        │ -> │ PPR → Beam Search → NPLL → Aggregate │ -> │ Ranked Paths +  │
-│ Entities    │    │        (Odin Engine)                 │    │ Patterns + Score│
-└─────────────┘    └──────────────────────────────────────┘    └─────────────────┘
-```
-
-**Key Components:**
-
-| Component | Purpose | Impact |
-|-----------|---------|--------|
-| **Personalized PageRank (PPR)** | Identifies structurally important nodes relative to the selected seeds | Directs attention within the current graph context |
-| **Beam Search** | Explores a bounded number of paths at each hop | Keeps multi-hop navigation within an explicit budget |
-| **NPLL (Neural Probabilistic Logic)** | Scores edge plausibility using patterns learned from the graph | Adds a semantic signal to path ranking |
-| **Motif Detection** | Surfaces recurring relationship sequences | Makes repeated graph structure inspectable |
-| **Triage Scoring** | Produces a 0-100 prioritization signal | Helps an agent decide what to inspect next |
 
 ---
 
@@ -144,13 +196,6 @@ for p in result['paths'][:5]:
     edges = p['edges']
     nodes = [edges[0]['u'], *(e['v'] for e in edges)] if edges else []
     print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
-
-# 5. NEW in v0.2.0: Inspect your database schema
-from odin import SchemaInspector
-inspector = SchemaInspector(db)  # Uses same db connection from step 1
-schema = inspector.get_schema_map()
-print(f"Database: {schema['database_name']}")
-print(f"Collections: {len(schema['collections'])}")
 ```
 
 **Output Example:**
@@ -174,25 +219,39 @@ Odin automatically manages its NPLL model lifecycle:
 
 ---
 
-## Core Features
+## What Agents Get Back
 
-### 1. Intelligent Path Finding
+Every `retrieve()` call returns ranked paths with per-edge provenance, plus
+aggregates an agent can act on (see the
+[Result Schema](https://odin.developers.prescottdata.io/reference/result-schema/)
+for the full shape):
 
 ```python
-# Start from suspicious entities, let Odin find connections
-result = engine.retrieve(
-    seeds=["claim/CLM_99285"],
-    max_paths=100,
-    hop_limit=4,
-)
-
-# Returns scored paths with:
-# - Structural importance (PPR)
-# - Semantic plausibility (NPLL) 
-# - Pattern frequency (motif detection)
+{
+    "topk_ppr": [...],
+    "paths": [
+        {
+            "id": "path_0",
+            "score": 0.94,
+            "edges": [
+                {"u": "entity/A", "v": "entity/B", "relation": "billed_by",
+                 "confidence": 0.89, "created_at": "...", "provenance": {...}}
+            ]
+        }
+    ],
+    "insight_score": 0.82,
+    "aggregates": {
+        "motifs": [{"pattern": "billed_by->flagged_in", "edge_count": 12, "path_count": 6}],
+        "relation_share": {"billed_by": {"count": 42, "share": 0.42}},
+        "summary": {...}
+    },
+    "triage": {"score": 87, "components": {...}, "dominant_relation": {...}}
+}
 ```
 
-### 2. Edge Plausibility Scoring
+Beyond `retrieve()`, four companion capabilities:
+
+### Edge Plausibility Scoring
 
 ```python
 # Validate specific relationships
@@ -208,7 +267,7 @@ if score > 0.7:
     agent.investigate_further(path)
 ```
 
-### 3. Anchor Node Discovery
+### Anchor Node Discovery
 
 ```python
 # Find most important nodes in your graph
@@ -219,7 +278,7 @@ anchors = engine.find_anchors(
 # Returns top-N nodes by PageRank for targeted exploration
 ```
 
-### 4. Pattern Detection
+### Pattern Detection
 
 ```python
 # Automatic motif extraction
@@ -232,7 +291,7 @@ for motif in motifs:
 # billed_by->flagged_in spans 12 edges across 6 paths
 ```
 
-### 5. Schema Introspection (v0.2.0+)
+### Schema Introspection
 
 ```python
 from arango import ArangoClient
@@ -270,6 +329,25 @@ inspect_arango_schema(db, output_file='schema.json')
 - **Documentation**: Auto-generate database schema documentation
 - **Validation**: Verify collection structures across environments
 - **Schema Evolution**: Track changes to your graph structure over time
+
+---
+
+## Research
+
+**Odin: Multi-Signal Graph Intelligence for Autonomous Discovery in Knowledge Graphs**
+Muyukani Kizito · Elizabeth Nyambere · Prescott Data · 2026
+[arXiv:2603.03097](https://arxiv.org/abs/2603.03097) · [DOI: 10.48550/arXiv.2603.03097](https://doi.org/10.48550/arXiv.2603.03097)
+
+The paper introduces:
+
+- the autonomous knowledge-graph discovery problem: surfacing meaningful patterns from seed entities without specifying the target pattern in advance;
+- the COMPASS multi-signal path scoring framework;
+- NPLL used as a discriminative filter over existing graph relationships rather than a generative model;
+- bridge-entity and community-affinity guidance for the "echo chamber" problem in dense graph communities;
+- bounded beam-search exploration with O(b·h) complexity relative to exhaustive traversal; and
+- provenance-preserving exploration for regulated environments.
+
+See [Citation](#citation) to cite the paper or the software.
 
 ---
 
@@ -341,15 +419,14 @@ if score > 0.5:
 | Document | Description |
 |----------|-------------|
 | [**Documentation Site**](https://odin.developers.prescottdata.io) | Full guides, concepts, and API reference |
+| [**Research Paper**](https://arxiv.org/abs/2603.03097) | COMPASS and the autonomous discovery problem (arXiv:2603.03097) |
 | [**Architecture**](whitepaper/ARCHITECTURE.md) | Complete technical design |
 | [**Agent Integration Guide**](whitepaper/AGENT_INTEGRATION_GUIDE.md) | How to integrate with AI agents |
 | [**Whitepaper**](whitepaper/ODIN_WHITEPAPER.md) | Research background and evaluation |
 
 ---
 
-## API Reference
-
-### OdinEngine
+## API at a Glance
 
 ```python
 from odin import OdinEngine
@@ -363,62 +440,15 @@ engine = OdinEngine(
 )
 ```
 
-**Methods:**
+| Method | Purpose |
+|--------|---------|
+| `retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64)` | Find and score paths from seed entities |
+| `score_edge(src, rel, dst)` | Score plausibility of a single edge (0.0-1.0) |
+| `find_anchors(seeds, topn=20)` | Top-N nodes by Personalized PageRank |
+| `retrain_model(force_retrain=True)` | Force NPLL retraining after major graph updates |
 
-#### `retrieve(seeds, max_paths, hop_limit, **kwargs)`
-Find and score paths from seed entities.
-
-**Parameters:**
-- `seeds: List[str]` - Starting entity IDs (e.g., `["entity/123"]`)
-- `max_paths: int = 50` - Maximum paths to return
-- `hop_limit: int = 3` - Maximum hops from seeds
-- `beam_width: int = 64` - Top-K paths to explore at each hop
-
-**Returns:** a dictionary (see the [Result Schema](https://odin.developers.prescottdata.io/reference/result-schema/) for the full shape):
-```python
-{
-    "topk_ppr": [...],
-    "paths": [
-        {
-            "id": "path_0",
-            "score": 0.94,
-            "edges": [
-                {"u": "entity/A", "v": "entity/B", "relation": "billed_by",
-                 "confidence": 0.89, "created_at": "...", "provenance": {...}}
-            ]
-        }
-    ],
-    "insight_score": 0.82,
-    "aggregates": {
-        "motifs": [{"pattern": "billed_by->flagged_in", "edge_count": 12, "path_count": 6}],
-        "relation_share": {"billed_by": {"count": 42, "share": 0.42}},
-        "summary": {...}
-    },
-    "triage": {"score": 87, "components": {...}, "dominant_relation": {...}}
-}
-```
-
-#### `score_edge(src, rel, dst)`
-Score plausibility of a single edge.
-
-**Parameters:**
-- `src: str` - Source entity ID
-- `rel: str` - Relationship type
-- `dst: str` - Target entity ID
-
-**Returns:** `float` (0.0-1.0)
-
-#### `find_anchors(seeds, topn)`
-Get top-N most important nodes by PageRank.
-
-**Parameters:**
-- `seeds: List[str]` - Seed entities for personalized PageRank
-- `topn: int = 20` - Number of top nodes to return
-
-**Returns:** `List[Tuple[str, float]]` - (entity_id, ppr_score)
-
-#### `retrain_model(force_retrain=True)`
-Force NPLL model retraining (use after major graph updates).
+Full parameter and result documentation lives in the
+[API reference](https://odin.developers.prescottdata.io).
 
 ---
 
@@ -477,7 +507,19 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Citation
 
-If you use Odin in academic work, please cite:
+If Odin contributes to your research, please cite the paper:
+
+```bibtex
+@article{kizito2026odin,
+  title={Odin: Multi-Signal Graph Intelligence for Autonomous Discovery in Knowledge Graphs},
+  author={Kizito, Muyukani and Nyambere, Elizabeth},
+  journal={arXiv preprint arXiv:2603.03097},
+  year={2026},
+  doi={10.48550/arXiv.2603.03097}
+}
+```
+
+To cite the software implementation specifically:
 
 ```bibtex
 @software{odin_engine,
