@@ -19,14 +19,15 @@ import logging
 import random
 import time
 import torch
-from datetime import datetime
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
 from arango.database import StandardDatabase
 
 from .core.knowledge_graph import KnowledgeGraph, load_knowledge_graph_from_triples
 from .core.logical_rules import LogicalRule, Atom, Variable, RuleType
 from .npll_model import create_initialized_npll_model, NPLLModel
-from .training.npll_trainer import TrainingConfig, create_trainer
+from .training.npll_trainer import TrainingConfig, TrainingResult, create_trainer
 from .utils.config import get_config
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,67 @@ logger = logging.getLogger(__name__)
 # Collection name for storing model weights
 ODIN_MODELS_COLLECTION = "OdinModels"
 NPLL_MODEL_KEY = "npll_current"
+
+
+@dataclass
+class TrainingReport:
+    """
+    Audit record for an NPLL training run.
+
+    Persisted alongside the model weights so convergence provenance survives
+    cached-weight loads. The complete per-iteration histories are kept —
+    they are small at bootstrap scale and required for auditability.
+    """
+    converged: bool
+    convergence_epoch: Optional[int]
+    final_elbo: float
+    best_elbo: float
+    total_epochs: int
+    total_em_iterations: int
+    elbo_history: List[float]
+    rule_weight_delta_history: List[Optional[float]]
+    training_time_seconds: float
+    trained_at: str
+    early_stopping_triggered: bool
+    convergence_criteria: Dict[str, float] = field(default_factory=dict)
+
+    @classmethod
+    def from_training_result(cls, result: TrainingResult, trained_at: str) -> "TrainingReport":
+        config = get_config("ArangoDB_Triples")
+        return cls(
+            converged=result.converged,
+            convergence_epoch=result.convergence_epoch,
+            final_elbo=float(result.final_elbo),
+            best_elbo=float(result.best_elbo),
+            total_epochs=result.total_epochs,
+            total_em_iterations=result.total_em_iterations,
+            elbo_history=[float(v) for v in result.elbo_history],
+            rule_weight_delta_history=list(result.rule_weight_delta_history),
+            training_time_seconds=float(result.total_training_time),
+            trained_at=trained_at,
+            early_stopping_triggered=result.early_stopping_triggered,
+            convergence_criteria={
+                "elbo_rel_tol": config.elbo_rel_tol,
+                "weight_abs_tol": config.weight_abs_tol,
+                "convergence_patience": config.convergence_patience,
+            },
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TrainingReport":
+        return cls(**data)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class BootstrapResult:
+    """Outcome of KnowledgeBootstrapper.ensure_model_ready."""
+    model: Optional[NPLLModel]
+    source: str  # "trained" | "cached_weights" | "failed"
+    data_hash: str
+    report: Optional[TrainingReport]
 
 
 class KnowledgeBootstrapper:
@@ -66,7 +128,7 @@ class KnowledgeBootstrapper:
             # Suppress permission errors (common in read-only environments)
             logger.warning(f"Could not verify/create {ODIN_MODELS_COLLECTION} (Permission Error?): {e}")
 
-    def ensure_model_ready(self, force_retrain: bool = False) -> Optional[NPLLModel]:
+    def ensure_model_ready(self, force_retrain: bool = False) -> BootstrapResult:
         """
         Ensures a trained NPLL model is available.
         
@@ -80,20 +142,26 @@ class KnowledgeBootstrapper:
             force_retrain: If True, ignores cached weights and retrains
             
         Returns:
-            Loaded NPLLModel ready for inference, or None if failed
+            BootstrapResult with the model (or None on failure), the source
+            of the weights, and the TrainingReport audit record when available
         """
         current_hash = self._compute_data_hash()
         logger.info(f"Current data hash: {current_hash[:16]}...")
         
         if not force_retrain:
             # Try to load existing weights and rebuild model
-            model = self._load_model_with_weights(current_hash)
+            model, report = self._load_model_with_weights(current_hash)
             if model:
-                return model
+                return BootstrapResult(
+                    model=model, source="cached_weights",
+                    data_hash=current_hash, report=report,
+                )
         
         # Train new model
         logger.info("Training new NPLL model...")
-        return self._train_and_save_weights(current_hash)
+        model, report = self._train_and_save_weights(current_hash)
+        source = "trained" if model else "failed"
+        return BootstrapResult(model=model, source=source, data_hash=current_hash, report=report)
 
     def _compute_data_hash(self) -> str:
         """
@@ -127,7 +195,7 @@ class KnowledgeBootstrapper:
             logger.warning(f"Could not compute data hash: {e}")
             return hashlib.sha256(str(time.time()).encode()).hexdigest()
 
-    def _load_model_with_weights(self, expected_hash: str) -> Optional[NPLLModel]:
+    def _load_model_with_weights(self, expected_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
         """
         Load saved weights from DB and rebuild the model.
         
@@ -137,6 +205,9 @@ class KnowledgeBootstrapper:
         3. Generate rules (same code = same rules)
         4. Initialize fresh model
         5. Apply saved weights
+        
+        Returns (model, rehydrated training report) — report is None for
+        documents written before reports were persisted.
         """
         try:
             collection = self.db.collection(ODIN_MODELS_COLLECTION)
@@ -144,25 +215,25 @@ class KnowledgeBootstrapper:
             
             if not doc:
                 logger.info("No saved weights found in database")
-                return None
+                return None, None
             
             stored_hash = doc.get("data_hash", "")
             if stored_hash != expected_hash:
                 logger.info(f"Data has changed. Stored: {stored_hash[:16]}..., Current: {expected_hash[:16]}...")
-                return None
+                return None, None
             
             # Get saved weights
             saved_weights = doc.get("rule_weights")
             if not saved_weights:
                 logger.warning("No rule_weights in saved document")
-                return None
+                return None, None
             
             logger.info("Rebuilding model from KG and applying saved weights...")
             
             # 1. Extract triples
             triples = self._extract_triples()
             if not triples:
-                return None
+                return None, None
             
             # 2. Build KG
             kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
@@ -172,7 +243,7 @@ class KnowledgeBootstrapper:
             
             if len(rules) != len(saved_weights):
                 logger.warning(f"Rule count mismatch: {len(rules)} rules, {len(saved_weights)} weights. Retraining.")
-                return None
+                return None, None
             
             # 4. Initialize model
             config = get_config("ArangoDB_Triples")
@@ -182,16 +253,24 @@ class KnowledgeBootstrapper:
             with torch.no_grad():
                 model.mln.rule_weights.copy_(torch.tensor(saved_weights, dtype=torch.float32))
             
+            report = None
+            report_data = doc.get("training_report")
+            if report_data:
+                try:
+                    report = TrainingReport.from_dict(report_data)
+                except TypeError as e:
+                    logger.warning(f"Could not rehydrate training report: {e}")
+            
             trained_at = doc.get("trained_at", "unknown")
             logger.info(f"✓ Model rebuilt with saved weights (trained: {trained_at})")
             
-            return model
+            return model, report
             
         except Exception as e:
             logger.warning(f"Failed to load model: {e}")
-            return None
+            return None, None
 
-    def _train_and_save_weights(self, data_hash: str) -> Optional[NPLLModel]:
+    def _train_and_save_weights(self, data_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
         """
         Train a new NPLL model and save ONLY the weights to database.
         """
@@ -199,7 +278,7 @@ class KnowledgeBootstrapper:
         triples = self._extract_triples()
         if not triples:
             logger.error("No triples extracted. Cannot train.")
-            return None
+            return None, None
         
         # 2. Build KG
         kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
@@ -221,7 +300,7 @@ class KnowledgeBootstrapper:
         
         if not rules:
             logger.error("No rules generated. Cannot train.")
-            return None
+            return None, None
         
         # 4. Initialize Model
         config = get_config("ArangoDB_Triples")
@@ -243,16 +322,25 @@ class KnowledgeBootstrapper:
             logger.info(f"Training completed. Final ELBO: {training_result.final_elbo}")
         except Exception as e:
             logger.error(f"Training failed: {e}", exc_info=True)
-            return None
+            return None, None
+        
+        trained_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        report = TrainingReport.from_training_result(training_result, trained_at)
+        if not report.converged:
+            logger.warning(
+                "NPLL training finished WITHOUT convergence "
+                f"(epochs={report.total_epochs}, em_iterations={report.total_em_iterations}, "
+                f"final_elbo={report.final_elbo:.6f}). Edge confidences may be poorly calibrated."
+            )
         
         # 6. Save ONLY weights to database
-        self._save_weights_to_db(model, kg, rules, data_hash, training_result)
+        self._save_weights_to_db(model, kg, rules, data_hash, report)
         
-        return model
+        return model, report
 
     def _save_weights_to_db(self, model: NPLLModel, kg: KnowledgeGraph, 
                             rules: List[LogicalRule], data_hash: str,
-                            training_result: Any):
+                            report: Optional[TrainingReport]):
         """
         Save ONLY the learned weights to OdinModels collection.
         This is tiny (~1 KB) compared to the full model (280 MB).
@@ -265,7 +353,7 @@ class KnowledgeBootstrapper:
                 "_key": NPLL_MODEL_KEY,
                 "model_type": "npll",
                 "storage_type": "weights_only",  # Mark this as weights-only storage
-                "trained_at": datetime.utcnow().isoformat() + "Z",
+                "trained_at": report.trained_at if report else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 "data_hash": data_hash,
                 "rule_weights": rule_weights,  # The learned weights - this is all we need!
                 "schema_snapshot": {
@@ -274,12 +362,7 @@ class KnowledgeBootstrapper:
                     "fact_count": len(kg.known_facts),
                     "relation_names": sorted([r.name for r in kg.relations])[:50],
                 },
-                "training_result": {
-                    "final_elbo": float(training_result.final_elbo) if training_result else 0,
-                    "best_elbo": float(training_result.best_elbo) if training_result else 0,
-                    "converged": training_result.converged if training_result else False,
-                    "training_time_seconds": training_result.total_training_time if training_result else 0,
-                },
+                "training_report": report.to_dict() if report else None,
                 "rules": [
                     {
                         "rule_id": r.rule_id,
@@ -288,7 +371,7 @@ class KnowledgeBootstrapper:
                     }
                     for r in rules
                 ],
-                "version": "2.0",  # Version 2 = weights-only storage
+                "version": "2.1",  # Version 2.1 = weights-only storage + full training report
             }
             
             # Upsert
