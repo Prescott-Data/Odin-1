@@ -58,6 +58,13 @@ class ELBOComputer(nn.Module):
         self.config = config
         self.elbo_weight = config.elbo_weight
         self.kl_weight = config.kl_weight
+
+    @staticmethod
+    def _scalar_like(value: float, ref: Optional[torch.Tensor]) -> torch.Tensor:
+        """Create a scalar tensor on the same device/dtype as ref (if provided)."""
+        if ref is None:
+            return torch.tensor(value)
+        return torch.tensor(value, device=ref.device, dtype=ref.dtype)
     
     def compute_elbo(self, 
                     mln: MarkovLogicNetwork,
@@ -366,10 +373,7 @@ class VariationalInference:
         }
 
     def _scalar_like(self, value: float, ref: Optional[torch.Tensor]) -> torch.Tensor:
-        """Create a scalar tensor on the same device/dtype as ref (if provided)."""
-        if ref is None:
-            return torch.tensor(value)
-        return torch.tensor(value, device=ref.device, dtype=ref.dtype)
+        return ELBOComputer._scalar_like(value, ref)
 
 
 def create_elbo_computer(config: NPLLConfig) -> ELBOComputer:
