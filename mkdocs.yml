@@ -99,6 +99,7 @@ nav:
   - Guides:
       - Overview: guides/index.md
       - Connecting ArangoDB: guides/arangodb.md
+      - Using Neo4j (Experimental): guides/neo4j.md
       - Your First Retrieval: guides/first-retrieval.md
       - Scoring Edges: guides/edge-scoring.md
       - Finding Anchors: guides/anchors.md

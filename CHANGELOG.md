@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   though Odin is distributed as a Python library.
 
 ### Added
+- **Experimental Neo4j retrieval adapter.** `Neo4jGraphAccessor`
+  (`retrieval/adapters_neo4j.py`) runs the retrieval pipeline — PPR, beam
+  search, and scoring — against a Neo4j labeled property graph via
+  parameterized Cypher. Installed with `pip install odin-engine[neo4j]`
+  (optional extra; existing installs unaffected). Ships with a shared
+  adapter conformance test suite that any `GraphAccessor` must pass, and a
+  "Using Neo4j (Experimental)" guide that documents the boundary:
+  `OdinEngine` auto-bootstrap and schema introspection still require
+  ArangoDB.
 - Security reporting guidance and GitHub issue and pull-request templates.
 - Brand Studio-aligned Odin `0.3.0` demo visuals and the complete canonical
   retrieval artifact behind the README example.
