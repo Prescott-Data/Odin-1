@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the responsibility boundary between Odin and the consuming agent.
 
 ### Fixed
+- `JanusGraphAccessor` could never return results: it unpacked Gremlin
+  `select('e','v')` rows (dicts) as tuples and read edge properties as a
+  dict, and its constructor used an API removed from modern gremlinpython.
+  Rewritten on `project()` queries returning plain values, with `iter_in`,
+  `get_node`, and a configurable weight property added; covered by unit
+  tests and a live JanusGraph integration test (validated against
+  JanusGraph 1.x with the GraphSON v3 serializer).
 - `ELBOComputer.compute_elbo` raised `AttributeError` whenever a graph had no
   unknown facts (or no sampled worlds), because its scalar helper was defined
   on a different class. Surfaced by the new E-M unit tests.

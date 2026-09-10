@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import Iterable, Tuple, Protocol, List, Dict, Optional
 from gremlin_python.process.graph_traversal import __
-from gremlin_python.structure.graph import Graph
 
 NodeId = str
 RelId = str
@@ -95,46 +94,81 @@ class OverlayAccessor:
 
 class JanusGraphAccessor(GraphAccessor):
     """
-    GraphAccessor implementation for JanusGraph.
-    Assumes connection to a JanusGraph instance via a Gremlin client.
+    GraphAccessor implementation for JanusGraph (experimental).
+
+    Takes a Gremlin GraphTraversalSource, e.g.:
+
+        from gremlin_python.process.anonymous_traversal import traversal
+        from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
+        g = traversal().with_remote(DriverRemoteConnection("ws://localhost:8182/gremlin", "g"))
+        accessor = JanusGraphAccessor(g)
+
+    Uses project() so results arrive as plain value dicts rather than
+    driver element objects. Edge weight is read from a configurable edge
+    property (default: "weight", falling back to 1.0).
     """
-    def __init__(self, graph: Graph, community_id_property: str = "communityId"):
-        self.g = graph.traversal()
+
+    def __init__(self, g, community_id_property: str = "communityId",
+                 weight_property: str = "weight"):
+        self.g = g
         self.community_id_property = community_id_property
+        self.weight_property = weight_property
 
     def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """
-        Yields (neighbor, relation, weight) for outgoing edges from a node.
-        Example Gremlin query: g.V(node).outE().as_('e').inV().as_('v').select('e', 'v')
-        """
-        traversal = self.g.V(node).outE().as_('e').inV().as_('v').select('e', 'v').toList()
-        for edge, neighbor in traversal:
-            # Note: You might need to adjust how you access IDs and properties based on your graph schema
-            neighbor_id = neighbor.id
-            rel_id = edge.label
-            weight = edge.properties.get('weight', 1.0)
-            yield neighbor_id, rel_id, weight
+        """Yield (neighbor, relation, weight) for outgoing edges."""
+        rows = (
+            self.g.V(node).outE()
+            .project('neighbor', 'rel', 'weight')
+            .by(__.inV().id_())
+            .by(__.label())
+            .by(__.coalesce(__.values(self.weight_property), __.constant(1.0)))
+            .toList()
+        )
+        for row in rows:
+            yield row['neighbor'], row['rel'], float(row['weight'])
 
-    def nodes(self, community_id: str) -> Iterable[NodeId]:
-        """
-        Yields all node IDs in a given community.
-        Example Gremlin query: g.V().has('communityId', community_id).id()
-        """
-        traversal = self.g.V().has(self.community_id_property, community_id).id().toList()
-        for node_id in traversal:
+    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
+        """Yield (neighbor, relation, weight) for incoming edges."""
+        rows = (
+            self.g.V(node).inE()
+            .project('neighbor', 'rel', 'weight')
+            .by(__.outV().id_())
+            .by(__.label())
+            .by(__.coalesce(__.values(self.weight_property), __.constant(1.0)))
+            .toList()
+        )
+        for row in rows:
+            yield row['neighbor'], row['rel'], float(row['weight'])
+
+    def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
+        """Yield node IDs, scoped to a community when one is given."""
+        if community_id:
+            rows = self.g.V().has(self.community_id_property, community_id).id_().toList()
+        else:
+            rows = self.g.V().id_().toList()
+        for node_id in rows:
             yield node_id
 
     def degree(self, node: NodeId) -> int:
-        """
-        Returns the out-degree of a node.
-        Example Gremlin query: g.V(node).outE().count()
-        """
-        return self.g.V(node).outE().count().next()
+        """Out-degree of a node."""
+        return int(self.g.V(node).outE().count().next())
 
     def in_degree(self, node: NodeId) -> int:
-        """
-        Returns the in-degree of a node.
-        Example Gremlin query: g.V(node).inE().count()
-        """
-        return self.g.V(node).inE().count().next()
+        """In-degree of a node."""
+        return int(self.g.V(node).inE().count().next())
 
+    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
+        """Passthrough: Gremlin vertex IDs are used as-is."""
+        return seeds
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, str]:
+        """Return a node's properties as plain values (first value per key)."""
+        rows = self.g.V(node_id).value_map().toList()
+        if not rows:
+            return {}
+        props = {}
+        for key, value in rows[0].items():
+            props[key] = value[0] if isinstance(value, list) and value else value
+        if fields:
+            props = {k: v for k, v in props.items() if k in fields}
+        return props
