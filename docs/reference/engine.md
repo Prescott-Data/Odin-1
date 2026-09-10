@@ -150,10 +150,35 @@ Returns a small status dictionary:
 {
     "community_id": "global",
     "npll_loaded": True,
-    "intelligence_mode": "NPLL",   # or "Constant"
+    "intelligence_mode": "NPLL",       # or "Constant"
+    "npll_source": "trained",          # "trained" | "cached_weights" | "failed" | "disabled"
+    "npll_converged": True,            # None when no training report is available
+    "npll_trained_at": "2026-09-08T12:00:00Z",
     "cache_size": 5000,
 }
 ```
+
+---
+
+## `training_report`
+
+```python
+training_report -> TrainingReport | None    # attribute
+```
+
+The audit record for the NPLL training run behind the active model — available
+both when the model was just trained and when it was rebuilt from cached
+weights. `None` when auto-train is disabled, training failed, or the weights
+were persisted before reports existed.
+
+Fields: `converged`, `convergence_epoch`, `final_elbo`, `best_elbo`,
+`total_epochs`, `total_em_iterations`, `elbo_history` (complete, per E-M
+iteration), `rule_weight_delta_history` (max-abs weight change per iteration),
+`training_time_seconds`, `trained_at`, `early_stopping_triggered`, and
+`convergence_criteria` (the thresholds the convergence decision used).
+
+If the model in use did **not** converge, the engine logs a warning at
+initialization and after `retrain_model()`.
 
 ---
 
@@ -167,4 +192,5 @@ Returns a small status dictionary:
 | `get_neighbors(node_id)` | `dict` | A node's neighborhood |
 | `retrain_model()` | `bool` | Force NPLL retrain |
 | `has_npll` | `bool` | Whether NPLL is active |
+| `training_report` | `TrainingReport \| None` | Training audit record |
 | `get_status()` | `dict` | Engine status |

@@ -274,11 +274,19 @@ class NPLLModel(nn.Module):
         # Check convergence
         converged = self._check_em_convergence()
         
+        # Max absolute weight change vs previous iteration (None on first iteration)
+        rule_weight_delta = None
+        if len(self.training_state.rule_weight_history) >= 2:
+            curr = torch.tensor(self.training_state.rule_weight_history[-1])
+            prev = torch.tensor(self.training_state.rule_weight_history[-2])
+            rule_weight_delta = torch.max(torch.abs(curr - prev)).item()
+        
         iteration_result = {
             'em_iteration': self.training_state.em_iteration - 1,
             'e_step_result': e_step_result,
             'm_step_result': m_step_result,
             'elbo': current_elbo,
+            'rule_weight_delta': rule_weight_delta,
             'iteration_time': iteration_time,
             'converged': converged,
             'convergence_info': {

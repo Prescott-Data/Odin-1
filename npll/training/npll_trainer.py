@@ -10,7 +10,7 @@ import logging
 import time
 import os
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
 from ..npll_model import NPLLModel, NPLLTrainingState
@@ -82,6 +82,8 @@ class TrainingResult:
     # Convergence info
     convergence_epoch: Optional[int] = None
     early_stopping_triggered: bool = False
+    # Max-abs rule weight change per E-M iteration (None entries = first iteration of a run)
+    rule_weight_delta_history: List[Optional[float]] = field(default_factory=list)
 
 
 class NPLLTrainer:
@@ -124,6 +126,7 @@ class NPLLTrainer:
         self.training_history = {
             'epochs': [],
             'elbo_history': [],
+            'rule_weight_deltas': [],
             'validation_metrics': [],
             'learning_rates': [],
             'convergence_info': []
@@ -319,6 +322,9 @@ class NPLLTrainer:
         self.training_history['elbo_history'].extend(
             [r['elbo'] for r in epoch_result['iteration_results']]
         )
+        self.training_history['rule_weight_deltas'].extend(
+            [r.get('rule_weight_delta') for r in epoch_result['iteration_results']]
+        )
         self.training_history['convergence_info'].append({
             'epoch': epoch,
             'converged': epoch_result['converged'],
@@ -376,7 +382,8 @@ class NPLLTrainer:
             average_epoch_time=total_training_time / total_epochs if total_epochs > 0 else 0.0,
             final_model_path=final_model_path,
             convergence_epoch=convergence_epoch,
-            early_stopping_triggered=early_stopped
+            early_stopping_triggered=early_stopped,
+            rule_weight_delta_history=self.training_history['rule_weight_deltas']
         )
     
     def resume_training(self, checkpoint_path: str) -> TrainingResult:
