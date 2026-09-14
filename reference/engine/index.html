@@ -1667,6 +1667,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#training_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        training_report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#method-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1987,6 +1998,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#training_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        training_report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#method-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2219,10 +2241,28 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="s2">"community_id"</span><span class="p">:</span> <span class="s2">"global"</span><span class="p">,</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="s2">"npll_loaded"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="s2">"intelligence_mode"</span><span class="p">:</span> <span class="s2">"NPLL"</span><span class="p">,</span>   <span class="c1"># or "Constant"</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">"cache_size"</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="p">}</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="s2">"intelligence_mode"</span><span class="p">:</span> <span class="s2">"NPLL"</span><span class="p">,</span>       <span class="c1"># or "Constant"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">"npll_source"</span><span class="p">:</span> <span class="s2">"trained"</span><span class="p">,</span>          <span class="c1"># "trained" | "cached_weights" | "failed" | "disabled"</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="s2">"npll_converged"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>            <span class="c1"># None when no training report is available</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="s2">"npll_trained_at"</span><span class="p">:</span> <span class="s2">"2026-09-08T12:00:00Z"</span><span class="p">,</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="s2">"cache_size"</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="p">}</span>
 </span></code></pre></div>
+<hr />
+<h2 id="training_report"><code>training_report</code><a class="headerlink" href="#training_report" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">training_report</span> <span class="o">-&gt;</span> <span class="n">TrainingReport</span> <span class="o">|</span> <span class="kc">None</span>    <span class="c1"># attribute</span>
+</span></code></pre></div>
+<p>The audit record for the NPLL training run behind the active model — available
+both when the model was just trained and when it was rebuilt from cached
+weights. <code>None</code> when auto-train is disabled, training failed, or the weights
+were persisted before reports existed.</p>
+<p>Fields: <code>converged</code>, <code>convergence_epoch</code>, <code>final_elbo</code>, <code>best_elbo</code>,
+<code>total_epochs</code>, <code>total_em_iterations</code>, <code>elbo_history</code> (complete, per E-M
+iteration), <code>rule_weight_delta_history</code> (max-abs weight change per iteration),
+<code>training_time_seconds</code>, <code>trained_at</code>, <code>early_stopping_triggered</code>, and
+<code>convergence_criteria</code> (the thresholds the convergence decision used).</p>
+<p>If the model in use did <strong>not</strong> converge, the engine logs a warning at
+initialization and after <code>retrain_model()</code>.</p>
 <hr />
 <h2 id="method-summary">Method summary<a class="headerlink" href="#method-summary" title="Permanent link">&para;</a></h2>
 <table>
@@ -2263,6 +2303,11 @@
 <td><code>has_npll</code></td>
 <td><code>bool</code></td>
 <td>Whether NPLL is active</td>
+</tr>
+<tr>
+<td><code>training_report</code></td>
+<td><code>TrainingReport \| None</code></td>
+<td>Training audit record</td>
 </tr>
 <tr>
 <td><code>get_status()</code></td>
@@ -2419,10 +2464,35 @@ Returns a small status dictionary:
 {
     "community_id": "global",
     "npll_loaded": True,
-    "intelligence_mode": "NPLL",   # or "Constant"
+    "intelligence_mode": "NPLL",       # or "Constant"
+    "npll_source": "trained",          # "trained" | "cached_weights" | "failed" | "disabled"
+    "npll_converged": True,            # None when no training report is available
+    "npll_trained_at": "2026-09-08T12:00:00Z",
     "cache_size": 5000,
 }
 ```
+
+---
+
+## `training_report`
+
+```python
+training_report -&gt; TrainingReport | None    # attribute
+```
+
+The audit record for the NPLL training run behind the active model — available
+both when the model was just trained and when it was rebuilt from cached
+weights. `None` when auto-train is disabled, training failed, or the weights
+were persisted before reports existed.
+
+Fields: `converged`, `convergence_epoch`, `final_elbo`, `best_elbo`,
+`total_epochs`, `total_em_iterations`, `elbo_history` (complete, per E-M
+iteration), `rule_weight_delta_history` (max-abs weight change per iteration),
+`training_time_seconds`, `trained_at`, `early_stopping_triggered`, and
+`convergence_criteria` (the thresholds the convergence decision used).
+
+If the model in use did **not** converge, the engine logs a warning at
+initialization and after `retrain_model()`.
 
 ---
 
@@ -2436,6 +2506,7 @@ Returns a small status dictionary:
 | `get_neighbors(node_id)` | `dict` | A node's neighborhood |
 | `retrain_model()` | `bool` | Force NPLL retrain |
 | `has_npll` | `bool` | Whether NPLL is active |
+| `training_report` | `TrainingReport \| None` | Training audit record |
 | `get_status()` | `dict` | Engine status |
 </script>
 
