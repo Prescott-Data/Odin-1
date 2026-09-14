@@ -17,7 +17,7 @@ from arango.database import StandardDatabase
 # Add parent path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from npll.bootstrap import KnowledgeBootstrapper
+from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.adapters_arango import ArangoCommunityAccessor, GlobalGraphAccessor
@@ -84,6 +84,8 @@ class OdinEngine:
         
         # 2. Load/Train NPLL Model
         self.npll_model: Optional[NPLLModel] = None
+        self.training_report: Optional[TrainingReport] = None
+        self.npll_source: str = "disabled"
         self.confidence = self._initialize_intelligence(auto_train)
         
         # 3. Setup Orchestrator
@@ -106,7 +108,11 @@ class OdinEngine:
         
         try:
             bootstrapper = KnowledgeBootstrapper(db=self.db)
-            self.npll_model = bootstrapper.ensure_model_ready()
+            result = bootstrapper.ensure_model_ready()
+            self.npll_model = result.model
+            self.training_report = result.report
+            self.npll_source = result.source
+            self._warn_if_not_converged()
             
             if self.npll_model:
                 return NPLLConfidence(self.npll_model, cache_size=10000)
@@ -117,6 +123,19 @@ class OdinEngine:
         except Exception as e:
             logger.error(f"Failed to initialize NPLL: {e}")
             return ConstantConfidence(0.8)
+
+    def _warn_if_not_converged(self):
+        """Surface non-convergence so users know confidences may be miscalibrated."""
+        if self.npll_model is None or self.training_report is None:
+            return
+        if not self.training_report.converged:
+            logger.warning(
+                "NPLL model in use did NOT converge during training "
+                f"(source: {self.npll_source}, trained_at: {self.training_report.trained_at}, "
+                f"final_elbo: {self.training_report.final_elbo:.6f}). "
+                "Edge confidences may be poorly calibrated. "
+                "Inspect engine.training_report or retrain with engine.retrain_model()."
+            )
 
     def retrieve(
         self,
@@ -233,7 +252,11 @@ class OdinEngine:
         """
         try:
             bootstrapper = KnowledgeBootstrapper(db=self.db)
-            self.npll_model = bootstrapper.ensure_model_ready(force_retrain=True)
+            result = bootstrapper.ensure_model_ready(force_retrain=True)
+            self.npll_model = result.model
+            self.training_report = result.report
+            self.npll_source = result.source
+            self._warn_if_not_converged()
             
             if self.npll_model:
                 self.confidence = NPLLConfidence(self.npll_model, cache_size=10000)
@@ -260,5 +283,8 @@ class OdinEngine:
             "community_id": self.community_id,
             "npll_loaded": self.has_npll,
             "intelligence_mode": "NPLL" if self.has_npll else "Constant",
+            "npll_source": self.npll_source,
+            "npll_converged": self.training_report.converged if self.training_report else None,
+            "npll_trained_at": self.training_report.trained_at if self.training_report else None,
             "cache_size": getattr(self.accessor, 'cache_size', 'unknown'),
         }
