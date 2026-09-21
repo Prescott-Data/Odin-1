@@ -145,6 +145,10 @@ class ArangoCommunityAccessor(GraphAccessor):
         for ev in self._iter_neighbors(node, direction="OUTBOUND", rich=True):
             yield ev.neighbor_id, ev.relation, ev.weight
 
+    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
+        """Arango retrieval accepts full document IDs without remapping."""
+        return seeds
+
     def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         for ev in self._iter_neighbors(node, direction="INBOUND", rich=True):
             yield ev.neighbor_id, ev.relation, ev.weight

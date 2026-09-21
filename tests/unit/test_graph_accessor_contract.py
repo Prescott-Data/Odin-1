@@ -56,6 +56,7 @@ def test_arango_accessors_return_an_empty_dict_for_absent_nodes():
     )
 
     for accessor in accessors:
+        assert accessor.community_seed_norm("global", ["ExtractedEntities/A"]) == ["ExtractedEntities/A"]
         assert accessor.get_node("ExtractedEntities/missing") == {}
         assert accessor.get_node("ExtractedEntities/missing", fields=["type"]) == {}
 
