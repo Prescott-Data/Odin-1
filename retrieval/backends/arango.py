@@ -148,7 +148,6 @@ class ArangoBackend:
         return GlobalGraphAccessor(db=self.db, algorithm="gnn")
 
     def schema_inspector(self):
-        # Avoid importing odin's public entry point while bootstrap is loading.
-        from odin.schema import SchemaInspector
+        from retrieval.backends.arango_schema import ArangoSchemaInspector
 
-        return SchemaInspector(self.db)
+        return ArangoSchemaInspector(self.db)

@@ -91,7 +91,7 @@ class ModelStore(Protocol):
              expected_revision: Optional[str]) -> str: ...
 
 
-class SchemaInspector(Protocol):
+class SchemaIntrospector(Protocol):
     def get_schema_map(self, refresh: bool = False) -> Dict[str, Any]: ...
 
 
@@ -109,7 +109,7 @@ class GlobalAccessBackend(Protocol):
 
 
 class SchemaInspectionBackend(Protocol):
-    def schema_inspector(self) -> Optional[SchemaInspector]: ...
+    def schema_inspector(self) -> Optional[SchemaIntrospector]: ...
 
 
 def validate_model_artifact(document: Dict[str, Any]) -> None:

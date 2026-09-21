@@ -4,73 +4,50 @@ icon: material/table-search
 
 # Schema Introspection
 
-`SchemaInspector` discovers your ArangoDB structure at runtime: every collection, its fields, and how edge collections connect. Agents that write their own AQL need that structure, and hard-coding it goes stale the moment the graph changes. Reading it live keeps it correct, which is what makes introspection useful both for priming agents and for generating documentation.
+Schema introspection is a backend capability. It lets agents inspect the graph
+structure they are about to query without assuming an ArangoDB data model.
 
 ## Basic usage
 
-Construct an inspector over a connected database and ask for the schema map:
+Construct a backend, then ask Odin for its complete schema map:
 
 ```python
-from arango import ArangoClient
-from odin import SchemaInspector
+from odin import inspect_schema
+from retrieval.backends.arango import ArangoBackend
 
-client = ArangoClient(hosts="http://localhost:8529")
-db = client.db("my_graph", username="root", password="")
-
-inspector = SchemaInspector(db)
-schema = inspector.get_schema_map()
-
-print(f"Database: {schema['database_name']}")
-print(f"Collections: {len(schema['collections'])}")
-print(f"Edge collections: {len(schema['edges'])}")
+backend = ArangoBackend(db)
+schema = inspect_schema(backend)
 ```
 
-`get_schema_map()` returns a dictionary with `database_name`, `collections`, and `edges`. It is cached after the first call, so pass `refresh=True` when you want to rebuild it.
-
-## Reading collections and edges
-
-Each document collection reports its `name`, `type`, `count`, and the `fields` discovered by sampling:
-
-```python
-for col in schema["collections"]:
-    print(f"{col['name']}: {col['count']} docs")
-    print(f"  fields: {', '.join(col['fields'][:5])}")
-
-info = inspector.get_collection_info("ExtractedEntities")
-print(info["fields"])
-```
-
-Edge collections additionally report which collections they connect, which is exactly the `_from`/`_to` mapping an agent needs to construct a valid traversal:
-
-```python
-edge = inspector.get_edge_info("ExtractedRelationships")
-print("From:", edge["from_collections"])
-print("To:  ", edge["to_collections"])
-print("Fields:", edge["fields"])
-```
+The returned map is backend-defined. ArangoDB reports document collections,
+edge collections, sampled fields, and edge endpoint collections. A backend
+that cannot inspect its schema raises `BackendCapabilityError` rather than
+inventing incomplete metadata.
 
 ## Exporting the schema
 
-For agents and documentation, export the whole map to a file in one call:
+For agents and documentation, write the complete map to JSON:
 
 ```python
-from odin import inspect_arango_schema
-
-inspect_arango_schema(db, output_file="schema.json")
+inspect_schema(backend, output_file="schema.json")
+agent.load_context("schema.json")
 ```
 
-That exported file has several uses: priming an agent with graph context in its system prompt, auto-generating database schema documentation, validating that collection structures match across environments, and tracking schema evolution over time in version control.
+The exported file can prime an agent with graph context, generate database
+documentation, validate structures across environments, and track schema
+evolution in version control.
 
-## Sampling behavior
+## Refreshing cached inspection
 
-Field discovery samples a small number of documents per collection, set by `max_sample_docs` (default `5`). Raise it when your documents are highly heterogeneous and a small sample would miss fields:
+When a backend caches inspection results, request a new map after a schema
+change:
 
 ```python
-inspector = SchemaInspector(db, max_sample_docs=25)
+schema = inspect_schema(backend, refresh=True)
 ```
-
-System collections, whose names start with `_`, are skipped automatically.
 
 ## Next
 
-The full method surface is in the [SchemaInspector API](../reference/schema.md), and [AI Agent Integration](agent-integration.md) shows introspection used to give an agent graph context.
+The full method surface is in the [Schema Inspection API](../reference/schema.md),
+and [AI Agent Integration](agent-integration.md) shows introspection used to
+give an agent graph context.

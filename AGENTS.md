@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this repository.
 
 Odin-1 (`odin-engine`) is a Python library for guided knowledge-graph retrieval:
 Personalized PageRank, beam search, and NPLL edge scoring over an ArangoDB (or
-custom-adapter) graph. Public API: `from odin import OdinEngine, SchemaInspector`.
+custom-adapter) graph. Public API: `from odin import OdinEngine, inspect_schema`.
 
 ## Writing Odin code
 

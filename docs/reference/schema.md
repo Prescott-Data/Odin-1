@@ -2,123 +2,37 @@
 icon: material/table-search
 ---
 
-# SchemaInspector API
+# Schema Inspection API
 
-`SchemaInspector` discovers your ArangoDB structure at runtime. See the [Schema Introspection guide](../guides/schema-introspection.md) for usage patterns.
+`inspect_schema` delegates schema discovery to the configured backend. A
+backend that does not implement schema inspection raises `BackendCapabilityError`.
 
 ```python
-from odin import SchemaInspector, inspect_arango_schema
+from odin import inspect_schema
 ```
 
----
-
-## Constructor
+## `inspect_schema`
 
 ```python
-SchemaInspector(db, max_sample_docs: int = 5)
+inspect_schema(
+    backend,
+    *,
+    refresh: bool = False,
+    output_file: str | None = None,
+) -> dict
 ```
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | required | A connected `python-arango` database |
-| `max_sample_docs` | `int` | `5` | Documents sampled per collection to discover fields |
-
----
-
-## `get_schema_map`
+| `backend` | `GraphBackend` | required | Backend that supplies schema inspection |
+| `refresh` | `bool` | `False` | Request a refreshed schema map |
+| `output_file` | `str \| None` | `None` | Optional JSON destination for the complete map |
 
 ```python
-get_schema_map(refresh: bool = False) -> dict
+schema = inspect_schema(backend, output_file="schema.json")
 ```
 
-Returns the full schema map. Cached after the first call; pass `refresh=True` to rebuild.
-
-```python
-schema = inspector.get_schema_map()
-schema["database_name"]   # str
-schema["collections"]     # list of document collections
-schema["edges"]           # list of edge collections
-```
-
-**Shape:**
-
-```python
-{
-    "database_name": "my_graph",
-    "collections": [
-        {"name": "ExtractedEntities", "type": "document",
-         "count": 12345, "fields": ["_key", "name", "type", ...]},
-        ...
-    ],
-    "edges": [
-        {"name": "ExtractedRelationships", "count": 45678,
-         "from_collections": ["ExtractedEntities"],
-         "to_collections": ["ExtractedEntities"],
-         "fields": ["_from", "_to", "relation", ...]},
-        ...
-    ],
-}
-```
-
-System collections (names starting with `_`) are skipped.
-
----
-
-## `get_collection_info`
-
-```python
-get_collection_info(collection_name: str) -> dict | None
-```
-
-Returns the schema entry for a document **or** edge collection, or `None` if not found.
-
-```python
-info = inspector.get_collection_info("ExtractedEntities")
-info["fields"]    # discovered field names
-```
-
----
-
-## `get_edge_info`
-
-```python
-get_edge_info(edge_collection: str) -> dict | None
-```
-
-Returns the schema entry for an edge collection, including its `from_collections` and `to_collections`.
-
-```python
-edge = inspector.get_edge_info("ExtractedRelationships")
-edge["from_collections"]   # e.g. ["ExtractedEntities"]
-edge["to_collections"]     # e.g. ["ExtractedEntities"]
-```
-
----
-
-## `inspect_arango_schema`
-
-```python
-inspect_arango_schema(db, output_file: str = "schema.json") -> dict
-```
-
-Convenience one-call helper: builds the schema map and optionally writes it to `output_file` as JSON.
-
-```python
-from odin import inspect_arango_schema
-
-inspect_arango_schema(db, output_file="schema.json")
-```
-
-Use the exported file to prime an agent, generate documentation, or validate structures across environments.
-
----
-
-## Data classes
-
-The inspector returns plain dictionaries, backed internally by these dataclasses:
-
-| Dataclass | Fields |
-|-----------|--------|
-| `CollectionSchema` | `name`, `type`, `count`, `fields` |
-| `EdgeSchema` | `name`, `count`, `from_collections`, `to_collections`, `fields` |
-| `SchemaMap` | `database_name`, `collections`, `edges` |
+The schema-map shape is backend-defined. ArangoDB currently reports its
+database name, document collections, edge collections, sampled fields, and
+edge endpoint collections. Other backends must report only the information
+they can inspect accurately.

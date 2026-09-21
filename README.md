@@ -363,7 +363,7 @@ engine = OdinEngine(
 | `score_edge(src, rel, dst)` | Score plausibility of a single edge (0.0-1.0) |
 | `find_anchors(seeds, topn=20)` | Top-N nodes by Personalized PageRank |
 | `retrain_model(force_retrain=True)` | Force NPLL retraining after major graph updates |
-| `SchemaInspector(db)` | Inspect collections, fields, and edge relationships at runtime |
+| `inspect_schema(backend)` | Inspect the configured backend's schema at runtime |
 
 Full parameter and result documentation lives in the
 [API reference](https://odin.developers.prescottdata.io).

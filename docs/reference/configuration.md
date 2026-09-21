@@ -48,14 +48,14 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 ## Schema inspection
 
-`SchemaInspector(...)`
+`inspect_schema(backend, ...)`
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `db` | `StandardDatabase` | required |
-| `max_sample_docs` | `int` | `5` |
+| `backend` | `GraphBackend` | required |
+| `refresh` | `bool` | `False` |
 
-`inspect_arango_schema(db, output_file="schema.json")`.
+`inspect_schema(backend, output_file="schema.json")`.
 
 ---
 

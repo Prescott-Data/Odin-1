@@ -116,7 +116,7 @@ nav:
   - Reference:
       - Overview: reference/index.md
       - OdinEngine API: reference/engine.md
-      - SchemaInspector API: reference/schema.md
+      - Schema Inspection API: reference/schema.md
       - Configuration: reference/configuration.md
       - Result Schema: reference/result-schema.md
       - Troubleshooting: reference/troubleshooting.md

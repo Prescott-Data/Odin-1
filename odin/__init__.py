@@ -16,7 +16,7 @@ Usage:
 """
 
 from .engine import OdinEngine
-from .schema import SchemaInspector, inspect_arango_schema
+from .schema import inspect_schema
 
-__all__ = ["OdinEngine", "SchemaInspector", "inspect_arango_schema"]
+__all__ = ["OdinEngine", "inspect_schema"]
 __version__ = "0.3.0"

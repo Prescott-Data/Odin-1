@@ -129,13 +129,13 @@ result = orch.retrieve(seeds=["v1"],
 
 NPLL training is ArangoDB-specific; on other backends pass an explicit `edge_confidence`.
 
-## Schema introspection (for agents writing AQL)
+## Schema introspection
 
 ```python
-from odin import SchemaInspector, inspect_arango_schema
+from odin import inspect_schema
 
-schema = SchemaInspector(db).get_schema_map()   # {"database_name", "collections", "edges"}
-inspect_arango_schema(db, output_file="schema.json")
+schema = inspect_schema(backend)
+inspect_schema(backend, output_file="schema.json")
 ```
 
 ## Reference

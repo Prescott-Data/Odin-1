@@ -52,9 +52,9 @@ else:
 Both of those work better when the agent knows the shape of the graph in the first place. [Schema introspection](schema-introspection.md) primes it so it can request sensible seeds or write valid queries:
 
 ```python
-from odin import inspect_arango_schema
+from odin import inspect_schema
 
-inspect_arango_schema(db, output_file="schema.json")
+inspect_schema(backend, output_file="schema.json")
 agent.load_context("schema.json")   # now the agent knows the collections/fields
 ```
 

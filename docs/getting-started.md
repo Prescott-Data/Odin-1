@@ -49,7 +49,7 @@ pip install odin-engine
     The package is published as `odin-engine`, but you import it as `odin`:
 
     ```python
-    from odin import OdinEngine, SchemaInspector
+    from odin import OdinEngine, inspect_schema
     ```
 
 ---

@@ -43,7 +43,7 @@ Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB backe
 ## Reference
 
 - [OdinEngine API](https://odin.developers.prescottdata.io/reference/engine/): every method and signature
-- [SchemaInspector API](https://odin.developers.prescottdata.io/reference/schema/)
+- [Schema Inspection API](https://odin.developers.prescottdata.io/reference/schema/)
 - [Configuration](https://odin.developers.prescottdata.io/reference/configuration/): every parameter and default
 - [Result Schema](https://odin.developers.prescottdata.io/reference/result-schema/): the exact shape `retrieve()` returns
 - [Troubleshooting](https://odin.developers.prescottdata.io/reference/troubleshooting/)

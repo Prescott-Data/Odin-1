@@ -14,7 +14,7 @@ The complete API surface, parameters, and data shapes.
 
     [Read more →](engine.md)
 
--   :material-table-search: **SchemaInspector API**
+-   :material-table-search: **Schema Inspection API**
 
     Runtime schema discovery.
 
@@ -51,13 +51,12 @@ The complete API surface, parameters, and data shapes.
 ## Public imports
 
 ```python
-from odin import OdinEngine, SchemaInspector, inspect_arango_schema
+from odin import OdinEngine, inspect_schema
 ```
 
 | Symbol | Purpose |
 |--------|---------|
 | `OdinEngine` | Main entry point: retrieval, scoring, anchors |
-| `SchemaInspector` | Runtime ArangoDB schema discovery |
-| `inspect_arango_schema` | One-call schema export helper |
+| `inspect_schema` | One-call backend schema export helper |
 
 `odin.__version__` reports the installed version.
