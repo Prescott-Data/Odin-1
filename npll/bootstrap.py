@@ -32,6 +32,10 @@ from .utils.config import get_config
 logger = logging.getLogger(__name__)
 
 
+class TrainingError(RuntimeError):
+    """Requested NPLL training failed; callers must not serve substitute scores."""
+
+
 @dataclass
 class TrainingReport:
     """
@@ -232,8 +236,7 @@ class KnowledgeBootstrapper:
             training_result = trainer.train()
             logger.info(f"Training completed. Final ELBO: {training_result.final_elbo}")
         except Exception as e:
-            logger.error(f"Training failed: {e}", exc_info=True)
-            return None, None
+            raise TrainingError("NPLL trainer failed") from e
         
         trained_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         report = TrainingReport.from_training_result(training_result, trained_at)

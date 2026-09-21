@@ -130,6 +130,11 @@ retrain_model() -> bool
 
 Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns `True` on success. Use after **structural** graph changes; see [Model Lifecycle](../guides/npll-lifecycle.md).
 
+Failures raise and preserve the active model and serving components. Trainer
+exceptions and results without a model raise `npll.TrainingError`; backend
+errors retain their distinct types. This method does not return `False` or
+switch to constant confidence on failure.
+
 ---
 
 ## `has_npll`
@@ -155,7 +160,7 @@ Returns a small status dictionary:
     "community_id": "global",
     "npll_loaded": True,
     "intelligence_mode": "NPLL",       # or "Constant"
-    "npll_source": "trained",          # "trained" | "cached_weights" | "failed" | "disabled"
+    "npll_source": "trained",          # "trained" | "cached_weights" | "disabled"
     "npll_converged": True,            # None when no training report is available
     "npll_trained_at": "2026-09-08T12:00:00Z",
     "cache_size": 5000,
@@ -172,8 +177,8 @@ training_report -> TrainingReport | None    # attribute
 
 The audit record for the NPLL training run behind the active model — available
 both when the model was just trained and when it was rebuilt from cached
-weights. `None` when auto-train is disabled, training failed, or the weights
-were persisted before reports existed.
+weights. `None` when auto-train is disabled. Failed retraining preserves the
+report associated with the active model; current artifacts require a report.
 
 Fields: `converged`, `convergence_epoch`, `final_elbo`, `best_elbo`,
 `total_epochs`, `total_em_iterations`, `elbo_history` (complete, per E-M

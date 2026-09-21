@@ -38,7 +38,8 @@ engine.get_status()
 #  'cache_size': 5000}
 ```
 
-An `intelligence_mode` of `Constant` means training was either disabled or could not complete, which most often happens on an empty graph.
+An `intelligence_mode` of `Constant` means training was explicitly disabled with
+`auto_train=False`. Requested training that fails or produces no model raises.
 
 ## Trusting the model: convergence diagnostics
 
@@ -70,7 +71,7 @@ Convergence is declared when the relative ELBO change **and** the rule-weight ch
 
 If the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
 
-`engine.training_report` is `None` when auto-train is disabled or training failed.
+`engine.training_report` is `None` when auto-train is disabled.
 Current artifacts require a complete report. Older unscoped artifacts are not
 reused by the new backend store; the first run creates a new namespaced model.
 
@@ -113,8 +114,11 @@ Backend failures, corrupt artifacts, and conflicting model writes raise distinct
 errors during initialization and retraining. They are not interpreted as missing
 weights or converted to constant confidence. Model saves atomically replace the
 artifact only if its revision still matches the revision read before training.
-Existing handling of non-backend training failures can still select constant
-confidence; confirm the active mode with `get_status()`.
+Exceptions inside the trainer raise `npll.TrainingError` with the original
+exception as their cause. An empty graph also makes engine initialization fail
+when training is requested. Choose `auto_train=False` explicitly for retrieval
+without NPLL. Failed retraining preserves the active model, report, and scoring
+components; it raises instead of publishing partial replacement state.
 
 Direct bootstrap callers now construct
 `KnowledgeBootstrapper(backend.triple_source(), backend.model_store(community_id, community_mode))`.

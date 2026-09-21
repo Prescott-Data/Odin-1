@@ -89,8 +89,11 @@ against the store revision it read. Corruption is reserved for artifacts that
 fail schema validation.
 
 These errors propagate through bootstrap and the engine's initialization and
-retraining methods. Existing handling of non-backend training failures is
-unchanged in this phase.
+retraining methods. Trainer exceptions raise `npll.TrainingError`, preserving
+the original cause. Bootstrap can return a failed result for an empty snapshot
+or no generated rules; the public engine treats this as `TrainingError` too.
+Only explicit `auto_train=False` selects constant confidence. Retraining builds
+replacement serving components before changing the active engine state.
 
 ## Scope and verification
 

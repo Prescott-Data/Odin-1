@@ -5,6 +5,6 @@ The semantic intelligence layer for Odin.
 """
 
 from npll.npll_model import NPLLModel
-from npll.bootstrap import KnowledgeBootstrapper, BootstrapResult, TrainingReport
+from npll.bootstrap import KnowledgeBootstrapper, BootstrapResult, TrainingError, TrainingReport
 
-__all__ = ["NPLLModel", "KnowledgeBootstrapper", "BootstrapResult", "TrainingReport"]
+__all__ = ["NPLLModel", "KnowledgeBootstrapper", "BootstrapResult", "TrainingError", "TrainingReport"]

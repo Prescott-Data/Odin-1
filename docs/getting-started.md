@@ -84,8 +84,10 @@ engine = OdinEngine(backend, community_id="global")
 
 On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
 
-!!! tip "No model? No problem"
-    If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check `engine.has_npll` to see which mode you are in.
+!!! tip "Explicit retrieval-only operation"
+    Use `OdinEngine(backend, auto_train=False)` to retrieve with constant
+    confidence without training. Requested training that fails, including on
+    an empty graph, raises an error instead of changing scoring modes.
 
 ---
 

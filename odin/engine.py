@@ -10,7 +10,7 @@ This class orchestrates all components:
 import logging
 from typing import List, Dict, Any, Optional
 
-from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
+from npll.bootstrap import KnowledgeBootstrapper, TrainingError, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.adapters import GraphAccessor
@@ -105,15 +105,15 @@ class OdinEngine:
         source, store = self._training_capabilities()
         bootstrapper = KnowledgeBootstrapper(source, store)
         result = bootstrapper.ensure_model_ready()
+        if result.model is None:
+            raise TrainingError("Requested NPLL training did not produce a model")
+        confidence = NPLLConfidence(result.model, cache_size=10000)
         self.npll_model = result.model
         self.training_report = result.report
         self.npll_source = result.source
         self._warn_if_not_converged()
 
-        if self.npll_model:
-            return NPLLConfidence(self.npll_model, cache_size=10000)
-        logger.warning("NPLL training did not produce a model. Using constant confidence.")
-        return ConstantConfidence(0.8)
+        return confidence
 
     def _create_accessor(self, community_id: str, community_mode: str):
         accessor_factory = getattr(self.backend, "accessor", None)
@@ -286,25 +286,26 @@ class OdinEngine:
         Useful after significant data changes.
         
         Returns:
-            True if training succeeded, False otherwise
+            True if training succeeded. Failure raises and preserves the active model.
         """
         source, store = self._training_capabilities()
         bootstrapper = KnowledgeBootstrapper(source, store)
         result = bootstrapper.ensure_model_ready(force_retrain=True)
+        if result.model is None:
+            raise TrainingError("Requested NPLL retraining did not produce a model")
+        confidence = NPLLConfidence(result.model, cache_size=10000)
+        orchestrator = RetrievalOrchestrator(
+            accessor=self.accessor, edge_confidence=confidence,
+        )
+        # Publish serving state only after a complete replacement is ready.
         self.npll_model = result.model
         self.training_report = result.report
         self.npll_source = result.source
+        self.confidence = confidence
+        self.orchestrator = orchestrator
         self._warn_if_not_converged()
-
-        if self.npll_model:
-            self.confidence = NPLLConfidence(self.npll_model, cache_size=10000)
-            self.orchestrator = RetrievalOrchestrator(
-                accessor=self.accessor,
-                edge_confidence=self.confidence,
-            )
-            logger.info("✓ Model retrained successfully")
-            return True
-        return False
+        logger.info("✓ Model retrained successfully")
+        return True
 
     @property
     def has_npll(self) -> bool:

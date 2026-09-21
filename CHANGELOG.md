@@ -46,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the responsibility boundary between Odin and the consuming agent.
 
 ### Fixed
+- Projected missing-node lookups return an empty mapping for both Arango
+  accessors. Engine validation rejects inherited GraphAccessor placeholders.
+- `OdinTriples` resolves to its own explicit configuration, preserving the
+  previously effective settings. Unknown configuration names raise.
+- Trainer failures propagate with their original cause. Requested training
+  that yields no model fails engine initialization; failed retraining preserves
+  the active serving state instead of substituting constant confidence.
 - Training fingerprints now cover the exact extracted triples, including type
   triples, so same-count endpoint or type changes invalidate cached weights.
   Arango training uses full document IDs and exact relation labels to match

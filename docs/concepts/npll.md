@@ -32,7 +32,9 @@ The full story (persistence, per-community models, and when to retrain) is in [M
 
 ## What happens when there is no model
 
-A model cannot always train: an empty or brand-new graph has nothing to learn from. Rather than fail, Odin falls back to a constant edge-confidence so retrieval keeps working, and it tells you which mode you are in:
+A model cannot always train: an empty graph has nothing to learn from. Requested
+training that fails raises an error. To use structural retrieval without a
+model, explicitly construct the engine with `auto_train=False`:
 
 ```python
 engine.has_npll        # True when the NPLL model is active

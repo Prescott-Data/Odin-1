@@ -364,7 +364,7 @@ Odin manages the complete NPLL lifecycle automatically:
 
 3. **Domain-Aware Rule Generation**: Odin automatically analyzes the relations present in the knowledge graph and generates appropriate logical rules. Healthcare graphs receive rules about diagnoses, treatments, and patient journeys. Insurance graphs receive rules about claims, policies, and provider patterns. Generic graphs receive universal patterns that apply across domains.
 
-4. **Graceful Fallback**: If NPLL training fails for any reason (insufficient data, corrupted graph, timeout), Odin falls back to constant-confidence scoring rather than failing entirely. The system continues to provide structural and temporal guidance while the semantic layer is unavailable.
+4. **Explicit Failure Policy**: Requested NPLL training fails loudly when it cannot produce a model. Callers can explicitly choose `auto_train=False` for constant-confidence retrieval. Failed retraining preserves the active model and serving components.
 
 This self-managing approach ensures that Odin's intelligence always reflects the current state of the knowledge graph, eliminating model staleness and reducing operational overhead.
 
@@ -429,7 +429,7 @@ Enterprise deployment requires careful attention to:
 
 **Memory Management.** Unbounded caches have caused production incidents in many systems—memory grows until the process is killed. All caches in Odin are bounded with configurable limits, ensuring predictable memory consumption regardless of exploration patterns.
 
-**Graceful Degradation.** If the plausibility model fails—whether due to missing embeddings, model corruption, or infrastructure issues—Odin falls back to structural-only scoring rather than failing entirely. Agents continue to receive guidance, albeit without semantic filtering. This robustness is essential for production systems that cannot afford downtime.
+**Explicit Scoring Mode.** Training and backend errors propagate to the caller. Constant-confidence retrieval requires `auto_train=False`; errors do not silently change the scoring mode. Failed retraining leaves the active serving state intact.
 
 ### 5.3 Database Abstraction
 
@@ -618,7 +618,7 @@ While Odin provides significant advances in graph-guided exploration, we acknowl
 
 ### 9.1 Cold Start
 
-When Odin connects to a new knowledge graph with no prior model weights, it must train the NPLL model before semantic scoring becomes available. This initial training takes 10-30 seconds depending on graph size. During this period, exploration falls back to structural-only scoring (PageRank + recency), which still provides useful guidance but lacks semantic filtering.
+When Odin connects to a new knowledge graph with no prior model weights, it must train the NPLL model before semantic scoring becomes available. Initialization waits for training and persistence to complete. Callers that need structural retrieval without training must explicitly choose `auto_train=False`.
 
 **Mitigation:** For latency-critical first-time connections, applications can trigger training asynchronously and notify users when semantic scoring becomes available.
 

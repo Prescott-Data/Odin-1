@@ -591,7 +591,7 @@ Odin tells you WHERE. The LLM agent tells you WHAT IT MEANS.
 - New domains need **model fine-tuning**
 - Empty graphs return empty results
 
-**Mitigation:** Pre-trained domain models, graceful fallback to ConstantConfidence.
+**Mitigation:** Prepare model artifacts before serving, or explicitly choose retrieval-only operation with `auto_train=False`. Training failures raise.
 
 ### 3. Sparse Graphs
 

@@ -105,7 +105,7 @@ if result["triage"]["score"] >= 70:
 - **`score_edge` argument order is `(src, rel, dst)`** (source, relation, destination).
 - **`beam_width` default is 64** (not 10).
 - **`OdinEngine` takes a `GraphBackend`**, not a connection string or raw database handle. Build `ArangoBackend(db)` from the connected ArangoDB handle.
-- **Check `engine.has_npll`** before relying on fine-grained plausibility; if False, the engine is in constant-confidence fallback.
+- **Check `engine.has_npll`** before relying on fine-grained plausibility; if False, training was explicitly disabled. Training failures raise; failed retraining preserves the active model.
 
 ## Other backends (adapters)
 
