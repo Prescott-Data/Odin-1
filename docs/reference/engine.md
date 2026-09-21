@@ -32,8 +32,8 @@ OdinEngine(
 | `auto_train` | `bool` | `True` | Train NPLL if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
-For ArangoDB, construct `ArangoBackend(db, community_id=..., community_mode=...)`
-from a connected `python-arango` database. On first construction against a
+For ArangoDB, construct `ArangoBackend(db)` from a connected `python-arango`
+database. The engine passes its community scope to model persistence. On first construction against a
 training-capable graph, NPLL trains (2-5 min) unless `auto_train=False`. A
 retrieval-only backend must set `auto_train=False`; otherwise construction
 raises `BackendCapabilityError`. See [Model Lifecycle](../guides/npll-lifecycle.md).

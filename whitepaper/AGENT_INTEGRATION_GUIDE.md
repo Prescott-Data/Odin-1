@@ -14,7 +14,7 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("KG-test", username="lisa", password="...")
 
 # Initialize Odin (auto-trains NPLL if needed, stores weights in DB)
-backend = ArangoBackend(db, community_id="healthcare")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="healthcare")
 
 # Use in your agent

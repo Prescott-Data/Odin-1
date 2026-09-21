@@ -16,7 +16,7 @@ from retrieval.backends.arango import ArangoBackend
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-backend = ArangoBackend(db, community_id="global")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="global")
 
 result = engine.retrieve(

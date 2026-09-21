@@ -100,8 +100,8 @@ retrieval, not the training snapshot:
 ```python
 from retrieval.backends.arango import ArangoBackend
 
-claims_backend = ArangoBackend(db, community_id="claims", community_mode="mapping")
-supply_backend = ArangoBackend(db, community_id="supply", community_mode="mapping")
+claims_backend = ArangoBackend(db)
+supply_backend = ArangoBackend(db)
 claims = OdinEngine(claims_backend, community_id="claims", community_mode="mapping")
 supply = OdinEngine(supply_backend, community_id="supply", community_mode="mapping")
 # Each trains or loads its own NPLL model on first use.
@@ -117,7 +117,7 @@ Existing handling of non-backend training failures can still select constant
 confidence; confirm the active mode with `get_status()`.
 
 Direct bootstrap callers now construct
-`KnowledgeBootstrapper(backend.triple_source(), backend.model_store())`.
+`KnowledgeBootstrapper(backend.triple_source(), backend.model_store(community_id, community_mode))`.
 See the [backend contracts](../development/backend-contracts.md) for the snapshot,
 artifact schema, migration, and concurrency details.
 

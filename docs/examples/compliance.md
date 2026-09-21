@@ -20,7 +20,7 @@ from retrieval.backends.arango import ArangoBackend
 db = ArangoClient(hosts="http://localhost:8529").db(
     "compliance", username="root", password=""
 )
-backend = ArangoBackend(db, community_id="compliance", community_mode="mapping")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="compliance", community_mode="mapping")
 
 score = engine.score_edge(

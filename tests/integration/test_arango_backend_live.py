@@ -63,7 +63,7 @@ def test_snapshot_tracks_same_count_mutations_and_types(db):
 
 def test_lossless_roundtrip_and_concurrent_replacement(db):
     backend = ArangoBackend(db)
-    store = backend.model_store()
+    store = backend.model_store("global", "none")
     artifact = model_artifact(101, 120)
     revision = store.save(MODEL_KEY, artifact, expected_revision=None)
     assert store.load(MODEL_KEY).document == artifact
@@ -72,7 +72,9 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
         candidate = model_artifact(101, 120)
         candidate["rule_weights"] = [weight]
         try:
-            backend.model_store().save(MODEL_KEY, candidate, expected_revision=revision)
+            backend.model_store("global", "none").save(
+                MODEL_KEY, candidate, expected_revision=revision,
+            )
             return "saved"
         except ModelConflictError:
             return "conflict"
@@ -83,7 +85,7 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
     del latest.document["evidence"]
     store.save(MODEL_KEY, latest.document, expected_revision=latest.revision)
     assert store.load(MODEL_KEY).document == latest.document
-    assert ArangoBackend(db, community_id="other").model_store().load(MODEL_KEY) is None
+    assert ArangoBackend(db).model_store("other", "none").load(MODEL_KEY) is None
 
 
 def test_real_train_save_reload_and_serve(db, monkeypatch):
@@ -102,9 +104,10 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
         num_epochs=1, max_em_iterations_per_epoch=1, save_checkpoints=False,
     ))
     backend = ArangoBackend(db)
-    first = KnowledgeBootstrapper(backend.triple_source(), backend.model_store()).ensure_model_ready()
+    store = backend.model_store("global", "none")
+    first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert first.source == "trained"
-    second = KnowledgeBootstrapper(backend.triple_source(), backend.model_store()).ensure_model_ready()
+    second = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert second.source == "cached_weights"
     assert first.report == second.report
     assert first.data_hash == second.data_hash

@@ -21,7 +21,7 @@ db = client.db("my_graph", username="root", password="")
 
 # OdinEngine takes a graph backend. ArangoBackend keeps credentials in the
 # already-connected database handle.
-backend = ArangoBackend(db, community_id="global", community_mode="none")
+backend = ArangoBackend(db)
 engine = OdinEngine(
     backend,
     community_id="global",   # scope; "global" explores the whole graph

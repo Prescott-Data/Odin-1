@@ -20,7 +20,7 @@ from retrieval.backends.arango import ArangoBackend
 db = ArangoClient(hosts="http://localhost:8529").db(
     "supply", username="root", password=""
 )
-backend = ArangoBackend(db, community_id="supply", community_mode="mapping")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="supply", community_mode="mapping")
 
 result = engine.retrieve(

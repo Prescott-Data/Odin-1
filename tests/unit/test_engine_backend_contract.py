@@ -41,7 +41,7 @@ class NullTrainingBackend(RetrievalOnlyBackend):
     def triple_source(self):
         return None
 
-    def model_store(self):
+    def model_store(self, community_id, community_mode):
         return None
 
 
@@ -96,7 +96,7 @@ def test_engine_rejects_an_incomplete_retrieval_accessor():
 def test_unexpected_bootstrap_failure_is_not_converted_to_constant_confidence():
     backend = NullTrainingBackend()
     backend.triple_source = lambda: object()
-    backend.model_store = lambda: object()
+    backend.model_store = lambda *_: object()
 
     with patch("odin.engine.KnowledgeBootstrapper") as bootstrap:
         bootstrap.return_value.ensure_model_ready.side_effect = RuntimeError("training exploded")

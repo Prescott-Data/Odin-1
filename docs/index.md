@@ -98,7 +98,7 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
 # 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-backend = ArangoBackend(db, community_id="global")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="global")
 
 # 3. Explore from seed entities

@@ -401,7 +401,7 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("knowledge_graph", username="user", password="pass")
 
 # Initialize Odin - NPLL auto-trains if needed
-backend = ArangoBackend(db, community_id="healthcare")
+backend = ArangoBackend(db)
 odin = OdinEngine(backend, community_id="healthcare")
 
 # Use during agent exploration

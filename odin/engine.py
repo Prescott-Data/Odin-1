@@ -66,6 +66,7 @@ class OdinEngine:
             community_mode: "none" for global exploration, "mapping" for community-scoped
         """
         self.community_id = community_id
+        self.community_mode = community_mode
         self.backend = backend
         
         logger.info(f"Initializing OdinEngine for community '{community_id}' (mode: {community_mode})...")
@@ -148,7 +149,7 @@ class OdinEngine:
                 + ", ".join(missing)
             )
         source = self.backend.triple_source()
-        store = self.backend.model_store()
+        store = self.backend.model_store(self.community_id, self.community_mode)
         unavailable = [
             name for name, capability in (("triple_source", source), ("model_store", store))
             if capability is None

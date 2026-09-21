@@ -163,7 +163,7 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_database", username="user", password="pass")
 
 # 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-backend = ArangoBackend(db, community_id="my_community")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="my_community")
 
 # 3. Explore from seed entities
@@ -296,7 +296,7 @@ The entity IDs and outputs below are illustrative, not measured results.
 **Scenario:** Find providers billing unusual procedure combinations
 
 ```python
-engine = OdinEngine(ArangoBackend(db, community_id="medicare_claims"), community_id="medicare_claims")
+engine = OdinEngine(ArangoBackend(db), community_id="medicare_claims")
 result = engine.retrieve(
     seeds=["provider/high_volume_clinic"],
     max_paths=100,

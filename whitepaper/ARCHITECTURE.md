@@ -708,7 +708,7 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
 # 2. Initialize Odin (auto-trains NPLL if needed)
-backend = ArangoBackend(db, community_id="my_community")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="my_community")
 
 # 3. Retrieve
@@ -771,8 +771,10 @@ client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
 # 2. Setup NPLL via bootstrapper
-backend = ArangoBackend(db, community_id="my_community", community_mode="mapping")
-bootstrapper = KnowledgeBootstrapper(backend.triple_source(), backend.model_store())
+backend = ArangoBackend(db)
+bootstrapper = KnowledgeBootstrapper(
+    backend.triple_source(), backend.model_store("my_community", "mapping")
+)
 bootstrap_result = bootstrapper.ensure_model_ready()
 npll_model = bootstrap_result.model
 if bootstrap_result.report and not bootstrap_result.report.converged:

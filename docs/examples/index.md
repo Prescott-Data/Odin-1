@@ -42,7 +42,7 @@ from retrieval.backends.arango import ArangoBackend
 db = ArangoClient(hosts="http://localhost:8529").db(
     "my_graph", username="root", password=""
 )
-backend = ArangoBackend(db, community_id="...", community_mode="mapping")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="...", community_mode="mapping")
 
 result = engine.retrieve(seeds=[...], max_paths=..., hop_limit=...)

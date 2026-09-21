@@ -261,12 +261,12 @@ class ArangoCommunityAccessor(GraphAccessor):
     def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, Any]:
         if fields:
             proj = ", ".join([f"{f}: d.{f}" for f in fields])
-            aql = f"LET d = DOCUMENT(@id) RETURN {{ _id: d._id, {proj} }}"
+            aql = f"LET d = DOCUMENT(@id) FILTER d != null RETURN {{ _id: d._id, {proj} }}"
         else:
             aql = "RETURN DOCUMENT(@id)"
         cur = self.db.aql.execute(aql, bind_vars={"id": node_id})
         res = list(cur)
-        return res[0] if res else {}
+        return res[0] or {}
 
     # --------------------------
     # Stats / quick analytics
@@ -1150,12 +1150,12 @@ class GlobalGraphAccessor(GraphAccessor):
         """Return node properties, or an empty dict when the node is absent."""
         if fields:
             projection = ", ".join([f"{field}: d.{field}" for field in fields])
-            aql = f"LET d = DOCUMENT(@id) RETURN {{ _id: d._id, {projection} }}"
+            aql = f"LET d = DOCUMENT(@id) FILTER d != null RETURN {{ _id: d._id, {projection} }}"
         else:
             aql = "RETURN DOCUMENT(@id)"
         cursor = self.db.aql.execute(aql, bind_vars={"id": node_id})
         result = list(cursor)
-        return result[0] if result else {}
+        return result[0] or {}
 
     def degree(self, node: NodeId) -> int:
         """Out-degree of a node."""

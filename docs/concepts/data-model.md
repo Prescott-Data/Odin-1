@@ -42,13 +42,13 @@ A **community** is a named scope for exploration. On a large multi-tenant graph,
 ```python
 # Global exploration across the whole graph (default)
 engine = OdinEngine(
-    ArangoBackend(db, community_id="global", community_mode="none"),
+    ArangoBackend(db),
     community_id="global", community_mode="none",
 )
 
 # Scoped to a single community
 engine = OdinEngine(
-    ArangoBackend(db, community_id="medicare_claims", community_mode="mapping"),
+    ArangoBackend(db),
     community_id="medicare_claims", community_mode="mapping",
 )
 ```

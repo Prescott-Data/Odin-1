@@ -67,11 +67,11 @@ A [community](../concepts/data-model.md#communities-scope-the-graph) restricts e
 
 ```python
 # Global exploration (default)
-backend = ArangoBackend(db, community_id="global", community_mode="none")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="global", community_mode="none")
 
 # Scoped to one partition
-backend = ArangoBackend(db, community_id="medicare_claims", community_mode="mapping")
+backend = ArangoBackend(db)
 engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 ```
 

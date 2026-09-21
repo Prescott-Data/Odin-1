@@ -108,15 +108,34 @@ def test_concurrent_creation_and_replacement_reject_stale_writers():
 
 def test_backend_namespaces_separate_communities_modes_and_databases():
     db = FakeArango()
-    a = ArangoBackend(db, community_id="a", community_mode="mapping").model_store()
-    b = ArangoBackend(db, community_id="b", community_mode="mapping").model_store()
-    unscoped = ArangoBackend(db, community_id="a").model_store()
+    backend = ArangoBackend(db)
+    a = backend.model_store("a", "mapping")
+    b = backend.model_store("b", "mapping")
+    unscoped = backend.model_store("a", "none")
     a.save(MODEL_KEY, model_artifact(), expected_revision=None)
     assert b.load(MODEL_KEY) is None
     assert unscoped.load(MODEL_KEY) is None
     other = FakeArango()
     other.name = "other_graph"
-    assert ArangoBackend(other).model_store().namespace != ArangoBackend(db).model_store().namespace
+    assert (ArangoBackend(other).model_store("a", "mapping").namespace !=
+            ArangoBackend(db).model_store("a", "mapping").namespace)
+
+
+def test_engine_scope_drives_arango_model_namespace():
+    from odin.engine import OdinEngine
+
+    backend = ArangoBackend(FakeArango())
+    engine = OdinEngine(
+        backend,
+        community_id="tenant-a",
+        community_mode="mapping",
+        auto_train=False,
+    )
+    _, store = engine._training_capabilities()
+
+    assert store.namespace.endswith(
+        '"tenant-a","mapping"]'
+    )
 
 
 def test_absence_corruption_and_backend_failure_are_distinct():
@@ -260,6 +279,8 @@ def test_engine_does_not_hide_backend_failure(method):
 
     engine = OdinEngine.__new__(OdinEngine)
     engine.backend = ArangoBackend(FakeArango())
+    engine.community_id = "global"
+    engine.community_mode = "none"
     with patch("odin.engine.KnowledgeBootstrapper") as bootstrap:
         bootstrap.return_value.ensure_model_ready.side_effect = BackendIOError("unavailable")
         with pytest.raises(BackendIOError):

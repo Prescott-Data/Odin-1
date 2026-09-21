@@ -2,7 +2,8 @@
 
 from npll.core.knowledge_graph import KnowledgeGraph
 from retrieval.adapters import KGCommunityAccessor, OverlayAccessor
-from retrieval.adapters_arango import GlobalGraphAccessor
+from retrieval.adapters_arango import ArangoCommunityAccessor, GlobalGraphAccessor
+from tests.utils.backend_fakes import FakeArango
 
 
 def _knowledge_graph():
@@ -37,3 +38,24 @@ def test_global_accessor_declares_the_complete_graph_accessor_surface():
         "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
     ):
         assert callable(getattr(accessor, method))
+
+
+def test_arango_accessors_return_an_empty_dict_for_absent_nodes():
+    db = FakeArango()
+    queries = []
+
+    def absent_node(query, **kwargs):
+        queries.append(query)
+        return iter([None])
+
+    db.aql.execute = absent_node
+    accessors = (
+        ArangoCommunityAccessor(db, community_id="global", community_mode="none"),
+        GlobalGraphAccessor(db),
+    )
+
+    for accessor in accessors:
+        assert accessor.get_node("ExtractedEntities/missing") == {}
+        assert accessor.get_node("ExtractedEntities/missing", fields=["type"]) == {}
+
+    assert all("FILTER d != null" in query for query in queries[1::2])

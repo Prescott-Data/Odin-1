@@ -122,15 +122,13 @@ class ArangoModelStore:
 class ArangoBackend:
     """Capabilities for the existing ExtractedEntities/Relationships graph.
 
-    The database and fixed collection pair identify the graph. Community ID
-    and mode additionally namespace model artifacts, even though training is
-    global in this extraction phase.
+    The database and fixed collection pair identify the graph. The engine's
+    community ID and mode additionally namespace model artifacts, even though
+    training is global in this extraction phase.
     """
 
-    def __init__(self, db, *, community_id: str = "global", community_mode: str = "none"):
+    def __init__(self, db):
         self.db = db
-        self.community_id = community_id
-        self.community_mode = community_mode
 
     def accessor(self, community_id: str, community_mode: str):
         return ArangoCommunityAccessor(self.db, community_id=community_id,
@@ -139,10 +137,10 @@ class ArangoBackend:
     def triple_source(self) -> ArangoTripleSource:
         return ArangoTripleSource(self.db)
 
-    def model_store(self) -> ArangoModelStore:
+    def model_store(self, community_id: str, community_mode: str) -> ArangoModelStore:
         namespace = json.dumps([
             self.db.name, "ExtractedEntities", "ExtractedRelationships",
-            self.community_id, self.community_mode,
+            community_id, community_mode,
         ], ensure_ascii=False, separators=(",", ":"))
         return ArangoModelStore(self.db, namespace=namespace)
 
