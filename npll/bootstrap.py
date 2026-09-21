@@ -56,7 +56,7 @@ class TrainingReport:
 
     @classmethod
     def from_training_result(cls, result: TrainingResult, trained_at: str) -> "TrainingReport":
-        config = get_config("ArangoDB_Triples")
+        config = get_config("OdinTriples")
         return cls(
             converged=result.converged,
             convergence_epoch=result.convergence_epoch,
@@ -172,7 +172,7 @@ class KnowledgeBootstrapper:
             report = TrainingReport.from_dict(doc["training_report"])
         except (TypeError, ValueError) as exc:
             raise CorruptModelError("Invalid training report") from exc
-        config = get_config("ArangoDB_Triples")
+        config = get_config("OdinTriples")
         model = create_initialized_npll_model(kg, rules, config)
         with torch.no_grad():
             model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
@@ -214,7 +214,7 @@ class KnowledgeBootstrapper:
             return None, None
         
         # 4. Initialize Model
-        config = get_config("ArangoDB_Triples")
+        config = get_config("OdinTriples")
         model = create_initialized_npll_model(kg, rules, config)
         
         # 5. Train

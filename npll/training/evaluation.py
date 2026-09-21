@@ -470,7 +470,7 @@ def example_evaluation():
     rules = rule_gen.generate_simple_rules(min_support=1)
     
     # Create and train model (simplified)
-    config = get_config("ArangoDB_Triples")
+    config = get_config("OdinTriples")
     model = create_npll_model(config)
     model.initialize(kg, rules)
     

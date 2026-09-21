@@ -68,7 +68,7 @@ class NPLLConfig:
     filtered_evaluation: bool = True  # Filtered setting from paper
     
     # Dataset-specific Settings (Paper datasets)
-    dataset_name: str = "ArangoDB_Triples"  # Default dataset
+    dataset_name: str = "OdinTriples"  # Default dataset
     train_ratio: float = 1.0  # Training data ratio (for data efficiency experiments)
     
     # Logging and Checkpointing
@@ -137,7 +137,7 @@ def get_config(dataset_name: str) -> NPLLConfig:
     if dataset_name in configs:
         return configs[dataset_name]
     else:
-        print(f"Warning: Unknown dataset {dataset_name}, using default ArangoDB_Triples config")
+        print(f"Warning: Unknown dataset {dataset_name}, using default OdinTriples config")
         return FB15K_237_CONFIG
 
 
