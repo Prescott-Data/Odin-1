@@ -36,15 +36,10 @@ class OdinEngine:
     
     Example:
         from odin import OdinEngine
-        from retrieval.backends.arango import ArangoBackend
-        from arango import ArangoClient
-        
-        client = ArangoClient(hosts="http://localhost:8529")
-        db = client.db("KG-test", username="root", password="")
-        
-        backend = ArangoBackend(db)
-        engine = OdinEngine(backend)
-        results = engine.retrieve(seeds=["Patient_123"])
+        from my_project.backend import MyGraphBackend
+
+        engine = OdinEngine(MyGraphBackend())
+        results = engine.retrieve(seeds=["entity/patient_123"])
     """
     
     def __init__(
