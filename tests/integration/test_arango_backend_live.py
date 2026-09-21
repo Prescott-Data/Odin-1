@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import pytest
 
+from odin import OdinEngine
 from retrieval.backends.arango import ArangoBackend
 from retrieval.backends.base import MODEL_KEY, ModelConflictError, TrainingSnapshot
 from tests.utils.backend_fakes import model_artifact
@@ -44,6 +45,33 @@ def db():
     finally:
         system.delete_database(name)
         client.close()
+
+
+def configure_fast_training(monkeypatch):
+    """Keep the live lifecycle tests practical while using real training."""
+    import npll.bootstrap as bootstrap_module
+    from npll.training.npll_trainer import TrainingConfig
+    from npll.utils.config import NPLLConfig
+
+    config = NPLLConfig(
+        entity_embedding_dim=4,
+        relation_embedding_dim=4,
+        rule_embedding_dim=8,
+        scoring_hidden_dim=8,
+        max_ground_rules=16,
+        batch_size=4,
+        device="cpu",
+    )
+    monkeypatch.setattr(bootstrap_module, "get_config", lambda name: config)
+    monkeypatch.setattr(
+        bootstrap_module,
+        "TrainingConfig",
+        lambda **kwargs: TrainingConfig(
+            num_epochs=1,
+            max_em_iterations_per_epoch=1,
+            save_checkpoints=False,
+        ),
+    )
 
 
 def test_snapshot_tracks_same_count_mutations_and_types(db):
@@ -89,20 +117,10 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
 
 
 def test_real_train_save_reload_and_serve(db, monkeypatch):
-    import npll.bootstrap as bootstrap_module
     from npll.bootstrap import KnowledgeBootstrapper
-    from npll.training.npll_trainer import TrainingConfig
-    from npll.utils.config import NPLLConfig
     from retrieval.confidence import NPLLConfidence
 
-    # Exercise the real training loop with small dimensions and one iteration.
-    config = NPLLConfig(entity_embedding_dim=4, relation_embedding_dim=4,
-                        rule_embedding_dim=8, scoring_hidden_dim=8,
-                        max_ground_rules=16, batch_size=4, device="cpu")
-    monkeypatch.setattr(bootstrap_module, "get_config", lambda name: config)
-    monkeypatch.setattr(bootstrap_module, "TrainingConfig", lambda **kwargs: TrainingConfig(
-        num_epochs=1, max_em_iterations_per_epoch=1, save_checkpoints=False,
-    ))
+    configure_fast_training(monkeypatch)
     backend = ArangoBackend(db)
     store = backend.model_store("global", "none")
     first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
@@ -116,3 +134,28 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
         "ExtractedEntities/A", "related_to", "ExtractedEntities/B",
     )
     assert math.isfinite(confidence) and 0 <= confidence <= 1
+
+
+def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
+    configure_fast_training(monkeypatch)
+
+    first = OdinEngine(ArangoBackend(db), community_id="global")
+    assert first.has_npll
+    assert first.npll_source == "trained"
+
+    reloaded = OdinEngine(ArangoBackend(db), community_id="global")
+    assert reloaded.has_npll
+    assert reloaded.npll_source == "cached_weights"
+
+    result = reloaded.retrieve(
+        seeds=["ExtractedEntities/A"],
+        max_paths=2,
+        hop_limit=2,
+    )
+    assert result["paths"]
+    assert all(path["edges"] for path in result["paths"])
+    assert any(
+        edge["relation"] == "related_to"
+        for path in result["paths"]
+        for edge in path["edges"]
+    )

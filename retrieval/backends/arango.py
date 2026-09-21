@@ -131,8 +131,15 @@ class ArangoBackend:
         self.db = db
 
     def accessor(self, community_id: str, community_mode: str):
-        return ArangoCommunityAccessor(self.db, community_id=community_id,
-                                       community_mode=community_mode)
+        provenance_collection = "EXTRACTED_FROM"
+        if not self.db.has_collection(provenance_collection):
+            provenance_collection = None
+        return ArangoCommunityAccessor(
+            self.db,
+            community_id=community_id,
+            community_mode=community_mode,
+            provenance_edge_collection=provenance_collection,
+        )
 
     def triple_source(self) -> ArangoTripleSource:
         return ArangoTripleSource(self.db)

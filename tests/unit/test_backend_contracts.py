@@ -121,6 +121,17 @@ def test_backend_namespaces_separate_communities_modes_and_databases():
             ArangoBackend(db).model_store("a", "mapping").namespace)
 
 
+def test_backend_disables_absent_optional_provenance_collection():
+    db = FakeArango()
+    assert ArangoBackend(db).accessor("global", "none").prov_edges_col is None
+
+    db.create_collection("EXTRACTED_FROM")
+    assert (
+        ArangoBackend(db).accessor("global", "none").prov_edges_col
+        == "EXTRACTED_FROM"
+    )
+
+
 def test_engine_scope_drives_arango_model_namespace():
     from odin.engine import OdinEngine
 
