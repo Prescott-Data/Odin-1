@@ -114,6 +114,10 @@ Mapping mode requires `membership_collection`, `membership_entity_field`, and
 `membership_community_field` together. Without that complete mapping Odin
 raises `BackendConfigurationError`; it never guesses a membership schema.
 
+The optional global cross-community accessor additionally requires configured
+`bridge_collection` and `affinity_collection` names. Otherwise it is not
+available; Odin does not probe default bridge collections.
+
 ## Verifying it worked
 
 `get_status()` confirms the connection and which intelligence mode you are in:

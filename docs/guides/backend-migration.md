@@ -57,12 +57,16 @@ never assumes collection or field names.
 | `entity_type_field` | Optional node field; each non-null value must be a non-empty string. Odin trains it as `has_type`. |
 | `membership_*` fields | Optional, all-or-nothing mapping used only with `community_mode="mapping"`. |
 | `provenance_edge_collection` | Optional edge collection used for retrieval provenance. |
+| `bridge_collection` / `affinity_collection` | Optional, together with membership, enables the global cross-community accessor. |
 
 Arango `_id`, `_from`, and `_to` values are opaque canonical identities; Odin
 does not need a particular `_key`, collection prefix, label, or node schema.
 Missing endpoints are excluded from the training snapshot. An invalid relation
 or configured type value stops training clearly instead of being coerced or
 dropped. See [Connecting ArangoDB](arangodb.md) for a complete example.
+Without the complete membership, bridge, and affinity mapping,
+`backend.global_accessor()` returns `None` rather than probing assumed
+collection names.
 
 ## Update imports and direct component calls
 
