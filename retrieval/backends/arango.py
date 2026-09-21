@@ -36,6 +36,8 @@ class ArangoGraphConfig:
     edge_collection: str
     relation_field: str
     entity_type_field: Optional[str] = None
+    edge_weight_field: Optional[str] = None
+    community_property_field: Optional[str] = None
     provenance_edge_collection: Optional[str] = None
     membership_collection: Optional[str] = None
     membership_entity_field: Optional[str] = None
@@ -53,6 +55,8 @@ class ArangoGraphConfig:
             )
         optional = (
             self.entity_type_field,
+            self.edge_weight_field,
+            self.community_property_field,
             self.provenance_edge_collection,
             self.bridge_collection,
             self.affinity_collection,
@@ -229,6 +233,11 @@ class ArangoBackend:
                 "community_mode='mapping' requires membership fields in "
                 "ArangoGraphConfig"
             )
+        if community_mode == "property" and self.graph.community_property_field is None:
+            raise BackendConfigurationError(
+                "community_mode='property' requires community_property_field in "
+                "ArangoGraphConfig"
+            )
         provenance_collection = self.graph.provenance_edge_collection
         if provenance_collection and not self.db.has_collection(provenance_collection):
             provenance_collection = None
@@ -239,7 +248,9 @@ class ArangoBackend:
             edges_collection=self.graph.edge_collection,
             relation_property=self.graph.relation_field,
             node_type_property=self.graph.entity_type_field or "",
+            weight_property=self.graph.edge_weight_field,
             community_mode=community_mode,
+            community_property=self.graph.community_property_field or "",
             membership_collection=self.graph.membership_collection or "",
             membership_entity_field=self.graph.membership_entity_field or "",
             membership_community_field=self.graph.membership_community_field or "",
@@ -273,6 +284,7 @@ class ArangoBackend:
             nodes_collection=self.graph.node_collection,
             edges_collection=self.graph.edge_collection,
             relation_property=self.graph.relation_field,
+            weight_property=self.graph.edge_weight_field,
             membership_collection=self.graph.membership_collection,
             membership_entity_field=self.graph.membership_entity_field,
             membership_community_field=self.graph.membership_community_field,

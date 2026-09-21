@@ -15,6 +15,7 @@ from retrieval.backends.arango import (
 )
 from retrieval.backends.base import (
     MODEL_KEY,
+    BackendConfigurationError,
     BackendError,
     BackendIOError,
     CorruptModelError,
@@ -223,6 +224,39 @@ def test_main_accessor_does_not_probe_bridge_defaults_without_configuration():
     assert accessor.is_bridge("Entities/A") is None
     assert accessor.get_affinity("left", "right") == 0.0
     assert db.queries == []
+
+
+def test_main_accessor_uses_uniform_weight_without_an_explicit_mapping():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+
+    assert list(accessor.iter_out("Entities/A")) == []
+    query = db.queries[0]
+    bind_vars = db.query_arguments[0]["bind_vars"]
+    assert "w_prop" not in bind_vars
+    assert "@w_prop" not in query
+
+
+def test_main_accessor_uses_configured_edge_weight_field():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, edge_weight_field="importance")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+
+    assert list(accessor.iter_out("Entities/A")) == []
+    assert db.query_arguments[0]["bind_vars"]["w_prop"] == "importance"
+
+
+def test_property_community_mode_requires_and_uses_an_explicit_field_mapping():
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
+    with pytest.raises(BackendConfigurationError, match="community_property_field"):
+        backend.accessor("tenant-a", "property")
+
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, community_property_field="tenant_code")
+    accessor = ArangoBackend(db, graph).accessor("tenant-a", "property")
+    assert list(accessor.nodes()) == []
+    assert "tenant_code" in db.queries[0]
+    assert "community_id" not in db.queries[0]
 
 
 def test_main_accessor_uses_configured_bridge_and_affinity_collections():

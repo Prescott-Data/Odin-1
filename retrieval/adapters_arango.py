@@ -42,7 +42,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         edges_collection: str = "ExtractedRelationships",
         # Core field names
         relation_property: str = "relationship",
-        weight_property: str = "weight",
+        weight_property: Optional[str] = "weight",
         node_type_property: str = "type",
         # Time fields
         edge_timestamp_property: str = "created_at",
@@ -886,7 +886,6 @@ class ArangoCommunityAccessor(GraphAccessor):
         bind: Dict[str, Any] = {
             "node": node,
             "rel_prop": self.rel_prop,
-            "w_prop": self.w_prop,
             "priors_map": self.type_priors,
         }
         
@@ -963,7 +962,10 @@ class ArangoCommunityAccessor(GraphAccessor):
             recency_clause = "POW(2, -1 * DATE_DIFF(@as_of, e[@ts_prop], 'days') / @half_life)"
 
         # Base weight
-        weight_clause = "(HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0)"
+        weight_clause = "1.0"
+        if self.w_prop is not None:
+            bind["w_prop"] = self.w_prop
+            weight_clause = "(HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0)"
 
         # Confidence fusion (usually disabled; you do it in engine)
         conf_clause = "1.0"
@@ -1086,7 +1088,7 @@ class GlobalGraphAccessor(GraphAccessor):
         nodes_collection: str = "ExtractedEntities",
         edges_collection: str = "ExtractedRelationships",
         relation_property: str = "relationship",
-        weight_property: str = "weight",
+        weight_property: Optional[str] = "weight",
         # Bridge collections
         bridge_collection: str = "BridgeEntities",
         affinity_collection: str = "CommunityAffinity",
@@ -1337,10 +1339,18 @@ class GlobalGraphAccessor(GraphAccessor):
         source_community = self.get_entity_community(node)
         
         # Get all neighbors
+        bind_vars = {
+            "node": node,
+            "rel_prop": self.rel_prop,
+        }
+        weight_clause = "1.0"
+        if self.w_prop is not None:
+            bind_vars["w_prop"] = self.w_prop
+            weight_clause = "HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0"
         aql = f"""
         FOR v, e IN 1..1 {direction} @node {self.edges_col}
           LET rel = e[@rel_prop]
-          LET base_weight = HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0
+          LET base_weight = {weight_clause}
           RETURN {{
             v_id: v._id,
             v_key: v._key,
@@ -1353,11 +1363,7 @@ class GlobalGraphAccessor(GraphAccessor):
         
         cursor = self.db.aql.execute(
             aql,
-            bind_vars={
-                "node": node,
-                "rel_prop": self.rel_prop,
-                "w_prop": self.w_prop,
-            },
+            bind_vars=bind_vars,
             batch_size=self.aql_batch_size,
             stream=self.aql_stream,
         )
