@@ -139,6 +139,31 @@ def test_configured_bridge_affinity_and_membership_queries(db):
     assert global_accessor.get_entity_community("ExtractedEntities/A") == "claims"
 
 
+def test_configured_weight_and_property_scope_fields(db):
+    entities = db.collection("ExtractedEntities")
+    edges = db.collection("ExtractedRelationships")
+    entities.update({"_key": "A", "tenant_code": "claims"})
+    entities.update({"_key": "B", "tenant_code": "claims"})
+    entities.update({"_key": "C", "tenant_code": "supply"})
+    edges.update({"_key": "ab", "weight": 0.25, "importance": 0.75})
+
+    uniform = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+    assert list(uniform.iter_out("ExtractedEntities/A")) == [
+        ("ExtractedEntities/B", "related_to", 1.0),
+    ]
+
+    graph = replace(
+        ARANGO_GRAPH,
+        edge_weight_field="importance",
+        community_property_field="tenant_code",
+    )
+    weighted = ArangoBackend(db, graph).accessor("claims", "property")
+    assert list(weighted.iter_out("ExtractedEntities/A")) == [
+        ("ExtractedEntities/B", "related_to", 0.75),
+    ]
+    assert set(weighted.nodes()) == {"ExtractedEntities/A", "ExtractedEntities/B"}
+
+
 def test_lossless_roundtrip_and_concurrent_replacement(db):
     backend = ArangoBackend(db, ARANGO_GRAPH)
     store = backend.model_store("global", "none")
