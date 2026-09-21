@@ -35,7 +35,7 @@ See [Production Deployment](../guides/production.md).
 
 | Error | Action |
 | --- | --- |
-| `BackendConfigurationError` | Pass a backend, such as `ArangoBackend(db)`, and implement every accessor method; inherited protocol placeholders do not count. |
+| `BackendConfigurationError` | Pass a complete backend, such as `ArangoBackend(db, graph)`, with a valid `ArangoGraphConfig`; inherited protocol placeholders do not count. |
 | `BackendCapabilityError` | Supply the requested capability, or explicitly disable training for a retrieval-only backend. |
 | `npll.TrainingError` | Inspect the exception cause and verify the graph contains valid training triples. Failed retraining leaves the active serving state intact. |
 | `BackendIOError` | Check database connectivity, access permissions, and the original exception cause. |

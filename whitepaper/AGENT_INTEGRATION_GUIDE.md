@@ -7,14 +7,19 @@ The simplest way to integrate Odin with your agents:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("KG-test", username="lisa", password="...")
 
-# Initialize Odin (auto-trains NPLL if needed, stores weights in DB)
-backend = ArangoBackend(db)
+# Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="healthcare")
 
 # Use in your agent
@@ -47,9 +52,14 @@ The simplest approach using the high-level `OdinEngine` class:
 
 ```python
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
-engine = OdinEngine(ArangoBackend(db))
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+engine = OdinEngine(ArangoBackend(db, graph))
 result = engine.retrieve(seeds=["Patient_123"])
 score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
 ```

@@ -32,7 +32,8 @@ An `OdinEngine` holds a cache and a loaded model, which makes it something to bu
 
 Your application owns credentials and connections. For ArangoDB, use a dedicated
 user scoped to the database it needs, obtain credentials from the environment
-or a secrets manager, and pass the connected handle to `ArangoBackend(db)`.
+or a secrets manager, and pass the connected handle plus an explicit
+`ArangoGraphConfig` to `ArangoBackend(db, graph)`.
 Pass that backend to `OdinEngine`. In production, keep the database on a private
 network and terminate TLS in front of ArangoDB. See
 [Connecting ArangoDB](arangodb.md#production-connections) for details.

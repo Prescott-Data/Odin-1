@@ -74,12 +74,17 @@ This exposes ArangoDB on `http://localhost:8529` with authentication disabled, w
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="global")
 ```
 
@@ -96,7 +101,7 @@ On the **first** initialization against a graph, Odin extracts edge patterns and
 
 ```python
 result = engine.retrieve(
-    seeds=["entity/claim_123"],
+    seeds=["CaseRecords/claim_123"],
     max_paths=50,
     hop_limit=3,
 )

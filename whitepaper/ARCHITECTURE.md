@@ -701,14 +701,19 @@ The simplest way to use Odin is through the `OdinEngine` class, which handles al
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to ArangoDB
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
-# 2. Initialize Odin (auto-trains NPLL if needed)
-backend = ArangoBackend(db)
+# 2. Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="my_community")
 
 # 3. Retrieve
@@ -764,14 +769,19 @@ from retrieval.cache import CachedGraphAccessor
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import NPLLConfidence
 from npll.bootstrap import KnowledgeBootstrapper
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
-# 2. Setup NPLL via bootstrapper
-backend = ArangoBackend(db)
+# 2. Setup NPLL via an explicit Arango graph mapping
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
 bootstrapper = KnowledgeBootstrapper(
     backend.triple_source(), backend.model_store("my_community", "mapping")
 )
@@ -807,11 +817,16 @@ result = orchestrator.retrieve(
 
 ```python
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 class InvestigatorAgent:
     def __init__(self, db, llm: LLMClient):
-        self.engine = OdinEngine(ArangoBackend(db))  # One line setup
+        graph = ArangoGraphConfig(
+            node_collection="entities",
+            edge_collection="relationships",
+            relation_field="relation",
+        )
+        self.engine = OdinEngine(ArangoBackend(db, graph))
         self.llm = llm
         self.db = db
     

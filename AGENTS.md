@@ -19,7 +19,7 @@ the real `retrieve()` result shape, and the mistakes to avoid. In particular:
 - Motif fields are `edge_count` / `path_count`, not `count`. `relation_share[rel]`
   is `{"count", "share"}`.
 - `score_edge(src, rel, dst)`; `retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64)`.
-- `OdinEngine` takes a `GraphBackend`, not a connection string or raw database handle. For ArangoDB, construct `ArangoBackend(db)` from the connected handle.
+- `OdinEngine` takes a `GraphBackend`, not a connection string or raw database handle. For ArangoDB, construct `ArangoBackend(db, graph)` from the connected handle and required `ArangoGraphConfig`.
 
 ## Commands
 

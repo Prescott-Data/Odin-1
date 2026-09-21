@@ -95,14 +95,19 @@ pip install -e ".[arango]"
 ```python title="explore.py"
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-# 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-backend = ArangoBackend(db)
+# 2. Map your graph, then initialize Odin (auto-trains NPLL on first run)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="global")
 
 # 3. Explore from seed entities

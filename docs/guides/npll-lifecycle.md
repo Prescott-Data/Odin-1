@@ -93,16 +93,24 @@ ok = engine.retrain_model()   # returns True on success
 
 ## Per-community models
 
-Model artifacts are namespaced by database, graph collections, community ID,
-and community mode. Communities have separate stored artifacts. Training still
+Model artifacts are namespaced by database, complete graph mapping, community
+ID, and community mode. Communities have separate stored artifacts. Training still
 reads the global graph; the community setting scopes
 retrieval, not the training snapshot:
 
 ```python
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
-claims_backend = ArangoBackend(db)
-supply_backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+    membership_collection="entity_communities",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+claims_backend = ArangoBackend(db, graph)
+supply_backend = ArangoBackend(db, graph)
 claims = OdinEngine(claims_backend, community_id="claims", community_mode="mapping")
 supply = OdinEngine(supply_backend, community_id="supply", community_mode="mapping")
 # Each trains or loads its own NPLL model on first use.

@@ -19,18 +19,47 @@ pip install -e ".[arango]"
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+    entity_type_field="record_type",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend)
 ```
 
 The important detail is that `OdinEngine` takes a backend, while `ArangoBackend`
 uses an already-connected `StandardDatabase` object and never manages credentials
 itself. That keeps secrets in your connection code and out of Odin entirely.
+
+## Map your graph data
+
+`ArangoGraphConfig` is required and makes the backend portable across your
+existing Arango schemas. Odin reads node IDs from `_id`, edge endpoints from
+`_from` and `_to`, and relation labels from the field you configure. It does
+not require collection names such as `ExtractedEntities` or a node label field.
+
+For the configuration above, an edge looks like:
+
+```json
+{
+  "_from": "CaseRecords/claim_1042",
+  "_to": "CaseRecords/person_73",
+  "predicate": "submitted_by"
+}
+```
+
+`predicate` must be a non-empty string on every edge included in training.
+`record_type` is optional, but when configured its non-null node values must be
+non-empty strings. Odin adds these as `has_type` training triples. Optional
+retrieval metadata such as `weight`, `created_at`, and provenance can remain in
+your own fields; it is not required to train or retrieve.
 
 ## Production connections
 
@@ -72,14 +101,18 @@ docker run -d --name arango -p 8529:8529 \
 A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend:
 
 ```python
-# Global exploration (default)
-backend = ArangoBackend(db)
+# Global exploration (default); `graph` is the explicit mapping above.
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="global", community_mode="none")
 
-# Scoped to one partition
-backend = ArangoBackend(db)
+# Scoped to one partition. Add all three membership fields to `graph`.
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 ```
+
+Mapping mode requires `membership_collection`, `membership_entity_field`, and
+`membership_community_field` together. Without that complete mapping Odin
+raises `BackendConfigurationError`; it never guesses a membership schema.
 
 ## Verifying it worked
 

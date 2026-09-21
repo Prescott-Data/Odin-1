@@ -394,14 +394,19 @@ Odin is designed as a **library** that agents import, not a standalone service:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to knowledge graph database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("knowledge_graph", username="user", password="pass")
 
-# Initialize Odin - NPLL auto-trains if needed
-backend = ArangoBackend(db)
+# Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
 odin = OdinEngine(backend, community_id="healthcare")
 
 # Use during agent exploration
@@ -694,14 +699,19 @@ Odin is designed for organizations that:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_knowledge_graph", username="user", password="pass")
 
 # Initialize Odin - auto-trains NPLL on first run
-odin = OdinEngine(ArangoBackend(db))
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+odin = OdinEngine(ArangoBackend(db, graph))
 
 # Explore from seed entities
 result = odin.retrieve(seeds=["entity/interesting_node"])

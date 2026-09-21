@@ -18,14 +18,19 @@ Published 0.3.0 does not provide these backend interfaces.
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
 # OdinEngine takes a graph backend. ArangoBackend keeps credentials in the
-# already-connected database handle.
-backend = ArangoBackend(db)
+# already-connected database handle and requires an explicit graph mapping.
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(
     backend,
     community_id="global",   # scope; "global" explores the whole graph
@@ -108,7 +113,7 @@ if result["triage"]["score"] >= 70:
 - **`relation_share[rel]` is `{"count": int, "share": float}`**, not a bare float.
 - **`score_edge` argument order is `(src, rel, dst)`** (source, relation, destination).
 - **`beam_width` default is 64** (not 10).
-- **`OdinEngine` takes a `GraphBackend`**, not a connection string or raw database handle. Build `ArangoBackend(db)` from the connected ArangoDB handle.
+- **`OdinEngine` takes a `GraphBackend`**, not a connection string or raw database handle. Build `ArangoBackend(db, graph)` from the connected ArangoDB handle and required `ArangoGraphConfig`.
 - **Check `engine.has_npll`** before relying on fine-grained plausibility; if False, training was explicitly disabled. Training failures raise; failed retraining preserves the active model.
 
 ## Other backends (adapters)

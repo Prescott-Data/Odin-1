@@ -18,7 +18,9 @@ An **entity** is a thing in your domain, addressed by an ID; a **relationship** 
 | **Path** | An ordered sequence of entities joined by edges | `A → B → C` |
 | **Seed** | An entity you start exploration from | `["entity/claim_123"]` |
 
-Node IDs are opaque strings. In ArangoDB they follow the `collection/key` convention (`ExtractedEntities/claim_123`, say), and Odin passes them straight through without interpreting them.
+Node IDs are opaque strings. In ArangoDB they follow the `collection/key`
+convention (`CaseRecords/claim_123`, say), and Odin passes them straight
+through without interpreting them.
 
 ## What edges can carry
 
@@ -27,7 +29,7 @@ Odin works with a bare `_from`/`_to`/relation edge, but it makes use of richer m
 | Field | Used for |
 |-------|----------|
 | `_from` / `_to` | Direction of the relationship |
-| relation / type | The relation label |
+| configured relation field | The non-empty string relation label |
 | `weight` | Optional structural weight |
 | `confidence` | Optional pre-existing confidence (falls back to `weight`) |
 | `created_at` | Optional recency signal in aggregation |
@@ -42,13 +44,13 @@ A **community** is a named scope for exploration. On a large multi-tenant graph,
 ```python
 # Global exploration across the whole graph (default)
 engine = OdinEngine(
-    ArangoBackend(db),
+    ArangoBackend(db, graph),
     community_id="global", community_mode="none",
 )
 
 # Scoped to a single community
 engine = OdinEngine(
-    ArangoBackend(db),
+    ArangoBackend(db, graph),
     community_id="medicare_claims", community_mode="mapping",
 )
 ```
@@ -57,7 +59,13 @@ For the current Arango backend, NPLL training remains global even when retrieval
 
 ## What Odin does *not* need from you
 
-Notably, there is a lot you do **not** have to prepare. There is no fixed schema to declare, because Odin discovers collections and fields at runtime via [Schema Introspection](../guides/schema-introspection.md). There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.
+Notably, there is a lot you do **not** have to prepare. There is no fixed Odin
+schema or collection name: you declare the small Arango mapping once with
+`ArangoGraphConfig`, and can inspect the rest with [Schema
+Introspection](../guides/schema-introspection.md). There are no pre-computed
+embeddings, because NPLL trains straight from the graph's edge structure. And
+there is no query language to write on your side: you hand Odin entity IDs and
+it handles the traversal.
 
 The reference backend is **ArangoDB**, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See [Adapters](adapters.md) for the interface and how to plug in a backend.
 

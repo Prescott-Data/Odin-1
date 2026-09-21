@@ -15,12 +15,20 @@ Start from a provider you want to scrutinize and let Odin find the patterns arou
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "claims", username="root", password=""
 )
-backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="claims_entities",
+    edge_collection="claims_relationships",
+    relation_field="relation",
+    membership_collection="entity_communities",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 
 result = engine.retrieve(

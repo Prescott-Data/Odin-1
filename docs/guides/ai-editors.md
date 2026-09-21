@@ -56,7 +56,7 @@ odin init --skill --force
 
 ## What good looks like
 
-Once the skill is loaded, your agent should construct `OdinEngine(backend, ...)` with a `GraphBackend` such as `ArangoBackend(db)`, call `retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)`, read `result["paths"][i]["edges"]` and derive nodes from `u`/`v`, use `score_edge(src, rel, dst)` in the right order, and read motifs as `edge_count` / `path_count`. If you see it reach for `path["nodes"]`, the skill is not loaded.
+Once the skill is loaded, your agent should construct `OdinEngine(backend, ...)` with a `GraphBackend` such as `ArangoBackend(db, graph)`, where `graph` is an explicit `ArangoGraphConfig`; call `retrieve(seeds, max_paths=..., hop_limit=..., beam_width=...)`, read `result["paths"][i]["edges"]` and derive nodes from `u`/`v`, use `score_edge(src, rel, dst)` in the right order, and read motifs as `edge_count` / `path_count`. If you see it reach for `path["nodes"]`, the skill is not loaded.
 
 ## Next
 

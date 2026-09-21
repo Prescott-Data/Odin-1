@@ -15,7 +15,8 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 ## Unreleased
 
 The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
-by `ArangoBackend(db)`, with optional driver extras and generic
+by `ArangoBackend(db, graph)`, with a required explicit Arango graph mapping,
+optional driver extras, and generic
 `inspect_schema(backend)` inspection. Raw handles and former public adapter
 exports require migration.
 

@@ -15,12 +15,20 @@ Because the interesting chains run deep, this is the case that calls for a **hig
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "supply", username="root", password=""
 )
-backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="supply_entities",
+    edge_collection="supply_relationships",
+    relation_field="relation",
+    membership_collection="entity_communities",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="supply", community_mode="mapping")
 
 result = engine.retrieve(

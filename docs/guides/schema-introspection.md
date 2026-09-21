@@ -13,9 +13,14 @@ Construct a backend, then ask Odin for its complete schema map:
 
 ```python
 from odin import inspect_schema
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
-backend = ArangoBackend(db)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 schema = inspect_schema(backend)
 ```
 
