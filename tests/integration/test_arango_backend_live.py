@@ -8,6 +8,7 @@ removed; existing databases are never modified.
 import math
 import os
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from uuid import uuid4
 
 import pytest
@@ -95,6 +96,47 @@ def test_snapshot_tracks_same_count_mutations_and_types(db):
     assert first.data_hash != second.data_hash
     db.collection("ExtractedEntities").update({"_key": "A", "type": "Organization"})
     assert second.data_hash != source.snapshot().data_hash
+
+
+def test_configured_bridge_affinity_and_membership_queries(db):
+    membership = db.create_collection("TenantMemberships")
+    bridges = db.create_collection("BridgeRecords")
+    affinity = db.create_collection("AffinityRecords")
+    membership.insert({
+        "_key": "a",
+        "record_id": "ExtractedEntities/A",
+        "group_id": "claims",
+        "algorithm": "leiden",
+    })
+    bridges.insert({
+        "_key": "a",
+        "entity_key": "A",
+        "algorithm": "leiden",
+    })
+    affinity.insert({
+        "_key": "claims-supply",
+        "community_a": "claims",
+        "community_b": "supply",
+        "affinity_score": 0.75,
+        "algorithm": "leiden",
+    })
+    graph = replace(
+        ARANGO_GRAPH,
+        membership_collection="TenantMemberships",
+        membership_entity_field="record_id",
+        membership_community_field="group_id",
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+    )
+    backend = ArangoBackend(db, graph)
+
+    accessor = backend.accessor("global", "none")
+    assert accessor.is_bridge("ExtractedEntities/A")["entity_key"] == "A"
+    assert accessor.get_affinity("claims", "supply") == pytest.approx(0.75)
+
+    global_accessor = backend.global_accessor()
+    assert global_accessor.get_entity_community("ExtractedEntities/A") == "claims"
 
 
 def test_lossless_roundtrip_and_concurrent_replacement(db):
