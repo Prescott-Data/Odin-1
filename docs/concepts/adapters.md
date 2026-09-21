@@ -33,7 +33,7 @@ class MyAccessor(GraphAccessor):
         ...
 
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
-        """Optional: map external seed IDs to internal ones. Default: passthrough."""
+        """Implement explicitly; return seeds unchanged if IDs need no mapping."""
         return seeds
 
     def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
@@ -56,12 +56,33 @@ Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point
 
 ## Using a non-Arango adapter
 
+An accessor handles graph reads; a backend supplies that accessor to the engine.
+Here is a complete retrieval-only example requiring no database driver:
+
+```python
+from odin import OdinEngine
+from npll.core.knowledge_graph import KnowledgeGraph
+from retrieval.adapters import KGCommunityAccessor
+
+graph = KnowledgeGraph()
+graph.add_known_fact("A", "linked_to", "B")
+
+class InMemoryBackend:
+    def accessor(self, community_id, community_mode):
+        if community_mode != "none":
+            raise ValueError("This example supports global retrieval only")
+        return KGCommunityAccessor(graph, community_id)
+
+engine = OdinEngine(InMemoryBackend(), auto_train=False)
+print(engine.get_neighbors("A"))
+```
+
 `OdinEngine` accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with `auto_train=False` or compose the retrieval orchestrator directly with your accessor:
 
 Install the Gremlin driver before importing its backend module:
 
 ```bash
-pip install "odin-engine[gremlin]"
+pip install -e ".[gremlin]"
 ```
 
 ```python
@@ -102,7 +123,11 @@ result = orchestrator.retrieve(
 The result has the same shape documented in the [Result Schema](../reference/result-schema.md).
 
 !!! note "NPLL and non-Arango backends"
-    Odin's learned [NPLL](npll.md) model is bootstrapped from an ArangoDB graph, so it is tied to the ArangoDB adapter today. On other backends, pass an edge-confidence function explicitly, `ConstantConfidence(...)` to treat all edges as equally plausible, or your own implementation of the confidence interface. You still get the full PPR and beam-search machinery; you supply the semantic signal.
+    The training lifecycle is backend-neutral. ArangoBackend is currently the
+    supplied implementation of both `TripleSource` and `ModelStore`. A custom
+    backend can supply those capabilities to enable engine-managed training.
+    Without them, use `auto_train=False`, or compose the orchestrator with your
+    own confidence provider. See the [backend contracts](../development/backend-contracts.md).
 
 ## Caching your adapter
 

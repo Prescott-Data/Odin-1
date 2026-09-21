@@ -30,7 +30,12 @@ An `OdinEngine` holds a cache and a loaded model, which makes it something to bu
 
 ## Security
 
-Odin never manages credentials itself, which keeps the security story simple. Give it a dedicated, least-privilege ArangoDB user scoped to the database it needs, and inject secrets from the environment or a secrets manager rather than hard-coding them; Odin takes an already-connected `db` handle and never logs credentials. In production, keep the database on a private network and terminate TLS in front of ArangoDB. See [Connecting ArangoDB](arangodb.md#production-connections) for the connection details.
+Your application owns credentials and connections. For ArangoDB, use a dedicated
+user scoped to the database it needs, obtain credentials from the environment
+or a secrets manager, and pass the connected handle to `ArangoBackend(db)`.
+Pass that backend to `OdinEngine`. In production, keep the database on a private
+network and terminate TLS in front of ArangoDB. See
+[Connecting ArangoDB](arangodb.md#production-connections) for details.
 
 ## Observability
 
@@ -46,11 +51,14 @@ Emitting `triage["score"]` and `timings_ms["total"]` as metrics lets you watch s
 
 ## Containerizing
 
-The repository ships a minimal `Dockerfile`. For a service, install the package on a slim Python base and add your own code on top:
+Odin is a library; create a Dockerfile for your service. For the unreleased
+backend API, build from the matching source checkout:
 
 ```dockerfile
 FROM python:3.11-slim
-RUN pip install --no-cache-dir "odin-engine[arango]"
+WORKDIR /opt/odin
+COPY . .
+RUN pip install --no-cache-dir ".[arango]"
 # ... copy your service code, set env, run
 ```
 

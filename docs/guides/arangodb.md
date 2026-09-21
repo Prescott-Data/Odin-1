@@ -9,11 +9,11 @@ Odin's reference backend is [ArangoDB](https://www.arangodb.com/). This guide co
 ## Connecting
 
 Install the ArangoDB Python driver with the `arango` extra. It imports as
-`arango`; connect, select a database, and hand the resulting object to the
-engine:
+`arango`; connect, select a database, and wrap the connected handle in
+`ArangoBackend`. From the unreleased source checkout:
 
 ```bash
-pip install "odin-engine[arango]"
+pip install -e ".[arango]"
 ```
 
 ```python
@@ -69,7 +69,7 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend in this phase:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend:
 
 ```python
 # Global exploration (default)

@@ -61,7 +61,9 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 ## Database connection (yours)
 
-Odin does not manage the connection; you construct it with `python-arango`. In production, source these from the environment:
+Odin does not manage connections. For ArangoDB, construct the connection with
+`python-arango` and wrap it in `ArangoBackend`. Other backends use their own
+connection mechanisms. In production, source these Arango settings from the environment:
 
 | Variable (suggested) | Used for |
 |----------------------|----------|
@@ -90,10 +92,18 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 | Requirement | Version |
 |-------------|---------|
 | Python | ≥ 3.9 |
-| ArangoDB | ≥ 3.10 |
+| ArangoDB (Arango backend only) | ≥ 3.10 |
 | PyTorch | ≥ 2.0 |
 
-Core dependencies install with `pip install odin-engine`. Install
-`python-arango` with `pip install "odin-engine[arango]"`, or install
-`gremlinpython` with `pip install "odin-engine[gremlin]"` when using the
-corresponding backend module.
+For this unreleased source checkout, install core dependencies with
+`pip install -e .`. Use `pip install -e ".[arango]"` or
+`pip install -e ".[gremlin]"` for the corresponding driver.
+See [Backend migration](../guides/backend-migration.md).
+
+## NPLL dataset configuration
+
+`get_config("OdinTriples")` in `npll.utils.config` selects the explicit
+production graph configuration. It preserves the settings previously obtained
+through the FB15k-237 fallback, including `max_epochs=200`. Bootstrap separately
+sets its trainer budget to 10 epochs and up to 5 E-M iterations per epoch.
+Unknown names, including the retired `ArangoDB_Triples`, raise `ValueError`.

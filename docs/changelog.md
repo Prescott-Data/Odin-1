@@ -12,6 +12,25 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 
 <div class="changelog-release" markdown>
 
+## Unreleased
+
+The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
+by `ArangoBackend(db)`, with optional driver extras and generic
+`inspect_schema(backend)` inspection. Raw handles and former public adapter
+exports require migration.
+
+Training fingerprints cover the exact extracted triples. Model artifacts are
+namespaced, complete, and replaced only when their stored revision matches.
+Training failures raise; constant confidence requires explicit
+`auto_train=False`. Failed retraining preserves the active serving state.
+
+See [Backend migration](guides/backend-migration.md) before upgrading.
+These changes have not been released to PyPI.
+
+</div>
+
+<div class="changelog-release" markdown>
+
 ## 0.3.0 <span class="changelog-date">2026-08-10</span>
 
 <div class="changelog-meta" markdown>

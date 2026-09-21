@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   though Odin is distributed as a Python library.
 
 ### Added
+- Public backend migration guide covering optional drivers, changed imports,
+  artifact migration, capability support, and explicit training failures.
 - **NPLL training telemetry and convergence diagnostics.** Every training run
   now produces a `TrainingReport` — complete per-iteration ELBO history,
   per-iteration max rule-weight deltas, convergence status, and the criteria

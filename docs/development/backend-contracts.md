@@ -1,10 +1,10 @@
-# Backend contracts (PR 1 and PR 2)
+# Backend contracts
 
-PR 1 extracts Arango database operations from `KnowledgeBootstrapper`. PR 2
-makes the public engine backend-neutral: `OdinEngine(backend)` accepts a
-`GraphBackend` and never constructs an Arango backend internally. Raw database
-handles raise a migration error. Neo4j backend support remains a subsequent
-phase.
+`OdinEngine(backend)` accepts a `GraphBackend` and obtains database operations
+through its capabilities. `KnowledgeBootstrapper` receives a training source
+and model store. Raw database handles raise a migration error. These contracts
+are unreleased; see [Backend migration](../guides/backend-migration.md) for
+installation and API changes. Neo4j engine support is not included yet.
 
 ## Engine capabilities
 
@@ -35,7 +35,7 @@ spaces; missing or non-string labels fail extraction. Type triples are
 `(entity._id, "has_type", entity.type)`, with a string type value. Dangling
 relationships are excluded, as in the previous extractor. Training continues
 to use the global `ExtractedEntities` / `ExtractedRelationships` graph;
-community-scoped training is not introduced in this PR.
+training is global even when retrieval is scoped to a community.
 
 This intentionally replaces the old bare-key/lowercased training identities.
 Existing weights must be retrained; there is no compatibility lookup.
@@ -97,16 +97,6 @@ replacement serving components before changing the active engine state.
 
 ## Scope and verification
 
-Updated direct bootstrap consumers: engine initialization, engine retraining,
-the factory, telemetry tests, and the whitepaper example. The other workspace
-implementation in `odin-kg-engine` has its own bootstrap and serving lifecycle;
-it is not migrated as part of this public-repository extraction.
-Scout, Guided Scout, and community-summarizer install private Azure-hosted
-`odin_engine` wheels (their Dockerfiles pin 0.4.5, 0.4.3, and 0.4.4 respectively),
-rather than this public checkout. Community-summarizer's direct bootstrap call
-therefore remains on that private contract. No compatibility adapter is added
-to the public bootstrapper.
-
 Unit regressions cover same-count mutations, snapshot immutability, one-read
 bootstrap, 101 relations, 120 history entries, complete nested persistence,
 namespaces, corruption, and conflicting creation/replacement/forced retraining.
@@ -117,7 +107,7 @@ round-trip, and real training followed by reload and scoring.
 The persistence contract covers the existing weights-only artifact. It does
 not assert identical neural scores after rebuilding a fresh model: embeddings
 and scoring-network parameters are not persisted by the existing design.
-Cross-backend retrieval parity and Neo4j live tests remain later-phase work.
+Cross-backend retrieval parity and Neo4j live tests are not established yet.
 
 Run the live tests with an account allowed to create databases:
 

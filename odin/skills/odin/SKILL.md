@@ -7,7 +7,11 @@ description: Use when writing or reviewing Python that uses the Odin graph-intel
 
 Odin is a Python library for guided knowledge-graph retrieval. Given seed entities it returns ranked, scored paths through a graph using Personalized PageRank, beam search, and learned edge-plausibility scoring (NPLL). It is the compass, not the explorer: it returns structured evidence, the calling agent interprets it.
 
-Package: `odin-engine` (`pip install odin-engine`). Import name: `odin`.
+Package: `odin-engine`. Import name: `odin`.
+
+This source checkout documents the unreleased backend API. Install it with
+`pip install -e ".[arango]"` for ArangoDB or `pip install -e .` for core only.
+Published 0.3.0 does not provide these backend interfaces.
 
 ## Setup
 
@@ -84,7 +88,7 @@ engine.get_status() -> dict
 Deriving the node sequence of a path (there is no `nodes` field):
 
 ```python
-for p in result["paths"][:5]:
+for p in result["paths"]:
     edges = p["edges"]
     nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
     print(f"[{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
@@ -115,7 +119,7 @@ retrieval-only backend must be passed with `auto_train=False`; a backend without
 training capabilities raises `BackendCapabilityError` if training is requested.
 `JanusGraphAccessor` ships for direct orchestrator composition:
 
-Install its optional driver first: `pip install "odin-engine[gremlin]"`.
+Install its optional driver from this checkout: `pip install -e ".[gremlin]"`.
 
 ```python
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
@@ -129,7 +133,9 @@ result = orch.retrieve(seeds=["v1"],
                                                  max_paths=50, hop_limit=3, beam_width=64))
 ```
 
-NPLL training is ArangoDB-specific; on other backends pass an explicit `edge_confidence`.
+NPLL bootstrap is backend-neutral. ArangoBackend currently supplies the training
+source and model store. Custom backends may implement both; retrieval-only
+backends require `auto_train=False`. Direct orchestrator users supply confidence.
 
 ## Schema introspection
 

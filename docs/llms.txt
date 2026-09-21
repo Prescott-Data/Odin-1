@@ -4,6 +4,8 @@
 
 Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB backend, with JanusGraph and custom adapters supported.
 
+This checkout documents an unreleased explicit-backend API, not published 0.3.0.
+
 ## Start here
 
 - [Overview](https://odin.developers.prescottdata.io/): what Odin is and where to begin
@@ -24,6 +26,7 @@ Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB backe
 ## Guides
 
 - [Connecting ArangoDB](https://odin.developers.prescottdata.io/guides/arangodb/)
+- [Backend Migration](https://odin.developers.prescottdata.io/guides/backend-migration/): installation, changed imports, training errors, and supported capabilities
 - [Your First Retrieval](https://odin.developers.prescottdata.io/guides/first-retrieval/): the full result shape
 - [Scoring Edges](https://odin.developers.prescottdata.io/guides/edge-scoring/)
 - [Finding Anchors](https://odin.developers.prescottdata.io/guides/anchors/)

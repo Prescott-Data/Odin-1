@@ -4,13 +4,20 @@ icon: material/rocket-launch
 
 # Getting Started
 
+!!! note "Unreleased backend API"
+    This guide describes the source checkout containing the backend migration,
+    not the published 0.3.0 package. Install from that checkout and see the
+    [migration guide](guides/backend-migration.md) when updating existing code.
+
 This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
 
 ---
 
 ## Requirements
 
-Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
+Odin needs **Python 3.9+** and a graph backend. This guide uses ArangoDB 3.10
+or later. NPLL training runs in your Python process; `ArangoBackend` reads the
+graph and persists the resulting model artifact in ArangoDB.
 
 | Dependency | Why |
 |------------|-----|
@@ -26,18 +33,12 @@ dependencies. Install the `arango` extra to use the reference backend.
 ## Installation
 
 ```bash
-pip install "odin-engine[arango]"
+pip install -e ".[arango]"
 ```
-
-=== "From PyPI"
-    ```bash
-    pip install "odin-engine[arango]"
-    ```
 
 === "From source"
     ```bash
-    git clone https://github.com/Prescott-Data/Odin-1.git
-    cd Odin-1
+    # Run in the checkout containing the backend migration.
     pip install -e ".[arango]"
     ```
 

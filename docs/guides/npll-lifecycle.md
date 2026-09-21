@@ -95,7 +95,7 @@ ok = engine.retrain_model()   # returns True on success
 
 Model artifacts are namespaced by database, graph collections, community ID,
 and community mode. Communities have separate stored artifacts. Training still
-reads the global graph in this extraction phase; the community setting scopes
+reads the global graph; the community setting scopes
 retrieval, not the training snapshot:
 
 ```python

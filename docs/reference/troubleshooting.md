@@ -10,11 +10,10 @@ Common issues and how to resolve them.
 
 ## `intelligence_mode` is `Constant`, not `NPLL`
 
-`engine.get_status()["intelligence_mode"] == "Constant"` means the NPLL model is not active. Causes:
-
-- **`auto_train=False`**: you disabled training. Set `auto_train=True`.
-- **Empty or tiny graph**: there were not enough edges to train a model.
-- **Training raised**: Odin caught an error and fell back. Check logs under the `odin` logger.
+`engine.get_status()["intelligence_mode"] == "Constant"` means you explicitly
+disabled NPLL with `auto_train=False`. Set `auto_train=True` only when the backend
+supplies training capabilities and the graph is ready to train. Training
+failures raise instead of selecting constant confidence.
 
 You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
@@ -27,7 +26,26 @@ logging.getLogger("odin").setLevel(logging.INFO)
 
 ## First retrieval is very slow
 
-The first `retrieve()` (or engine construction) trains or loads the NPLL model, taking **2-5 minutes** to train or **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
+Engine construction trains or loads the NPLL model when `auto_train=True`;
+`retrieve()` does not start training. Startup cost depends on graph size and
+training settings. Construct the engine before serving traffic and reuse it.
+See [Production Deployment](../guides/production.md).
+
+## Backend migration and training errors
+
+| Error | Action |
+| --- | --- |
+| `BackendConfigurationError` | Pass a backend, such as `ArangoBackend(db)`, and implement every accessor method; inherited protocol placeholders do not count. |
+| `BackendCapabilityError` | Supply the requested capability, or explicitly disable training for a retrieval-only backend. |
+| `npll.TrainingError` | Inspect the exception cause and verify the graph contains valid training triples. Failed retraining leaves the active serving state intact. |
+| `BackendIOError` | Check database connectivity, access permissions, and the original exception cause. |
+| `CorruptModelError` | Inspect the stored artifact against the current schema; do not treat corruption as an absent model. |
+| `ModelConflictError` | Another writer changed the artifact. Coordinate training and load the current artifact rather than blindly overwriting it. |
+
+Invalid triple identities raise `BackendError`; Arango entity IDs and relation
+labels must be non-empty strings, and entity types must be strings when present.
+See [Backend migration](../guides/backend-migration.md) for import changes and
+the first-startup retraining requirement.
 
 ---
 
@@ -75,10 +93,11 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 
 ## `ImportError` / wrong package
 
-Install the **published** package and import the **short** name:
+For the unreleased backend API, install from the matching source checkout and
+import the **short** name:
 
 ```bash
-pip install odin-engine
+pip install -e ".[arango]"
 ```
 
 ```python

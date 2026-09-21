@@ -130,18 +130,15 @@ investigator interprets it and chooses the next action.
 
 ## Quick Start
 
+**Unreleased API:** this checkout uses explicit backends. The published 0.3.0
+package does not provide this API. Install from the checkout containing these
+changes and follow the [backend migration guide](docs/guides/backend-migration.md)
+when upgrading existing code.
+
 ### Installation
 
 ```bash
-# From PyPI (recommended)
-pip install odin-engine
-
-# For the ArangoDB reference backend
-pip install "odin-engine[arango]"
-
-# From source
-git clone https://github.com/Prescott-Data/Odin-1.git
-cd Odin-1
+# From the repository root of the checkout containing the backend migration
 pip install -e ".[arango]"
 ```
 
@@ -180,7 +177,7 @@ result = engine.retrieve(
 print(f"Found {len(result['paths'])} paths")
 print(f"Triage Score: {result['triage']['score']}/100")
 
-for p in result['paths'][:5]:
+for p in result['paths']:
     edges = p['edges']
     nodes = [edges[0]['u'], *(e['v'] for e in edges)] if edges else []
     print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
