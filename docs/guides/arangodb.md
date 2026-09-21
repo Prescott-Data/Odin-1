@@ -114,9 +114,11 @@ Mapping mode requires `membership_collection`, `membership_entity_field`, and
 `membership_community_field` together. Without that complete mapping Odin
 raises `BackendConfigurationError`; it never guesses a membership schema.
 
-The optional global cross-community accessor additionally requires configured
-`bridge_collection` and `affinity_collection` names. Otherwise it is not
-available; Odin does not probe default bridge collections.
+Bridge and affinity scoring require `bridge_collection`, `affinity_collection`,
+and the `community_algorithm` value together. Otherwise ordinary retrieval
+does not issue bridge or affinity queries. The optional global cross-community
+accessor additionally requires the complete membership mapping. It is then
+unavailable rather than probing default collections.
 
 ## Verifying it worked
 
