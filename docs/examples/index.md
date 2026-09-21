@@ -37,11 +37,13 @@ Every example follows the same skeleton:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "my_graph", username="root", password=""
 )
-engine = OdinEngine(db, community_id="...", community_mode="mapping")
+backend = ArangoBackend(db, community_id="...", community_mode="mapping")
+engine = OdinEngine(backend, community_id="...", community_mode="mapping")
 
 result = engine.retrieve(seeds=[...], max_paths=..., hop_limit=...)
 # → inspect result["triage"], result["paths"], result["aggregates"]["motifs"]

@@ -1,9 +1,22 @@
-# Backend extraction contracts (PR 1)
+# Backend contracts (PR 1 and PR 2)
 
-This phase extracts Arango database operations from `KnowledgeBootstrapper`.
-The public engine still accepts `OdinEngine(db)`, constructs an `ArangoBackend`
-internally, and passes its capabilities into bootstrap. The constructor swap,
-partial-capability policy, and Neo4j backend belong to subsequent PRs.
+PR 1 extracts Arango database operations from `KnowledgeBootstrapper`. PR 2
+makes the public engine backend-neutral: `OdinEngine(backend)` accepts a
+`GraphBackend` and never constructs an Arango backend internally. Raw database
+handles raise a migration error. Neo4j backend support remains a subsequent
+phase.
+
+## Engine capabilities
+
+Every engine backend supplies an accessor with `iter_out`, `iter_in`, `nodes`,
+`degree`, `get_node`, and `community_seed_norm`. The engine validates this
+surface at construction rather than relying on deferred attribute errors.
+
+Backends may be retrieval-only. They initialize with `auto_train=False` and
+use constant confidence. Automatic training and `retrain_model()` require both
+a non-null `TripleSource` and `ModelStore`; otherwise the engine raises
+`BackendCapabilityError`. Unexpected bootstrap failures propagate rather than
+being converted into constant confidence.
 
 ## Snapshot identity
 

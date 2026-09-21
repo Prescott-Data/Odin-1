@@ -21,8 +21,8 @@ The **first run** does the heavy lifting. When you construct an `OdinEngine` and
 By default the engine trains automatically when it finds no model. You can turn that off:
 
 ```python
-engine = OdinEngine(db, auto_train=True)    # default: train if none exists
-engine = OdinEngine(db, auto_train=False)   # skip NPLL, use constant confidence
+engine = OdinEngine(backend, auto_train=True)    # default: train if none exists
+engine = OdinEngine(backend, auto_train=False)   # skip NPLL, use constant confidence
 ```
 
 With `auto_train=False` Odin skips NPLL entirely and falls back to a constant edge-confidence. You keep PPR-driven structural exploration, but you lose semantic pruning until a model is available.
@@ -98,8 +98,12 @@ reads the global graph in this extraction phase; the community setting scopes
 retrieval, not the training snapshot:
 
 ```python
-claims = OdinEngine(db, community_id="claims", community_mode="mapping")
-supply = OdinEngine(db, community_id="supply", community_mode="mapping")
+from retrieval.backends.arango import ArangoBackend
+
+claims_backend = ArangoBackend(db, community_id="claims", community_mode="mapping")
+supply_backend = ArangoBackend(db, community_id="supply", community_mode="mapping")
+claims = OdinEngine(claims_backend, community_id="claims", community_mode="mapping")
+supply = OdinEngine(supply_backend, community_id="supply", community_mode="mapping")
 # Each trains or loads its own NPLL model on first use.
 ```
 

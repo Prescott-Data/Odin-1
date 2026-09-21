@@ -1135,12 +1135,27 @@ class GlobalGraphAccessor(GraphAccessor):
         """Rich inbound edges with cross-community metadata."""
         yield from self._iter_neighbors_global(node, direction="INBOUND")
 
-    def nodes(self) -> Iterable[NodeId]:
+    def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
         """Return all nodes (no community restriction)."""
         aql = f"FOR v IN {self.nodes_col} RETURN v._id"
         cursor = self.db.aql.execute(aql, batch_size=self.aql_batch_size, stream=self.aql_stream)
         for vid in cursor:
             yield vid
+
+    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
+        """Global access uses the supplied Arango document identities as-is."""
+        return seeds
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Return node properties, or an empty dict when the node is absent."""
+        if fields:
+            projection = ", ".join([f"{field}: d.{field}" for field in fields])
+            aql = f"LET d = DOCUMENT(@id) RETURN {{ _id: d._id, {projection} }}"
+        else:
+            aql = "RETURN DOCUMENT(@id)"
+        cursor = self.db.aql.execute(aql, bind_vars={"id": node_id})
+        result = list(cursor)
+        return result[0] if result else {}
 
     def degree(self, node: NodeId) -> int:
         """Out-degree of a node."""

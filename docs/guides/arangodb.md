@@ -13,14 +13,18 @@ The ArangoDB Python driver (`python-arango`) is installed automatically with `od
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db)
+backend = ArangoBackend(db)
+engine = OdinEngine(backend)
 ```
 
-The important detail is that `OdinEngine` takes an already-connected `StandardDatabase` object and never manages credentials itself. That keeps secrets in your connection code and out of Odin entirely.
+The important detail is that `OdinEngine` takes a backend, while `ArangoBackend`
+uses an already-connected `StandardDatabase` object and never manages credentials
+itself. That keeps secrets in your connection code and out of Odin entirely.
 
 ## Production connections
 
@@ -59,14 +63,16 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want both retrieval and the NPLL model focused on one partition:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend in this phase:
 
 ```python
 # Global exploration (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+backend = ArangoBackend(db, community_id="global", community_mode="none")
+engine = OdinEngine(backend, community_id="global", community_mode="none")
 
 # Scoped to one partition
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+backend = ArangoBackend(db, community_id="medicare_claims", community_mode="mapping")
+engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 ```
 
 ## Verifying it worked

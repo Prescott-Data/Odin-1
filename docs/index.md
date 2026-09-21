@@ -91,13 +91,15 @@ pip install odin-engine
 ```python title="explore.py"
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
 # 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-engine = OdinEngine(db=db, community_id="global")
+backend = ArangoBackend(db, community_id="global")
+engine = OdinEngine(backend, community_id="global")
 
 # 3. Explore from seed entities
 result = engine.retrieve(

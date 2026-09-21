@@ -11,7 +11,8 @@ Graph exploration is repetitive by nature: PPR and beam search revisit the same 
 There are actually two caches working together. The **graph accessor** cache sits over ArangoDB: when you build an engine, the raw accessor is wrapped in a `CachedGraphAccessor`, and every node fetch and neighbor lookup during a walk goes through it.
 
 ```python
-engine = OdinEngine(db, cache_size=5000)   # LRU size for graph reads
+backend = ArangoBackend(db)
+engine = OdinEngine(backend, cache_size=5000)   # LRU size for graph reads
 ```
 
 Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.

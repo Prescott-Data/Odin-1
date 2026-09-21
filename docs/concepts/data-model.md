@@ -37,17 +37,23 @@ None of the optional fields are required (Odin defaults them sensibly), but the 
 
 ## Communities scope the graph
 
-A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval, and the model behind it, focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with `community_mode`:
+A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps retrieval focused on one tenant, dataset, or domain instead of the whole graph. You choose the behavior with `community_mode`:
 
 ```python
 # Global exploration across the whole graph (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+engine = OdinEngine(
+    ArangoBackend(db, community_id="global", community_mode="none"),
+    community_id="global", community_mode="none",
+)
 
 # Scoped to a single community
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+engine = OdinEngine(
+    ArangoBackend(db, community_id="medicare_claims", community_mode="mapping"),
+    community_id="medicare_claims", community_mode="mapping",
+)
 ```
 
-Communities are also the natural unit for [NPLL](npll.md): a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.
+For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Model artifacts are separately namespaced per community and mode.
 
 ## What Odin does *not* need from you
 

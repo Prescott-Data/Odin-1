@@ -11,11 +11,13 @@ This guide runs the full Odin pipeline once and then walks through every field o
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db, community_id="global")
+backend = ArangoBackend(db, community_id="global")
+engine = OdinEngine(backend, community_id="global")
 
 result = engine.retrieve(
     seeds=["entity/claim_123"],

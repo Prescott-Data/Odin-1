@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extracted Arango training-snapshot reads and model persistence into
   `retrieval.backends`, with `GraphBackend`, `TripleSource`, and `ModelStore`
   protocols. Direct bootstrap callers now pass a source and store;
-  `OdinEngine(db)` remains unchanged until the next separation phase.
+  `OdinEngine` now accepts an explicit `GraphBackend`, and raw database
+  handles raise a migration error.
 - Model artifacts use a graph/community namespace and revision-checked atomic
   replacement. Missing, corrupt, unavailable, and concurrently changed models
   have distinct outcomes. Old unscoped artifacts are not reused.

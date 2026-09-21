@@ -19,6 +19,14 @@ class BackendError(RuntimeError):
     """Base for failures that must never be interpreted as missing models."""
 
 
+class BackendConfigurationError(BackendError):
+    """A backend or retrieval accessor does not satisfy Odin's contract."""
+
+
+class BackendCapabilityError(BackendError):
+    """A requested operation is not supported by the configured backend."""
+
+
 class BackendIOError(BackendError):
     """The backend could not complete an operation."""
 
@@ -89,9 +97,18 @@ class SchemaInspector(Protocol):
 
 class GraphBackend(Protocol):
     def accessor(self, community_id: str, community_mode: str) -> GraphAccessor: ...
-    def triple_source(self) -> Optional[TripleSource]: ...
-    def model_store(self) -> Optional[ModelStore]: ...
+
+
+class TrainingBackend(Protocol):
+    def triple_source(self) -> TripleSource: ...
+    def model_store(self) -> ModelStore: ...
+
+
+class GlobalAccessBackend(Protocol):
     def global_accessor(self) -> Optional[GraphAccessor]: ...
+
+
+class SchemaInspectionBackend(Protocol):
     def schema_inspector(self) -> Optional[SchemaInspector]: ...
 
 

@@ -72,11 +72,13 @@ This exposes ArangoDB on `http://localhost:8529` with authentication disabled, w
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db, community_id="global")
+backend = ArangoBackend(db, community_id="global")
+engine = OdinEngine(backend, community_id="global")
 ```
 
 On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).

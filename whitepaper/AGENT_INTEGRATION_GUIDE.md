@@ -7,13 +7,15 @@ The simplest way to integrate Odin with your agents:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # Connect to database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("KG-test", username="lisa", password="...")
 
 # Initialize Odin (auto-trains NPLL if needed, stores weights in DB)
-engine = OdinEngine(db, community_id="healthcare")
+backend = ArangoBackend(db, community_id="healthcare")
+engine = OdinEngine(backend, community_id="healthcare")
 
 # Use in your agent
 result = engine.retrieve(seeds=["Patient_123"], max_paths=100)
@@ -45,8 +47,9 @@ The simplest approach using the high-level `OdinEngine` class:
 
 ```python
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
-engine = OdinEngine(db)
+engine = OdinEngine(ArangoBackend(db))
 result = engine.retrieve(seeds=["Patient_123"])
 score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
 ```

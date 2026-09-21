@@ -14,13 +14,16 @@ Package: `odin-engine` (`pip install odin-engine`). Import name: `odin`.
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-# OdinEngine takes an already-connected ArangoDB handle. It never manages credentials.
+# OdinEngine takes a graph backend. ArangoBackend keeps credentials in the
+# already-connected database handle.
+backend = ArangoBackend(db, community_id="global", community_mode="none")
 engine = OdinEngine(
-    db,
+    backend,
     community_id="global",   # scope; "global" explores the whole graph
     cache_size=5000,
     auto_train=True,          # trains NPLL from the graph on first run, persists weights in ArangoDB
@@ -101,12 +104,16 @@ if result["triage"]["score"] >= 70:
 - **`relation_share[rel]` is `{"count": int, "share": float}`**, not a bare float.
 - **`score_edge` argument order is `(src, rel, dst)`** (source, relation, destination).
 - **`beam_width` default is 64** (not 10).
-- **`OdinEngine` takes a connected `db` handle**, not a connection string. Build the ArangoDB client yourself and pass `db`.
+- **`OdinEngine` takes a `GraphBackend`**, not a connection string or raw database handle. Build `ArangoBackend(db)` from the connected ArangoDB handle.
 - **Check `engine.has_npll`** before relying on fine-grained plausibility; if False, the engine is in constant-confidence fallback.
 
 ## Other backends (adapters)
 
-`OdinEngine` wires the ArangoDB adapter. The retrieval layer works against the `GraphAccessor` protocol (`retrieval.adapters`), and a `JanusGraphAccessor` ships. To drive a non-Arango backend, compose the orchestrator directly:
+`OdinEngine` works with any backend that supplies the complete `GraphAccessor`
+surface. `ArangoBackend` supplies both retrieval and NPLL training. A
+retrieval-only backend must be passed with `auto_train=False`; a backend without
+training capabilities raises `BackendCapabilityError` if training is requested.
+`JanusGraphAccessor` ships for direct orchestrator composition:
 
 ```python
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams

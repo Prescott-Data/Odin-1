@@ -156,13 +156,15 @@ for local ArangoDB setup and data-model requirements.
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_database", username="user", password="pass")
 
 # 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-engine = OdinEngine(db=db, community_id="my_community")
+backend = ArangoBackend(db, community_id="my_community")
+engine = OdinEngine(backend, community_id="my_community")
 
 # 3. Explore from seed entities
 result = engine.retrieve(
@@ -294,7 +296,7 @@ The entity IDs and outputs below are illustrative, not measured results.
 **Scenario:** Find providers billing unusual procedure combinations
 
 ```python
-engine = OdinEngine(db, community_id="medicare_claims")
+engine = OdinEngine(ArangoBackend(db, community_id="medicare_claims"), community_id="medicare_claims")
 result = engine.retrieve(
     seeds=["provider/high_volume_clinic"],
     max_paths=100,
@@ -344,9 +346,10 @@ if score > 0.5:
 
 ```python
 from odin import OdinEngine
+from retrieval.backends.base import GraphBackend
 
 engine = OdinEngine(
-    db: StandardDatabase,              # ArangoDB connection
+    backend: GraphBackend,             # Graph access and optional NPLL capabilities
     community_id: str = "global",      # Scope for exploration
     cache_size: int = 5000,            # LRU cache size
     auto_train: bool = True,           # Auto-train NPLL if needed

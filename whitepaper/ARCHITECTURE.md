@@ -701,13 +701,15 @@ The simplest way to use Odin is through the `OdinEngine` class, which handles al
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # 1. Connect to ArangoDB
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
 # 2. Initialize Odin (auto-trains NPLL if needed)
-engine = OdinEngine(db, community_id="my_community")
+backend = ArangoBackend(db, community_id="my_community")
+engine = OdinEngine(backend, community_id="my_community")
 
 # 3. Retrieve
 result = engine.retrieve(seeds=["entity/my_entity"], max_paths=100)
@@ -803,10 +805,11 @@ result = orchestrator.retrieve(
 
 ```python
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 class InvestigatorAgent:
     def __init__(self, db, llm: LLMClient):
-        self.engine = OdinEngine(db)  # One line setup
+        self.engine = OdinEngine(ArangoBackend(db))  # One line setup
         self.llm = llm
         self.db = db
     

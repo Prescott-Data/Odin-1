@@ -7,21 +7,17 @@ This class orchestrates all components:
 - Retrieval (PPR + Beam Search + Scoring)
 """
 
-import os
-import sys
 import logging
 from typing import List, Dict, Any, Optional
-
-from arango.database import StandardDatabase
-
-# Add parent path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
-from retrieval.backends.arango import ArangoBackend
-from retrieval.backends.base import BackendError
+from retrieval.backends.base import (
+    BackendCapabilityError,
+    BackendConfigurationError,
+    GraphBackend,
+)
 from retrieval.cache import CachedGraphAccessor
 from retrieval.confidence import NPLLConfidence, ConstantConfidence
 from retrieval.ppr.anchors import APPRAnchors, APPRAnchorParams
@@ -40,18 +36,20 @@ class OdinEngine:
     
     Example:
         from odin import OdinEngine
+        from retrieval.backends.arango import ArangoBackend
         from arango import ArangoClient
         
         client = ArangoClient(hosts="http://localhost:8529")
         db = client.db("KG-test", username="root", password="")
         
-        engine = OdinEngine(db)
+        backend = ArangoBackend(db)
+        engine = OdinEngine(backend)
         results = engine.retrieve(seeds=["Patient_123"])
     """
     
     def __init__(
         self,
-        db: StandardDatabase,
+        backend: GraphBackend,
         community_id: str = "global",
         cache_size: int = 5000,
         auto_train: bool = True,
@@ -61,27 +59,27 @@ class OdinEngine:
         Initialize the Odin Engine.
         
         Args:
-            db: Connected ArangoDB database instance
+            backend: Graph backend that supplies retrieval and optional training capabilities
             community_id: Community to scope queries to (default: "global")
             cache_size: Size of the graph accessor cache (default: 5000)
             auto_train: If True, automatically train NPLL if no model exists (default: True)
             community_mode: "none" for global exploration, "mapping" for community-scoped
         """
-        self.db = db
         self.community_id = community_id
-        self.backend = ArangoBackend(db, community_id=community_id, community_mode=community_mode)
+        self.backend = backend
         
         logger.info(f"Initializing OdinEngine for community '{community_id}' (mode: {community_mode})...")
         
         # 1. Setup Graph Accessor (with caching)
-        base_accessor = self.backend.accessor(
+        base_accessor = self._create_accessor(
             community_id=community_id,
             community_mode=community_mode,
         )
         self.accessor = CachedGraphAccessor(base_accessor, cache_size=cache_size)
         
         # Global accessor for cross-community queries
-        self.global_accessor = self.backend.global_accessor()
+        global_accessor = getattr(self.backend, "global_accessor", None)
+        self.global_accessor = global_accessor() if callable(global_accessor) else None
         
         # 2. Load/Train NPLL Model
         self.npll_model: Optional[NPLLModel] = None
@@ -107,25 +105,60 @@ class OdinEngine:
             logger.info("Auto-train disabled. Using constant confidence.")
             return ConstantConfidence(0.8)
         
-        try:
-            bootstrapper = KnowledgeBootstrapper(self.backend.triple_source(), self.backend.model_store())
-            result = bootstrapper.ensure_model_ready()
-            self.npll_model = result.model
-            self.training_report = result.report
-            self.npll_source = result.source
-            self._warn_if_not_converged()
-            
-            if self.npll_model:
-                return NPLLConfidence(self.npll_model, cache_size=10000)
-            else:
-                logger.warning("NPLL training failed. Using constant confidence.")
-                return ConstantConfidence(0.8)
-                
-        except BackendError:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to initialize NPLL: {e}")
-            return ConstantConfidence(0.8)
+        source, store = self._training_capabilities()
+        bootstrapper = KnowledgeBootstrapper(source, store)
+        result = bootstrapper.ensure_model_ready()
+        self.npll_model = result.model
+        self.training_report = result.report
+        self.npll_source = result.source
+        self._warn_if_not_converged()
+
+        if self.npll_model:
+            return NPLLConfidence(self.npll_model, cache_size=10000)
+        logger.warning("NPLL training did not produce a model. Using constant confidence.")
+        return ConstantConfidence(0.8)
+
+    def _create_accessor(self, community_id: str, community_mode: str):
+        accessor_factory = getattr(self.backend, "accessor", None)
+        if not callable(accessor_factory):
+            raise BackendConfigurationError(
+                "OdinEngine now requires a GraphBackend, not a raw database handle. "
+                "Pass a backend that implements accessor(community_id, community_mode)."
+            )
+        accessor = accessor_factory(community_id, community_mode)
+        required_methods = (
+            "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
+        )
+        missing = [name for name in required_methods if not callable(getattr(accessor, name, None))]
+        if missing:
+            raise BackendConfigurationError(
+                "Backend accessor is missing required GraphAccessor methods: "
+                + ", ".join(missing)
+            )
+        return accessor
+
+    def _training_capabilities(self):
+        missing = [
+            name for name in ("triple_source", "model_store")
+            if not callable(getattr(self.backend, name, None))
+        ]
+        if missing:
+            raise BackendCapabilityError(
+                "Backend does not support NPLL training; missing capabilities: "
+                + ", ".join(missing)
+            )
+        source = self.backend.triple_source()
+        store = self.backend.model_store()
+        unavailable = [
+            name for name, capability in (("triple_source", source), ("model_store", store))
+            if capability is None
+        ]
+        if unavailable:
+            raise BackendCapabilityError(
+                "Backend does not support NPLL training; unavailable capabilities: "
+                + ", ".join(unavailable)
+            )
+        return source, store
 
     def _warn_if_not_converged(self):
         """Surface non-convergence so users know confidences may be miscalibrated."""
@@ -253,29 +286,23 @@ class OdinEngine:
         Returns:
             True if training succeeded, False otherwise
         """
-        try:
-            bootstrapper = KnowledgeBootstrapper(self.backend.triple_source(), self.backend.model_store())
-            result = bootstrapper.ensure_model_ready(force_retrain=True)
-            self.npll_model = result.model
-            self.training_report = result.report
-            self.npll_source = result.source
-            self._warn_if_not_converged()
-            
-            if self.npll_model:
-                self.confidence = NPLLConfidence(self.npll_model, cache_size=10000)
-                self.orchestrator = RetrievalOrchestrator(
-                    accessor=self.accessor,
-                    edge_confidence=self.confidence,
-                )
-                logger.info("✓ Model retrained successfully")
-                return True
-            return False
-            
-        except BackendError:
-            raise
-        except Exception as e:
-            logger.error(f"Retraining failed: {e}")
-            return False
+        source, store = self._training_capabilities()
+        bootstrapper = KnowledgeBootstrapper(source, store)
+        result = bootstrapper.ensure_model_ready(force_retrain=True)
+        self.npll_model = result.model
+        self.training_report = result.report
+        self.npll_source = result.source
+        self._warn_if_not_converged()
+
+        if self.npll_model:
+            self.confidence = NPLLConfidence(self.npll_model, cache_size=10000)
+            self.orchestrator = RetrievalOrchestrator(
+                accessor=self.accessor,
+                edge_confidence=self.confidence,
+            )
+            logger.info("✓ Model retrained successfully")
+            return True
+        return False
 
     @property
     def has_npll(self) -> bool:

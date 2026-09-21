@@ -4,20 +4,24 @@ icon: material/power-plug
 
 # Adapters
 
-Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter and the one `OdinEngine` wires up for you, but the interface is small and deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
+Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter, supplied to `OdinEngine` through `ArangoBackend`, but the interface is deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
 
 ## The accessor interface
 
 An adapter implements the `GraphAccessor` protocol from `retrieval.adapters`. It is only a handful of methods:
 
 ```python
-from typing import Iterable, Tuple, List
+from typing import Dict, Iterable, Optional, Tuple, List
 from retrieval.adapters import GraphAccessor, NodeId, RelId
 
 class MyAccessor(GraphAccessor):
 
     def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         """Yield (neighbor, relation, weight) for each outgoing edge."""
+        ...
+
+    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
+        """Yield (neighbor, relation, weight) for each incoming edge."""
         ...
 
     def nodes(self, community_id: str) -> Iterable[NodeId]:
@@ -31,9 +35,13 @@ class MyAccessor(GraphAccessor):
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
         """Optional: map external seed IDs to internal ones. Default: passthrough."""
         return seeds
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
+        """Return node properties, or an empty dict when the node is absent."""
+        ...
 ```
 
-If your backend can traverse outgoing edges and enumerate nodes, it can drive Odin. Everything the engine needs, PPR, beam search, and aggregation, is expressed in terms of these methods.
+If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.
 
 ## Adapters that ship with Odin
 
@@ -48,7 +56,7 @@ Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point
 
 ## Using a non-Arango adapter
 
-`OdinEngine` is a convenience wrapper that constructs the ArangoDB adapter from a `db` handle. To drive Odin with a different backend, compose the retrieval orchestrator directly with your accessor:
+`OdinEngine` accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with `auto_train=False` or compose the retrieval orchestrator directly with your accessor:
 
 ```python
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
@@ -102,7 +110,7 @@ accessor = CachedGraphAccessor(JanusGraphAccessor(g), cache_size=5000)
 
 ## Writing your own
 
-To add a backend, implement the four `GraphAccessor` methods for it. `iter_out` is the workhorse: given a node, return its outgoing `(neighbor, relation, weight)` tuples. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
+To add a backend, implement all six `GraphAccessor` methods. `iter_out` is the workhorse: given a node, return its outgoing `(neighbor, relation, weight)` tuples. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
 
 ## Next
 

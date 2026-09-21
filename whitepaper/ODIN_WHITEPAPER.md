@@ -394,13 +394,15 @@ Odin is designed as a **library** that agents import, not a standalone service:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # Connect to knowledge graph database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("knowledge_graph", username="user", password="pass")
 
 # Initialize Odin - NPLL auto-trains if needed
-odin = OdinEngine(db=db, community_id="healthcare")
+backend = ArangoBackend(db, community_id="healthcare")
+odin = OdinEngine(backend, community_id="healthcare")
 
 # Use during agent exploration
 result = odin.retrieve(
@@ -692,20 +694,23 @@ Odin is designed for organizations that:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_knowledge_graph", username="user", password="pass")
 
 # Initialize Odin - auto-trains NPLL on first run
-odin = OdinEngine(db=db)
+odin = OdinEngine(ArangoBackend(db))
 
 # Explore from seed entities
 result = odin.retrieve(seeds=["entity/interesting_node"])
 
 # Access scored paths
 for path in result["paths"][:5]:
-    print(f"Path: {path['nodes']} | Score: {path['score']:.3f}")
+    edges = path["edges"]
+    nodes = [edges[0]["u"], *(edge["v"] for edge in edges)] if edges else []
+    print(f"Path: {nodes} | Score: {path['score']:.3f}")
 
 # Get aggregated insights
 print(f"Top motifs: {result['aggregates']['top_motifs']}")

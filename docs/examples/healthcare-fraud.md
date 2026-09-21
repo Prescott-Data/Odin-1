@@ -15,11 +15,13 @@ Start from a provider you want to scrutinize and let Odin find the patterns arou
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "claims", username="root", password=""
 )
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+backend = ArangoBackend(db, community_id="medicare_claims", community_mode="mapping")
+engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 
 result = engine.retrieve(
     seeds=["provider/high_volume_clinic"],

@@ -14,7 +14,7 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `db` | `StandardDatabase` | required | Connected `python-arango` handle |
+| `backend` | `GraphBackend` | required | Retrieval backend; NPLL training needs source and store capabilities |
 | `community_id` | `str` | `"global"` | Exploration scope |
 | `cache_size` | `int` | `5000` | Graph-accessor LRU size (see [Caching](../concepts/caching.md)) |
 | `auto_train` | `bool` | `True` | Train NPLL on first run if no model exists |

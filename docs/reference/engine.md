@@ -4,7 +4,7 @@ icon: material/engine
 
 # OdinEngine API
 
-`OdinEngine` is the main entry point. Construct it with a connected ArangoDB database, then call its methods.
+`OdinEngine` is the main entry point. Construct it with a graph backend, then call its methods.
 
 ```python
 from odin import OdinEngine
@@ -16,7 +16,7 @@ from odin import OdinEngine
 
 ```python
 OdinEngine(
-    db,
+    backend,
     community_id: str = "global",
     cache_size: int = 5000,
     auto_train: bool = True,
@@ -26,13 +26,17 @@ OdinEngine(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | required | A connected `python-arango` database instance |
+| `backend` | `GraphBackend` | required | Graph access plus optional NPLL training and persistence capabilities |
 | `community_id` | `str` | `"global"` | Scope to explore within |
 | `cache_size` | `int` | `5000` | LRU size for the graph accessor |
 | `auto_train` | `bool` | `True` | Train NPLL if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
-On first construction against a graph, NPLL trains (2-5 min) unless `auto_train=False`. See [Model Lifecycle](../guides/npll-lifecycle.md).
+For ArangoDB, construct `ArangoBackend(db, community_id=..., community_mode=...)`
+from a connected `python-arango` database. On first construction against a
+training-capable graph, NPLL trains (2-5 min) unless `auto_train=False`. A
+retrieval-only backend must set `auto_train=False`; otherwise construction
+raises `BackendCapabilityError`. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
 ---
 

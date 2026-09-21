@@ -15,11 +15,13 @@ Because the interesting chains run deep, this is the case that calls for a **hig
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.backends.arango import ArangoBackend
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "supply", username="root", password=""
 )
-engine = OdinEngine(db, community_id="supply", community_mode="mapping")
+backend = ArangoBackend(db, community_id="supply", community_mode="mapping")
+engine = OdinEngine(backend, community_id="supply", community_mode="mapping")
 
 result = engine.retrieve(
     seeds=["supplier/critical_vendor"],
