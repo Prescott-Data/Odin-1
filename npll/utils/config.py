@@ -125,21 +125,25 @@ KINSHIP_CONFIG = NPLLConfig(
 )
 
 
+# Preserve the effective settings previously obtained through the FB15k fallback,
+# while giving production graph training its own explicit configuration identity.
+ODIN_TRIPLES_CONFIG = NPLLConfig(dataset_name="OdinTriples", max_epochs=200)
+
+
 def get_config(dataset_name: str) -> NPLLConfig:
     """Get dataset-specific configuration"""
     configs = {
+        "OdinTriples": ODIN_TRIPLES_CONFIG,
         "FB15k-237": FB15K_237_CONFIG,
         "WN18RR": WN18RR_CONFIG,
         "UMLS": UMLS_CONFIG,
         "Kinship": KINSHIP_CONFIG
     }
     
-    if dataset_name in configs:
-        return configs[dataset_name]
-    else:
-        print(f"Warning: Unknown dataset {dataset_name}, using default OdinTriples config")
-        return FB15K_237_CONFIG
+    if dataset_name not in configs:
+        raise ValueError(f"Unknown NPLL dataset configuration: {dataset_name}")
+    return configs[dataset_name]
 
 
 # Export default config
-default_config = FB15K_237_CONFIG
+default_config = ODIN_TRIPLES_CONFIG

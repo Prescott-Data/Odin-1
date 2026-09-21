@@ -182,7 +182,7 @@ def run_benchmark(
     kg = dataset_to_kg(dataset)
     
     # Create NPLL config
-    config = get_config()
+    config = get_config("OdinTriples")
     config.embedding_dim = 100
     config.hidden_dim = 200
     results["config"] = {
