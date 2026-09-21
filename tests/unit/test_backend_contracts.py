@@ -1,20 +1,44 @@
 """Regression tests for snapshot identity and complete, atomic persistence."""
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from unittest.mock import patch
 
 import pytest
 import torch
 
 from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
-from retrieval.backends.arango import ArangoBackend, ArangoModelStore, ArangoTripleSource
+from retrieval.backends.arango import (
+    ArangoBackend,
+    ArangoGraphConfig,
+    ArangoModelStore,
+    ArangoTripleSource,
+)
 from retrieval.backends.base import (
-    MODEL_KEY, BackendError, BackendIOError, CorruptModelError, ModelConflictError,
-    TrainingSnapshot, validate_model_artifact,
+    MODEL_KEY,
+    BackendError,
+    BackendIOError,
+    CorruptModelError,
+    ModelConflictError,
+    TrainingSnapshot,
+    validate_model_artifact,
 )
 from tests.unit.test_training_telemetry import make_training_result
 from tests.utils.backend_fakes import (
     FakeArango, MemorySource, MemoryStore, model_artifact,
+)
+
+
+ARANGO_GRAPH = ArangoGraphConfig(
+    node_collection="Entities",
+    edge_collection="Relationships",
+    relation_field="relation",
+    entity_type_field="type",
+)
+ARANGO_GRAPH_WITH_MEMBERSHIP = replace(
+    ARANGO_GRAPH,
+    membership_collection="Memberships",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
 )
 
 
@@ -44,29 +68,54 @@ def test_arango_materializes_one_snapshot_and_retains_tail_evidence():
     triples = [("Entities/A", "Relation %03d" % i, "Entities/B") for i in range(101)]
     triples.append(("Entities/A", "has_type", "Person"))
     db = FakeArango(triples)
-    snapshot = ArangoTripleSource(db).snapshot()
+    snapshot = ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
     assert len(db.queries) == 1
     assert "source._id" in db.queries[0] and '"has_type"' in db.queries[0]
     assert snapshot == TrainingSnapshot(triples)
     db.triples[-1] = ("Entities/A", "has_type", "Organization")
     assert ("Entities/A", "Relation 100", "Entities/B") in snapshot.triples
-    assert snapshot.data_hash != ArangoTripleSource(db).snapshot().data_hash
+    assert snapshot.data_hash != ArangoTripleSource(db, ARANGO_GRAPH).snapshot().data_hash
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {"node_collection": "", "edge_collection": "Edges", "relation_field": "predicate"},
+        {"node_collection": "Nodes", "edge_collection": "", "relation_field": "predicate"},
+        {"node_collection": "Nodes", "edge_collection": "Edges", "relation_field": ""},
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "entity_type_field": "",
+        },
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "membership_collection": "Memberships",
+        },
+    ),
+)
+def test_arango_graph_config_rejects_incomplete_mapping(kwargs):
+    with pytest.raises(ValueError):
+        ArangoGraphConfig(**kwargs)
 
 
 def test_extraction_errors_do_not_return_empty_or_partial_snapshots():
     db = FakeArango()
 
-    def interrupted(query):
+    def interrupted(query, **kwargs):
         yield ("A", "r", "B")
         raise OSError("cursor interrupted")
 
     db.aql.execute = interrupted
     with pytest.raises(BackendIOError, match="complete"):
-        ArangoTripleSource(db).snapshot()
-    db.aql.execute = lambda query: [("A", None, "B")]
+        ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
+    db.aql.execute = lambda query, **kwargs: [("A", None, "B")]
     # Invalid identities are a data-validity failure, distinct from transport I/O.
     with pytest.raises(BackendError, match="invalid triple identities"):
-        ArangoTripleSource(db).snapshot()
+        ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
 
 
 def test_arango_lossless_large_artifact_and_atomic_replacement():
@@ -108,7 +157,7 @@ def test_concurrent_creation_and_replacement_reject_stale_writers():
 
 def test_backend_namespaces_separate_communities_modes_and_databases():
     db = FakeArango()
-    backend = ArangoBackend(db)
+    backend = ArangoBackend(db, ARANGO_GRAPH)
     a = backend.model_store("a", "mapping")
     b = backend.model_store("b", "mapping")
     unscoped = backend.model_store("a", "none")
@@ -117,25 +166,32 @@ def test_backend_namespaces_separate_communities_modes_and_databases():
     assert unscoped.load(MODEL_KEY) is None
     other = FakeArango()
     other.name = "other_graph"
-    assert (ArangoBackend(other).model_store("a", "mapping").namespace !=
-            ArangoBackend(db).model_store("a", "mapping").namespace)
+    assert (ArangoBackend(other, ARANGO_GRAPH).model_store("a", "mapping").namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store("a", "mapping").namespace)
+    alternate_graph = replace(ARANGO_GRAPH, relation_field="predicate")
+    assert (ArangoBackend(db, alternate_graph).model_store("a", "mapping").namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store("a", "mapping").namespace)
 
 
 def test_backend_disables_absent_optional_provenance_collection():
     db = FakeArango()
-    assert ArangoBackend(db).accessor("global", "none").prov_edges_col is None
+    assert ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none").prov_edges_col is None
 
-    db.create_collection("EXTRACTED_FROM")
+    db.create_collection("Provenance")
+    graph_with_provenance = replace(
+        ARANGO_GRAPH,
+        provenance_edge_collection="Provenance",
+    )
     assert (
-        ArangoBackend(db).accessor("global", "none").prov_edges_col
-        == "EXTRACTED_FROM"
+        ArangoBackend(db, graph_with_provenance).accessor("global", "none").prov_edges_col
+        == "Provenance"
     )
 
 
 def test_engine_scope_drives_arango_model_namespace():
     from odin.engine import OdinEngine
 
-    backend = ArangoBackend(FakeArango())
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH_WITH_MEMBERSHIP)
     engine = OdinEngine(
         backend,
         community_id="tenant-a",
@@ -289,7 +345,7 @@ def test_engine_does_not_hide_backend_failure(method):
     from odin.engine import OdinEngine
 
     engine = OdinEngine.__new__(OdinEngine)
-    engine.backend = ArangoBackend(FakeArango())
+    engine.backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
     engine.community_id = "global"
     engine.community_mode = "none"
     with patch("odin.engine.KnowledgeBootstrapper") as bootstrap:

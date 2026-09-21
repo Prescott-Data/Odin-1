@@ -13,12 +13,20 @@ from uuid import uuid4
 import pytest
 
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 from retrieval.backends.base import MODEL_KEY, ModelConflictError, TrainingSnapshot
 from tests.utils.backend_fakes import model_artifact
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get("ODIN_TEST_ARANGO_URL"), reason="ODIN_TEST_ARANGO_URL not set",
+)
+
+
+ARANGO_GRAPH = ArangoGraphConfig(
+    node_collection="ExtractedEntities",
+    edge_collection="ExtractedRelationships",
+    relation_field="relationship",
+    entity_type_field="type",
 )
 
 
@@ -75,7 +83,7 @@ def configure_fast_training(monkeypatch):
 
 
 def test_snapshot_tracks_same_count_mutations_and_types(db):
-    source = ArangoBackend(db).triple_source()
+    source = ArangoBackend(db, ARANGO_GRAPH).triple_source()
     first = source.snapshot()
     expected = [("ExtractedEntities/" + key, "has_type", "Person") for key in ("A", "B", "C")]
     expected += [("ExtractedEntities/A", "related_to", "ExtractedEntities/B"),
@@ -90,7 +98,7 @@ def test_snapshot_tracks_same_count_mutations_and_types(db):
 
 
 def test_lossless_roundtrip_and_concurrent_replacement(db):
-    backend = ArangoBackend(db)
+    backend = ArangoBackend(db, ARANGO_GRAPH)
     store = backend.model_store("global", "none")
     artifact = model_artifact(101, 120)
     revision = store.save(MODEL_KEY, artifact, expected_revision=None)
@@ -113,7 +121,7 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
     del latest.document["evidence"]
     store.save(MODEL_KEY, latest.document, expected_revision=latest.revision)
     assert store.load(MODEL_KEY).document == latest.document
-    assert ArangoBackend(db).model_store("other", "none").load(MODEL_KEY) is None
+    assert ArangoBackend(db, ARANGO_GRAPH).model_store("other", "none").load(MODEL_KEY) is None
 
 
 def test_real_train_save_reload_and_serve(db, monkeypatch):
@@ -121,7 +129,7 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
     from retrieval.confidence import NPLLConfidence
 
     configure_fast_training(monkeypatch)
-    backend = ArangoBackend(db)
+    backend = ArangoBackend(db, ARANGO_GRAPH)
     store = backend.model_store("global", "none")
     first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert first.source == "trained"
@@ -139,11 +147,11 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
 def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
     configure_fast_training(monkeypatch)
 
-    first = OdinEngine(ArangoBackend(db), community_id="global")
+    first = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
     assert first.has_npll
     assert first.npll_source == "trained"
 
-    reloaded = OdinEngine(ArangoBackend(db), community_id="global")
+    reloaded = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
     assert reloaded.has_npll
     assert reloaded.npll_source == "cached_weights"
 

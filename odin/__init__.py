@@ -8,9 +8,14 @@ A library for intelligent knowledge graph exploration using:
 
 Usage:
     from odin import OdinEngine
-    from retrieval.backends.arango import ArangoBackend
-    
-    engine = OdinEngine(ArangoBackend(my_arango_db))
+    from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+
+    graph = ArangoGraphConfig(
+        node_collection="MyEntities",
+        edge_collection="MyRelationships",
+        relation_field="predicate",
+    )
+    engine = OdinEngine(ArangoBackend(my_arango_db, graph))
     results = engine.retrieve(seeds=["Patient_123"])
     score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
 """

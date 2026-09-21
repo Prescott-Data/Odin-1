@@ -91,7 +91,7 @@ class FakeArango:
     def collection(self, name):
         return self.collections[name]
 
-    def execute(self, query):
+    def execute(self, query, **kwargs):
         self.queries.append(query)
         return iter(deepcopy(self.triples))
 

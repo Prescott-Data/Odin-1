@@ -4,7 +4,7 @@ Unit tests for ArangoDB schema inspection.
 import pytest
 from unittest.mock import Mock, MagicMock
 from odin.schema import inspect_schema
-from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 from retrieval.backends.base import BackendCapabilityError
 from retrieval.backends.arango_schema import (
     ArangoSchemaInspector,
@@ -276,7 +276,13 @@ class TestBackendNeutralSchemaInspection:
         mock_db.aql = Mock()
         output_file = tmp_path / "schema.json"
 
-        schema = inspect_schema(ArangoBackend(mock_db), output_file=str(output_file))
+        graph = ArangoGraphConfig(
+            node_collection="ExtractedEntities",
+            edge_collection="ExtractedRelationships",
+            relation_field="relationship",
+            entity_type_field="type",
+        )
+        schema = inspect_schema(ArangoBackend(mock_db, graph), output_file=str(output_file))
 
         assert schema["database_name"] == "test_db"
         assert output_file.exists()
