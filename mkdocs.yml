@@ -122,6 +122,7 @@ nav:
       - Troubleshooting: reference/troubleshooting.md
       - Changelog: changelog.md
   - Enterprise: infrastructure/enterprise.md
+  - Development: development/backend-contracts.md
 
 extra:
   version: "0.3.0"

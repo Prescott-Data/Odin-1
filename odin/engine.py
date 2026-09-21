@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
-from retrieval.adapters_arango import ArangoCommunityAccessor, GlobalGraphAccessor
+from retrieval.backends.arango import ArangoBackend
+from retrieval.backends.base import BackendError
 from retrieval.cache import CachedGraphAccessor
 from retrieval.confidence import NPLLConfidence, ConstantConfidence
 from retrieval.ppr.anchors import APPRAnchors, APPRAnchorParams
@@ -68,19 +69,19 @@ class OdinEngine:
         """
         self.db = db
         self.community_id = community_id
+        self.backend = ArangoBackend(db, community_id=community_id, community_mode=community_mode)
         
         logger.info(f"Initializing OdinEngine for community '{community_id}' (mode: {community_mode})...")
         
         # 1. Setup Graph Accessor (with caching)
-        base_accessor = ArangoCommunityAccessor(
-            db=db,
+        base_accessor = self.backend.accessor(
             community_id=community_id,
             community_mode=community_mode,
         )
         self.accessor = CachedGraphAccessor(base_accessor, cache_size=cache_size)
         
         # Global accessor for cross-community queries
-        self.global_accessor = GlobalGraphAccessor(db=db, algorithm="gnn")
+        self.global_accessor = self.backend.global_accessor()
         
         # 2. Load/Train NPLL Model
         self.npll_model: Optional[NPLLModel] = None
@@ -107,7 +108,7 @@ class OdinEngine:
             return ConstantConfidence(0.8)
         
         try:
-            bootstrapper = KnowledgeBootstrapper(db=self.db)
+            bootstrapper = KnowledgeBootstrapper(self.backend.triple_source(), self.backend.model_store())
             result = bootstrapper.ensure_model_ready()
             self.npll_model = result.model
             self.training_report = result.report
@@ -120,6 +121,8 @@ class OdinEngine:
                 logger.warning("NPLL training failed. Using constant confidence.")
                 return ConstantConfidence(0.8)
                 
+        except BackendError:
+            raise
         except Exception as e:
             logger.error(f"Failed to initialize NPLL: {e}")
             return ConstantConfidence(0.8)
@@ -251,7 +254,7 @@ class OdinEngine:
             True if training succeeded, False otherwise
         """
         try:
-            bootstrapper = KnowledgeBootstrapper(db=self.db)
+            bootstrapper = KnowledgeBootstrapper(self.backend.triple_source(), self.backend.model_store())
             result = bootstrapper.ensure_model_ready(force_retrain=True)
             self.npll_model = result.model
             self.training_report = result.report
@@ -268,6 +271,8 @@ class OdinEngine:
                 return True
             return False
             
+        except BackendError:
+            raise
         except Exception as e:
             logger.error(f"Retraining failed: {e}")
             return False

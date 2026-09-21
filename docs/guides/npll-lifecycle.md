@@ -70,7 +70,9 @@ Convergence is declared when the relative ELBO change **and** the rule-weight ch
 
 If the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
 
-`engine.training_report` is `None` when auto-train is disabled, training failed, or the weights were saved by a version that predates reports.
+`engine.training_report` is `None` when auto-train is disabled or training failed.
+Current artifacts require a complete report. Older unscoped artifacts are not
+reused by the new backend store; the first run creates a new namespaced model.
 
 ## Retraining
 
@@ -83,11 +85,17 @@ ok = engine.retrain_model()   # returns True on success
 `retrain_model()` trains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.
 
 !!! tip "When to retrain"
-    Ordinary incremental writes do not need a retrain. Retrain when the *shape* of the graph changes, meaning new kinds of entities or relationships, not merely a few new documents.
+    Startup fingerprints the actual extracted training triples, including entity
+    types. Changes to endpoints, relation labels, or types invalidate cached
+    weights even if graph counts stay the same. A running engine does not watch
+    for graph changes; call `retrain_model()` when it should learn a new snapshot.
 
 ## Per-community models
 
-Because NPLL learns the patterns of the community it trains on, each model is tied to its `community_id`. If you serve several communities, each one gets its own model, trained the first time you initialize an engine for it:
+Model artifacts are namespaced by database, graph collections, community ID,
+and community mode. Communities have separate stored artifacts. Training still
+reads the global graph in this extraction phase; the community setting scopes
+retrieval, not the training snapshot:
 
 ```python
 claims = OdinEngine(db, community_id="claims", community_mode="mapping")
@@ -97,7 +105,17 @@ supply = OdinEngine(db, community_id="supply", community_mode="mapping")
 
 ## When things go wrong
 
-Initialization is deliberately defensive. If training or loading raises, Odin logs the error and falls back to constant confidence rather than taking the whole engine down. When a model does not come up as expected, check the logs under the `odin` logger and confirm the mode with `get_status()`.
+Backend failures, corrupt artifacts, and conflicting model writes raise distinct
+errors during initialization and retraining. They are not interpreted as missing
+weights or converted to constant confidence. Model saves atomically replace the
+artifact only if its revision still matches the revision read before training.
+Existing handling of non-backend training failures can still select constant
+confidence; confirm the active mode with `get_status()`.
+
+Direct bootstrap callers now construct
+`KnowledgeBootstrapper(backend.triple_source(), backend.model_store())`.
+See the [backend contracts](../development/backend-contracts.md) for the snapshot,
+artifact schema, migration, and concurrency details.
 
 ## Next
 

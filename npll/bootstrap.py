@@ -1,28 +1,27 @@
 """
 Bootstrap module for NPLL.
 Handles the end-to-end lifecycle of the NPLL model:
-1. Extracting data from ArangoDB
+1. Reading a backend-neutral training snapshot
 2. Generating domain-appropriate logical rules
 3. Training the model
-4. Storing ONLY WEIGHTS in database (not full model)
+4. Persisting rule weights, rules, schema, and the complete training report
 
 Architecture:
-- Weights stored in OdinModels collection (~1 KB)
-- Model rebuilt from KG on each load (~30 sec)
+- The injected ModelStore owns persistence
+- Model rebuilt from the same training snapshot on each load
 - No external files needed
 """
 
-import os
-import hashlib
-import json
 import logging
 import random
-import time
 import torch
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
-from arango.database import StandardDatabase
+from retrieval.backends.base import (
+    ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelStore, StoredModel,
+    TrainingSnapshot, TripleSource, validate_model_artifact,
+)
 
 from .core.knowledge_graph import KnowledgeGraph, load_knowledge_graph_from_triples
 from .core.logical_rules import LogicalRule, Atom, Variable, RuleType
@@ -31,10 +30,6 @@ from .training.npll_trainer import TrainingConfig, TrainingResult, create_traine
 from .utils.config import get_config
 
 logger = logging.getLogger(__name__)
-
-# Collection name for storing model weights
-ODIN_MODELS_COLLECTION = "OdinModels"
-NPLL_MODEL_KEY = "npll_current"
 
 
 @dataclass
@@ -103,54 +98,45 @@ class KnowledgeBootstrapper:
     Manages the lifecycle of the NPLL model.
     
     Storage Strategy:
-    - Only rule weights are saved to database (~1 KB)
-    - Model is rebuilt from KG data on each load (~30 sec)
+    - Rule weights and audit metadata are saved through ModelStore
+    - Model is rebuilt from KG data on each load
     - No external .pt files needed
     """
     
-    def __init__(self, db: StandardDatabase):
-        """
-        Initialize the bootstrapper.
-        
-        Args:
-            db: An already-connected ArangoDB database instance
-        """
-        self.db = db
-        self._ensure_collection_exists()
-
-    def _ensure_collection_exists(self):
-        """Ensure OdinModels collection exists."""
-        try:
-            if not self.db.has_collection(ODIN_MODELS_COLLECTION):
-                self.db.create_collection(ODIN_MODELS_COLLECTION)
-                logger.info(f"Created {ODIN_MODELS_COLLECTION} collection")
-        except Exception as e:
-            # Suppress permission errors (common in read-only environments)
-            logger.warning(f"Could not verify/create {ODIN_MODELS_COLLECTION} (Permission Error?): {e}")
+    def __init__(self, triple_source: TripleSource, model_store: ModelStore):
+        self.triple_source = triple_source
+        self.model_store = model_store
 
     def ensure_model_ready(self, force_retrain: bool = False) -> BootstrapResult:
         """
         Ensures a trained NPLL model is available.
         
         Flow:
-        1. Compute current data hash
-        2. Check OdinModels for saved weights with matching hash
+        1. Extract a snapshot with its content fingerprint
+        2. Read the model artifact and its revision from ModelStore
         3. If found: rebuild model from KG, apply saved weights
         4. If not found: train new model, save weights to DB
         
         Args:
-            force_retrain: If True, ignores cached weights and retrains
+            force_retrain: If True, retrains using the current store revision.
+                Corrupt artifacts and store failures still raise.
             
         Returns:
             BootstrapResult with the model (or None on failure), the source
-            of the weights, and the TrainingReport audit record when available
+            of the weights, and the TrainingReport audit record when available.
+            Backend errors propagate without converting them into cache misses.
         """
-        current_hash = self._compute_data_hash()
-        logger.info(f"Current data hash: {current_hash[:16]}...")
+        snapshot = self.triple_source.snapshot()
+        current_hash = snapshot.data_hash
+        logger.info("Current data hash: %s", current_hash)
+        # Read the revision before training, including forced retraining.
+        stored = self.model_store.load(MODEL_KEY)
+        if stored is not None:
+            validate_model_artifact(stored.document)
         
         if not force_retrain:
             # Try to load existing weights and rebuild model
-            model, report = self._load_model_with_weights(current_hash)
+            model, report = self._load_model_with_weights(snapshot, stored)
             if model:
                 return BootstrapResult(
                     model=model, source="cached_weights",
@@ -159,129 +145,54 @@ class KnowledgeBootstrapper:
         
         # Train new model
         logger.info("Training new NPLL model...")
-        model, report = self._train_and_save_weights(current_hash)
+        model, report = self._train_and_save_weights(
+            snapshot, stored.revision if stored is not None else None,
+        )
         source = "trained" if model else "failed"
         return BootstrapResult(model=model, source=source, data_hash=current_hash, report=report)
 
-    def _compute_data_hash(self) -> str:
-        """
-        Compute a hash of the current schema to detect when retraining is needed.
-        """
-        try:
-            # Get relation names
-            rel_query = """
-            FOR e IN ExtractedRelationships
-              COLLECT rel = e.relationship WITH COUNT INTO cnt
-              SORT rel
-              RETURN {rel: rel, count: cnt}
-            """
-            relations = list(self.db.aql.execute(rel_query))
-            relation_names = sorted([r['rel'] for r in relations if r['rel']])
-            
-            # Get counts
-            entity_count = self.db.collection("ExtractedEntities").count()
-            fact_count = self.db.collection("ExtractedRelationships").count()
-            
-            hash_input = {
-                "relations": relation_names,
-                "entity_count": entity_count,
-                "fact_count": fact_count,
-            }
-            
-            hash_str = json.dumps(hash_input, sort_keys=True)
-            return hashlib.sha256(hash_str.encode()).hexdigest()
-            
-        except Exception as e:
-            logger.warning(f"Could not compute data hash: {e}")
-            return hashlib.sha256(str(time.time()).encode()).hexdigest()
-
-    def _load_model_with_weights(self, expected_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
-        """
-        Load saved weights from DB and rebuild the model.
-        
-        Flow:
-        1. Check if saved weights exist with matching hash
-        2. Extract triples from DB → build KG
-        3. Generate rules (same code = same rules)
-        4. Initialize fresh model
-        5. Apply saved weights
-        
-        Returns (model, rehydrated training report) — report is None for
-        documents written before reports were persisted.
-        """
-        try:
-            collection = self.db.collection(ODIN_MODELS_COLLECTION)
-            doc = collection.get(NPLL_MODEL_KEY)
-            
-            if not doc:
-                logger.info("No saved weights found in database")
-                return None, None
-            
-            stored_hash = doc.get("data_hash", "")
-            if stored_hash != expected_hash:
-                logger.info(f"Data has changed. Stored: {stored_hash[:16]}..., Current: {expected_hash[:16]}...")
-                return None, None
-            
-            # Get saved weights
-            saved_weights = doc.get("rule_weights")
-            if not saved_weights:
-                logger.warning("No rule_weights in saved document")
-                return None, None
-            
-            logger.info("Rebuilding model from KG and applying saved weights...")
-            
-            # 1. Extract triples
-            triples = self._extract_triples()
-            if not triples:
-                return None, None
-            
-            # 2. Build KG
-            kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
-            
-            # 3. Generate rules (same code = same rules)
-            rules = self._generate_smart_rules(kg)
-            
-            if len(rules) != len(saved_weights):
-                logger.warning(f"Rule count mismatch: {len(rules)} rules, {len(saved_weights)} weights. Retraining.")
-                return None, None
-            
-            # 4. Initialize model
-            config = get_config("ArangoDB_Triples")
-            model = create_initialized_npll_model(kg, rules, config)
-            
-            # 5. Apply saved weights
-            with torch.no_grad():
-                model.mln.rule_weights.copy_(torch.tensor(saved_weights, dtype=torch.float32))
-            
-            report = None
-            report_data = doc.get("training_report")
-            if report_data:
-                try:
-                    report = TrainingReport.from_dict(report_data)
-                except TypeError as e:
-                    logger.warning(f"Could not rehydrate training report: {e}")
-            
-            trained_at = doc.get("trained_at", "unknown")
-            logger.info(f"✓ Model rebuilt with saved weights (trained: {trained_at})")
-            
-            return model, report
-            
-        except Exception as e:
-            logger.warning(f"Failed to load model: {e}")
+    def _load_model_with_weights(
+        self, snapshot: TrainingSnapshot, stored: Optional[StoredModel],
+    ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
+        if stored is None or stored.document["data_hash"] != snapshot.data_hash:
             return None, None
+        doc = stored.document
+        if not snapshot.triples:
+            return None, None
+        kg = load_knowledge_graph_from_triples(snapshot.triples, "Odin_KG")
+        rules = self._generate_smart_rules(kg)
+        expected_rules = [(r.rule_id, str(r), r.confidence) for r in rules]
+        saved_rules = [(r["rule_id"], r["rule_text"], r["confidence"]) for r in doc["rules"]]
+        if expected_rules != saved_rules:
+            # Rules are code-generated: a mismatch means the generation code
+            # changed since training — staleness, not corruption. Retrain.
+            logger.info("Saved rules do not match current rule generation; retraining")
+            return None, None
+        try:
+            report = TrainingReport.from_dict(doc["training_report"])
+        except (TypeError, ValueError) as exc:
+            raise CorruptModelError("Invalid training report") from exc
+        config = get_config("ArangoDB_Triples")
+        model = create_initialized_npll_model(kg, rules, config)
+        with torch.no_grad():
+            model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
+        logger.info("Model rebuilt with saved weights (trained: %s)", doc["trained_at"])
+        return model, report
 
-    def _train_and_save_weights(self, data_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
+    def _train_and_save_weights(
+        self, snapshot: TrainingSnapshot, expected_revision: Optional[str],
+    ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
         """
         Train a new NPLL model and save ONLY the weights to database.
         """
         # 1. Extract Triples
-        triples = self._extract_triples()
+        triples = snapshot.triples
         if not triples:
             logger.error("No triples extracted. Cannot train.")
             return None, None
         
         # 2. Build KG
-        kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
+        kg = load_knowledge_graph_from_triples(triples, "Odin_KG")
         logger.info(f"Built KG: {len(kg.entities)} entities, {len(kg.relations)} relations, {len(kg.known_facts)} facts")
         
         # Create unknown facts for training (10%)
@@ -334,106 +245,34 @@ class KnowledgeBootstrapper:
             )
         
         # 6. Save ONLY weights to database
-        self._save_weights_to_db(model, kg, rules, data_hash, report)
+        self._save_weights(model, kg, rules, snapshot.data_hash, report, expected_revision)
         
         return model, report
 
-    def _save_weights_to_db(self, model: NPLLModel, kg: KnowledgeGraph, 
-                            rules: List[LogicalRule], data_hash: str,
-                            report: Optional[TrainingReport]):
-        """
-        Save ONLY the learned weights to OdinModels collection.
-        This is tiny (~1 KB) compared to the full model (280 MB).
-        """
-        try:
-            # Extract just the rule weights
-            rule_weights = model.mln.rule_weights.detach().cpu().tolist()
-            
-            doc = {
-                "_key": NPLL_MODEL_KEY,
-                "model_type": "npll",
-                "storage_type": "weights_only",  # Mark this as weights-only storage
-                "trained_at": report.trained_at if report else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                "data_hash": data_hash,
-                "rule_weights": rule_weights,  # The learned weights - this is all we need!
-                "schema_snapshot": {
-                    "entity_count": len(kg.entities),
-                    "relation_count": len(kg.relations),
-                    "fact_count": len(kg.known_facts),
-                    "relation_names": sorted([r.name for r in kg.relations])[:50],
-                },
-                "training_report": report.to_dict() if report else None,
-                "rules": [
-                    {
-                        "rule_id": r.rule_id,
-                        "rule_text": str(r),
-                        "confidence": r.confidence,
-                    }
-                    for r in rules
-                ],
-                "version": "2.1",  # Version 2.1 = weights-only storage + full training report
-            }
-            
-            # Upsert
-            collection = self.db.collection(ODIN_MODELS_COLLECTION)
-            if collection.has(NPLL_MODEL_KEY):
-                collection.update(doc)
-            else:
-                collection.insert(doc)
-            
-            weights_size = len(json.dumps(rule_weights))
-            logger.info(f"✓ Saved rule weights to database ({weights_size} bytes)")
-            
-        except Exception as e:
-            logger.error(f"Failed to save weights: {e}", exc_info=True)
-
-    def _extract_triples(self) -> List[Tuple[str, str, str]]:
-        """Extracts S-P-O triples from ArangoDB."""
-        logger.info("Extracting triples from database...")
-        triples = []
-        
-        # Extract Relationships
-        query = """
-        FOR rel IN ExtractedRelationships
-          LET source = DOCUMENT(rel._from)
-          LET target = DOCUMENT(rel._to)
-          FILTER source != null AND target != null 
-          FILTER source._key != null AND target._key != null
-          RETURN {
-            source: source._key,
-            target: target._key,
-            relation: rel.relationship || "related_to"
-          }
-        """
-        try:
-            cursor = self.db.aql.execute(query)
-            for doc in cursor:
-                s, t = doc['source'], doc['target']
-                r = str(doc['relation']).replace(' ', '_').lower()
-                triples.append((s, r, t))
-            logger.info(f"Extracted {len(triples)} relationship triples")
-        except Exception as e:
-            logger.error(f"Extraction error: {e}")
-            return []
-        
-        # Extract Entity Types
-        query_types = """
-        FOR entity IN ExtractedEntities
-          FILTER entity._key != null AND entity.type != null
-          RETURN { key: entity._key, type: entity.type }
-        """
-        try:
-            cursor = self.db.aql.execute(query_types)
-            type_count = 0
-            for doc in cursor:
-                triples.append((doc['key'], 'has_type', doc['type']))
-                type_count += 1
-            logger.info(f"Extracted {type_count} entity type triples")
-        except Exception as e:
-            logger.error(f"Type extraction error: {e}")
-        
-        logger.info(f"Total triples: {len(triples)}")
-        return triples
+    def _save_weights(self, model: NPLLModel, kg: KnowledgeGraph,
+                      rules: List[LogicalRule], data_hash: str,
+                      report: TrainingReport, expected_revision: Optional[str]):
+        doc = {
+            "model_type": "npll",
+            "storage_type": "weights_only",
+            "trained_at": report.trained_at,
+            "data_hash": data_hash,
+            "rule_weights": model.mln.rule_weights.detach().cpu().tolist(),
+            "schema_snapshot": {
+                "entity_count": len(kg.entities),
+                "relation_count": len(kg.relations),
+                "fact_count": len(kg.known_facts | kg.unknown_facts),
+                "relation_names": sorted(r.name for r in kg.relations),
+            },
+            "training_report": report.to_dict(),
+            "rules": [
+                {"rule_id": r.rule_id, "rule_text": str(r), "confidence": r.confidence}
+                for r in rules
+            ],
+            "version": ARTIFACT_VERSION,
+        }
+        validate_model_artifact(doc)
+        self.model_store.save(MODEL_KEY, doc, expected_revision=expected_revision)
 
     def _generate_smart_rules(self, kg: KnowledgeGraph) -> List[LogicalRule]:
         """
@@ -540,7 +379,7 @@ class KnowledgeBootstrapper:
         # Fallback
         if not rules:
             logger.warning("No domain rules matched. Creating fallback.")
-            rel = next(iter(kg.relations))
+            rel = min(kg.relations, key=lambda relation: relation.name)
             rules.append(LogicalRule(
                 rule_id="fallback_self",
                 body=[Atom(rel, (x, y))],
@@ -552,6 +391,6 @@ class KnowledgeBootstrapper:
         return rules
 
 
-def create_bootstrapper(db: StandardDatabase) -> KnowledgeBootstrapper:
+def create_bootstrapper(triple_source: TripleSource, model_store: ModelStore) -> KnowledgeBootstrapper:
     """Factory function to create a KnowledgeBootstrapper."""
-    return KnowledgeBootstrapper(db)
+    return KnowledgeBootstrapper(triple_source, model_store)

@@ -762,13 +762,15 @@ from retrieval.cache import CachedGraphAccessor
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import NPLLConfidence
 from npll.bootstrap import KnowledgeBootstrapper
+from retrieval.backends.arango import ArangoBackend
 
 # 1. Connect
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
 # 2. Setup NPLL via bootstrapper
-bootstrapper = KnowledgeBootstrapper(db)
+backend = ArangoBackend(db, community_id="my_community", community_mode="mapping")
+bootstrapper = KnowledgeBootstrapper(backend.triple_source(), backend.model_store())
 bootstrap_result = bootstrapper.ensure_model_ready()
 npll_model = bootstrap_result.model
 if bootstrap_result.report and not bootstrap_result.report.converged:

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Extracted Arango training-snapshot reads and model persistence into
+  `retrieval.backends`, with `GraphBackend`, `TripleSource`, and `ModelStore`
+  protocols. Direct bootstrap callers now pass a source and store;
+  `OdinEngine(db)` remains unchanged until the next separation phase.
+- Model artifacts use a graph/community namespace and revision-checked atomic
+  replacement. Missing, corrupt, unavailable, and concurrently changed models
+  have distinct outcomes. Old unscoped artifacts are not reused.
 - Reworked the README to distinguish Odin's graph-navigation role from the
   consuming agent's interpretation role and removed performance claims that
   were not linked to reproducible repository evidence.
@@ -38,6 +45,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the responsibility boundary between Odin and the consuming agent.
 
 ### Fixed
+- Training fingerprints now cover the exact extracted triples, including type
+  triples, so same-count endpoint or type changes invalidate cached weights.
+  Arango training uses full document IDs and exact relation labels to match
+  retrieval; malformed identities raise instead of being normalized silently.
+- Persisted schema snapshots retain all relation names, including beyond the
+  former 50-relation limit.
 - `JanusGraphAccessor` could never return results: it unpacked Gremlin
   `select('e','v')` rows (dicts) as tuples and read edge properties as a
   dict, and its constructor used an API removed from modern gremlinpython.
