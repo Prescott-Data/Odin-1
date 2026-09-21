@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   though Odin is distributed as a Python library.
 
 ### Added
+- **NPLL training telemetry and convergence diagnostics.** Every training run
+  now produces a `TrainingReport` — complete per-iteration ELBO history,
+  per-iteration max rule-weight deltas, convergence status, and the criteria
+  used — persisted alongside the model weights and rehydrated on
+  cached-weight loads. `KnowledgeBootstrapper.ensure_model_ready` returns a
+  `BootstrapResult` (model, source, data hash, report); `OdinEngine` exposes
+  `engine.training_report`, reports `npll_source` / `npll_converged` /
+  `npll_trained_at` in `get_status()`, and logs a warning whenever the active
+  model — freshly trained or cached — did not converge.
 - **Experimental Neo4j retrieval adapter.** `Neo4jGraphAccessor`
   (`retrieval/adapters_neo4j.py`) runs the retrieval pipeline — PPR, beam
   search, and scoring — against a Neo4j labeled property graph via
@@ -28,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Using Neo4j (Experimental)" guide that documents the boundary:
   `OdinEngine` auto-bootstrap and schema introspection still require
   ArangoDB.
+- Unit test coverage for the NPLL E-M machinery: ELBO computation on
+  hand-checkable graphs, variational inference budgets, E-step posterior
+  validity, M-step weight-update consistency, and trainer loop termination.
 - Security reporting guidance and GitHub issue and pull-request templates.
 - Brand Studio-aligned Odin `0.3.0` demo visuals and the complete canonical
   retrieval artifact behind the README example.
@@ -35,6 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the responsibility boundary between Odin and the consuming agent.
 
 ### Fixed
+- `JanusGraphAccessor` could never return results: it unpacked Gremlin
+  `select('e','v')` rows (dicts) as tuples and read edge properties as a
+  dict, and its constructor used an API removed from modern gremlinpython.
+  Rewritten on `project()` queries returning plain values, with `iter_in`,
+  `get_node`, and a configurable weight property added; covered by unit
+  tests and a live JanusGraph integration test (validated against
+  JanusGraph 1.x with the GraphSON v3 serializer).
+- `ELBOComputer.compute_elbo` raised `AttributeError` whenever a graph had no
+  unknown facts (or no sampled worlds), because its scalar helper was defined
+  on a different class. Surfaced by the new E-M unit tests.
 - Replaced stale `PRODUCTION_FIXES.md` references in the architecture guide
   with the current production deployment guide.
 

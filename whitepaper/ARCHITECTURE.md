@@ -769,7 +769,10 @@ db = client.db("mydb", username="root", password="...")
 
 # 2. Setup NPLL via bootstrapper
 bootstrapper = KnowledgeBootstrapper(db)
-npll_model = bootstrapper.ensure_model_ready()
+bootstrap_result = bootstrapper.ensure_model_ready()
+npll_model = bootstrap_result.model
+if bootstrap_result.report and not bootstrap_result.report.converged:
+    print("Warning: NPLL training did not converge; confidences may be miscalibrated")
 confidence = NPLLConfidence(npll_model, cache_size=10000)
 
 # 3. Setup accessor with caching

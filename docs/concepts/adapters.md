@@ -40,22 +40,34 @@ If your backend can traverse outgoing edges and enumerate nodes, it can drive Od
 | Adapter | Backend | Notes |
 |---------|---------|-------|
 | `ArangoCommunityAccessor` | ArangoDB | The reference adapter. Rich edges (weights, timestamps, provenance), community mapping, and the backend `OdinEngine` uses. |
-| `JanusGraphAccessor` | JanusGraph | Talks to a JanusGraph instance over a Gremlin traversal. |
+| `JanusGraphAccessor` | JanusGraph | Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
 | `KGCommunityAccessor` | In-memory `KnowledgeGraph` | For a pre-sliced community held in memory. |
 | `OverlayAccessor` | Any accessor | Wraps a base accessor and adds soft overlay edges on top. |
 
-Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a working starting point for other Gremlin-compatible stores such as Amazon Neptune.
+Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point for other Gremlin-compatible stores such as Amazon Neptune — those targets are untested, so validate before relying on them.
 
 ## Using a non-Arango adapter
 
 `OdinEngine` is a convenience wrapper that constructs the ArangoDB adapter from a `db` handle. To drive Odin with a different backend, compose the retrieval orchestrator directly with your accessor:
 
 ```python
+from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
+from gremlin_python.driver.serializer import GraphSONSerializersV3d0
+from gremlin_python.process.anonymous_traversal import traversal
+
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import ConstantConfidence
 from retrieval.adapters import JanusGraphAccessor
 
-accessor = JanusGraphAccessor(graph)          # your Gremlin graph
+# GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,
+# which JanusGraph 1.x (TinkerPop 3.7) servers reject.
+conn = DriverRemoteConnection(
+    "ws://localhost:8182/gremlin", "g",
+    message_serializer=GraphSONSerializersV3d0(),
+)
+g = traversal().with_remote(conn)
+
+accessor = JanusGraphAccessor(g)
 
 orchestrator = RetrievalOrchestrator(
     accessor=accessor,
@@ -85,7 +97,7 @@ Wrap any accessor in `CachedGraphAccessor` to get the same LRU caching `OdinEngi
 ```python
 from retrieval.cache import CachedGraphAccessor
 
-accessor = CachedGraphAccessor(JanusGraphAccessor(graph), cache_size=5000)
+accessor = CachedGraphAccessor(JanusGraphAccessor(g), cache_size=5000)
 ```
 
 ## Writing your own
