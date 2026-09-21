@@ -59,7 +59,10 @@ For the configuration above, an edge looks like:
 `record_type` is optional, but when configured its non-null node values must be
 non-empty strings. Odin adds these as `has_type` training triples. Optional
 retrieval metadata such as `weight`, `created_at`, and provenance can remain in
-your own fields; it is not required to train or retrieve.
+your own fields; it is not required to train or retrieve. To make a numeric
+edge field affect structural traversal, set `edge_weight_field` explicitly.
+Without it, Odin assigns every edge a structural weight of `1.0` and does not
+assume a field named `weight`.
 
 ## Production connections
 
@@ -113,6 +116,8 @@ engine = OdinEngine(backend, community_id="medicare_claims", community_mode="map
 Mapping mode requires `membership_collection`, `membership_entity_field`, and
 `membership_community_field` together. Without that complete mapping Odin
 raises `BackendConfigurationError`; it never guesses a membership schema.
+Property mode instead requires `community_property_field`; Odin does not assume
+a node field named `community_id`.
 
 Bridge and affinity scoring require `bridge_collection`, `affinity_collection`,
 and the `community_algorithm` value together. Otherwise ordinary retrieval

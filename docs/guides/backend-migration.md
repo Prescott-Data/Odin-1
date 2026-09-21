@@ -55,6 +55,8 @@ never assumes collection or field names.
 | `edge_collection` | Edge collection whose `_from` and `_to` point to those node `_id` values. |
 | `relation_field` | Every trainable edge has a non-empty string predicate in this field. |
 | `entity_type_field` | Optional node field; each non-null value must be a non-empty string. Odin trains it as `has_type`. |
+| `edge_weight_field` | Optional numeric edge field. Without it, every traversed edge has structural weight `1.0`; Odin never assumes `weight`. |
+| `community_property_field` | Required only with `community_mode="property"`; no property field is assumed. |
 | `membership_*` fields | Optional, all-or-nothing mapping used only with `community_mode="mapping"`. |
 | `provenance_edge_collection` | Optional edge collection used for retrieval provenance. |
 | `bridge_collection` / `affinity_collection` / `community_algorithm` | Optional, all three together enable bridge and affinity scoring. With membership, they also enable the global cross-community accessor. |
