@@ -188,6 +188,24 @@ def test_backend_disables_absent_optional_provenance_collection():
     )
 
 
+def test_global_access_requires_explicit_bridge_collections():
+    db = FakeArango()
+    assert ArangoBackend(db, ARANGO_GRAPH_WITH_MEMBERSHIP).global_accessor() is None
+
+    graph_with_global_access = replace(
+        ARANGO_GRAPH_WITH_MEMBERSHIP,
+        bridge_collection="BridgeRecords",
+        affinity_collection="CommunityAffinity",
+    )
+    accessor = ArangoBackend(db, graph_with_global_access).global_accessor()
+    assert accessor.nodes_col == ARANGO_GRAPH.node_collection
+    assert accessor.edges_col == ARANGO_GRAPH.edge_collection
+    assert accessor.rel_prop == ARANGO_GRAPH.relation_field
+    assert accessor.membership_col == "Memberships"
+    assert accessor.bridge_col == "BridgeRecords"
+    assert accessor.affinity_col == "CommunityAffinity"
+
+
 def test_engine_scope_drives_arango_model_namespace():
     from odin.engine import OdinEngine
 

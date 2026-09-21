@@ -40,6 +40,8 @@ class ArangoGraphConfig:
     membership_collection: Optional[str] = None
     membership_entity_field: Optional[str] = None
     membership_community_field: Optional[str] = None
+    bridge_collection: Optional[str] = None
+    affinity_collection: Optional[str] = None
 
     def __post_init__(self):
         required = (self.node_collection, self.edge_collection, self.relation_field)
@@ -48,7 +50,12 @@ class ArangoGraphConfig:
                 "node_collection, edge_collection, and relation_field must be "
                 "non-empty strings"
             )
-        optional = (self.entity_type_field, self.provenance_edge_collection)
+        optional = (
+            self.entity_type_field,
+            self.provenance_edge_collection,
+            self.bridge_collection,
+            self.affinity_collection,
+        )
         if any(value is not None and (not isinstance(value, str) or not value)
                for value in optional):
             raise ValueError("optional Arango graph fields must be non-empty strings")
@@ -236,13 +243,22 @@ class ArangoBackend:
         return ArangoModelStore(self.db, namespace=namespace)
 
     def global_accessor(self):
+        global_collections = (
+            self.graph.membership_collection,
+            self.graph.bridge_collection,
+            self.graph.affinity_collection,
+        )
+        if any(value is None for value in global_collections):
+            return None
         return GlobalGraphAccessor(
             db=self.db,
             algorithm="gnn",
             nodes_collection=self.graph.node_collection,
             edges_collection=self.graph.edge_collection,
             relation_property=self.graph.relation_field,
-            membership_collection=self.graph.membership_collection or "",
+            membership_collection=self.graph.membership_collection,
+            bridge_collection=self.graph.bridge_collection,
+            affinity_collection=self.graph.affinity_collection,
         )
 
     def schema_inspector(self):
