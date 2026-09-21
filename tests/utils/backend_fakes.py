@@ -78,6 +78,7 @@ class FakeArango:
         self.collections = {}
         self.triples = list(triples)
         self.queries = []
+        self.query_arguments = []
         self.aql = SimpleNamespace(execute=self.execute)
 
     def has_collection(self, name):
@@ -93,6 +94,7 @@ class FakeArango:
 
     def execute(self, query, **kwargs):
         self.queries.append(query)
+        self.query_arguments.append(kwargs)
         return iter(deepcopy(self.triples))
 
 

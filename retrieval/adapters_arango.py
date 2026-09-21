@@ -82,9 +82,9 @@ class ArangoCommunityAccessor(GraphAccessor):
         outbound_index_hint: Optional[str] = None,  # e.g. "edges_from_rel_ts"
         inbound_index_hint: Optional[str] = None,   # e.g. "edges_to_rel_ts"
         # Bridge / GNN integration
-        bridge_collection: str = "BridgeEntities",
-        affinity_collection: str = "CommunityAffinity",
-        algorithm: str = "gnn",  # Default to GNN as per pipeline
+        bridge_collection: Optional[str] = None,
+        affinity_collection: Optional[str] = None,
+        algorithm: Optional[str] = None,
     ):
         self.db = db
         self._cid = community_id
@@ -382,6 +382,8 @@ class ArangoCommunityAccessor(GraphAccessor):
         Check if an entity is a bridge and return its bridge data.
         Uses caching for performance.
         """
+        if self.bridge_col is None or self.algorithm is None:
+            return None
         # Strip collection if present to get key
         if "/" in entity_key:
             entity_key = entity_key.split("/")[-1]
@@ -437,7 +439,8 @@ class ArangoCommunityAccessor(GraphAccessor):
         Get the affinity score between two communities.
         Returns 0.0 if no affinity data exists.
         """
-        if not community_a or not community_b:
+        if (self.affinity_col is None or self.algorithm is None or
+                not community_a or not community_b):
             return 0.0
             
         cache_key = f"{min(community_a, community_b)}_{max(community_a, community_b)}"
@@ -1088,6 +1091,8 @@ class GlobalGraphAccessor(GraphAccessor):
         bridge_collection: str = "BridgeEntities",
         affinity_collection: str = "CommunityAffinity",
         membership_collection: str = "EntityCommunities",
+        membership_entity_field: str = "entity_id",
+        membership_community_field: str = "community_id",
         # Cross-community scoring
         cross_community_bonus: float = 1.5,  # Boost for cross-community edges (often valuable)
         min_affinity_threshold: float = 0.0,  # Minimum affinity to allow crossing
@@ -1106,6 +1111,9 @@ class GlobalGraphAccessor(GraphAccessor):
         self.bridge_col = bridge_collection
         self.affinity_col = affinity_collection
         self.membership_col = membership_collection
+        self.membership_entity_field = membership_entity_field
+        self.membership_community_field = membership_community_field
+        self.algorithm = algorithm
         
         self.cross_community_bonus = cross_community_bonus
         self.min_affinity_threshold = min_affinity_threshold
@@ -1208,14 +1216,16 @@ class GlobalGraphAccessor(GraphAccessor):
         """Get the community ID for an entity."""
         aql = """
         FOR m IN @@membership_col
-          FILTER m.entity_id == @entity_id
+          FILTER m[@membership_entity_field] == @entity_id
           FILTER m.algorithm == @algorithm
-          RETURN m.community_id
+          RETURN m[@membership_community_field]
         """
         result = list(self.db.aql.execute(
             aql,
             bind_vars={
                 "@membership_col": self.membership_col,
+                "membership_entity_field": self.membership_entity_field,
+                "membership_community_field": self.membership_community_field,
                 "entity_id": entity_id,
                 "algorithm": self.algorithm,
             }

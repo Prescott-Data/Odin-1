@@ -95,6 +95,12 @@ def test_arango_materializes_one_snapshot_and_retains_tail_evidence():
             "relation_field": "predicate",
             "membership_collection": "Memberships",
         },
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "bridge_collection": "BridgeRecords",
+        },
     ),
 )
 def test_arango_graph_config_rejects_incomplete_mapping(kwargs):
@@ -196,6 +202,7 @@ def test_global_access_requires_explicit_bridge_collections():
         ARANGO_GRAPH_WITH_MEMBERSHIP,
         bridge_collection="BridgeRecords",
         affinity_collection="CommunityAffinity",
+        community_algorithm="leiden",
     )
     accessor = ArangoBackend(db, graph_with_global_access).global_accessor()
     assert accessor.nodes_col == ARANGO_GRAPH.node_collection
@@ -204,6 +211,60 @@ def test_global_access_requires_explicit_bridge_collections():
     assert accessor.membership_col == "Memberships"
     assert accessor.bridge_col == "BridgeRecords"
     assert accessor.affinity_col == "CommunityAffinity"
+    assert accessor.membership_entity_field == "entity_id"
+    assert accessor.membership_community_field == "community_id"
+    assert accessor.algorithm == "leiden"
+
+
+def test_main_accessor_does_not_probe_bridge_defaults_without_configuration():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+
+    assert accessor.is_bridge("Entities/A") is None
+    assert accessor.get_affinity("left", "right") == 0.0
+    assert db.queries == []
+
+
+def test_main_accessor_uses_configured_bridge_and_affinity_collections():
+    db = FakeArango()
+    graph = replace(
+        ARANGO_GRAPH,
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+    )
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+
+    assert accessor.is_bridge("Entities/A") is None
+    assert accessor.get_affinity("left", "right") == 0.0
+    bridge_bind = db.query_arguments[0]["bind_vars"]
+    affinity_bind = db.query_arguments[1]["bind_vars"]
+    assert bridge_bind["@bridge_col"] == "BridgeRecords"
+    assert bridge_bind["algorithm"] == "leiden"
+    assert affinity_bind["@affinity_col"] == "AffinityRecords"
+    assert affinity_bind["algorithm"] == "leiden"
+
+
+def test_global_accessor_uses_configured_membership_fields_for_scoring():
+    db = FakeArango()
+    graph = replace(
+        ARANGO_GRAPH_WITH_MEMBERSHIP,
+        membership_entity_field="record_id",
+        membership_community_field="group_id",
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+    )
+    accessor = ArangoBackend(db, graph).global_accessor()
+
+    assert accessor.get_entity_community("Entities/A") is None
+    query = db.queries[0]
+    bind_vars = db.query_arguments[0]["bind_vars"]
+    assert "m[@membership_entity_field]" in query
+    assert "m[@membership_community_field]" in query
+    assert bind_vars["membership_entity_field"] == "record_id"
+    assert bind_vars["membership_community_field"] == "group_id"
+    assert bind_vars["algorithm"] == "leiden"
 
 
 def test_engine_scope_drives_arango_model_namespace():

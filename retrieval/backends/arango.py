@@ -42,6 +42,7 @@ class ArangoGraphConfig:
     membership_community_field: Optional[str] = None
     bridge_collection: Optional[str] = None
     affinity_collection: Optional[str] = None
+    community_algorithm: Optional[str] = None
 
     def __post_init__(self):
         required = (self.node_collection, self.edge_collection, self.relation_field)
@@ -55,6 +56,7 @@ class ArangoGraphConfig:
             self.provenance_edge_collection,
             self.bridge_collection,
             self.affinity_collection,
+            self.community_algorithm,
         )
         if any(value is not None and (not isinstance(value, str) or not value)
                for value in optional):
@@ -69,6 +71,18 @@ class ArangoGraphConfig:
         ):
             raise ValueError(
                 "community membership requires collection, entity field, and community field"
+            )
+        bridge_access = (
+            self.bridge_collection,
+            self.affinity_collection,
+            self.community_algorithm,
+        )
+        if any(bridge_access) and not all(
+            isinstance(value, str) and value for value in bridge_access
+        ):
+            raise ValueError(
+                "bridge access requires bridge collection, affinity collection, "
+                "and community algorithm"
             )
 
     def namespace(self) -> str:
@@ -230,6 +244,9 @@ class ArangoBackend:
             membership_entity_field=self.graph.membership_entity_field or "",
             membership_community_field=self.graph.membership_community_field or "",
             provenance_edge_collection=provenance_collection,
+            bridge_collection=self.graph.bridge_collection,
+            affinity_collection=self.graph.affinity_collection,
+            algorithm=self.graph.community_algorithm,
         )
 
     def triple_source(self) -> ArangoTripleSource:
@@ -247,18 +264,21 @@ class ArangoBackend:
             self.graph.membership_collection,
             self.graph.bridge_collection,
             self.graph.affinity_collection,
+            self.graph.community_algorithm,
         )
         if any(value is None for value in global_collections):
             return None
         return GlobalGraphAccessor(
             db=self.db,
-            algorithm="gnn",
             nodes_collection=self.graph.node_collection,
             edges_collection=self.graph.edge_collection,
             relation_property=self.graph.relation_field,
             membership_collection=self.graph.membership_collection,
+            membership_entity_field=self.graph.membership_entity_field,
+            membership_community_field=self.graph.membership_community_field,
             bridge_collection=self.graph.bridge_collection,
             affinity_collection=self.graph.affinity_collection,
+            algorithm=self.graph.community_algorithm,
         )
 
     def schema_inspector(self):
