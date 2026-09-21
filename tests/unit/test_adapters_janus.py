@@ -6,7 +6,7 @@ Uses a fake Gremlin traversal source; no live JanusGraph required.
 
 import pytest
 
-from retrieval.adapters import JanusGraphAccessor
+from retrieval.adapters_janus import JanusGraphAccessor
 from retrieval.cache import CachedGraphAccessor
 
 EDGES = [

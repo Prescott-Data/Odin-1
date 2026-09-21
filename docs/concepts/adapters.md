@@ -58,6 +58,12 @@ Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point
 
 `OdinEngine` accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with `auto_train=False` or compose the retrieval orchestrator directly with your accessor:
 
+Install the Gremlin driver before importing its backend module:
+
+```bash
+pip install "odin-engine[gremlin]"
+```
+
 ```python
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 from gremlin_python.driver.serializer import GraphSONSerializersV3d0
@@ -65,7 +71,7 @@ from gremlin_python.process.anonymous_traversal import traversal
 
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import ConstantConfidence
-from retrieval.adapters import JanusGraphAccessor
+from retrieval.adapters_janus import JanusGraphAccessor
 
 # GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,
 # which JanusGraph 1.x (TinkerPop 3.7) servers reject.

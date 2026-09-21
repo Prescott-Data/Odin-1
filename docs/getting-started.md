@@ -18,26 +18,27 @@ Odin needs **Python 3.9+** and a **graph database**; the reference backend is [A
 | ArangoDB ≥ 3.10 | Stores your knowledge graph and Odin's learned NPLL weights |
 | PyTorch ≥ 2.0 | Powers the NPLL edge-plausibility model |
 
-PyTorch, `python-arango`, NumPy, scikit-learn, and `gremlinpython` are pulled in automatically with the package.
+The core package includes PyTorch, NumPy, scikit-learn, and the retrieval
+dependencies. Install the `arango` extra to use the reference backend.
 
 ---
 
 ## Installation
 
 ```bash
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
 
 === "From PyPI"
     ```bash
-    pip install odin-engine
+    pip install "odin-engine[arango]"
     ```
 
 === "From source"
     ```bash
     git clone https://github.com/Prescott-Data/Odin-1.git
     cd Odin-1
-    pip install -e .
+    pip install -e ".[arango]"
     ```
 
 === "With dev tools"

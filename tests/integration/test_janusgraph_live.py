@@ -60,7 +60,7 @@ def seeded_graph(g):
 
 @pytest.fixture
 def accessor(g):
-    from retrieval.adapters import JanusGraphAccessor
+    from retrieval.adapters_janus import JanusGraphAccessor
 
     return JanusGraphAccessor(g)
 

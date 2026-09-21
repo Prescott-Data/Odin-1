@@ -136,10 +136,13 @@ investigator interprets it and chooses the next action.
 # From PyPI (recommended)
 pip install odin-engine
 
+# For the ArangoDB reference backend
+pip install "odin-engine[arango]"
+
 # From source
 git clone https://github.com/Prescott-Data/Odin-1.git
 cd Odin-1
-pip install -e .
+pip install -e ".[arango]"
 ```
 
 **Requirements:**

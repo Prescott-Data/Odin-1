@@ -93,4 +93,7 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 | ArangoDB | ≥ 3.10 |
 | PyTorch | ≥ 2.0 |
 
-Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `scikit-learn`, `gremlinpython`) install automatically with `pip install odin-engine`.
+Core dependencies install with `pip install odin-engine`. Install
+`python-arango` with `pip install "odin-engine[arango]"`, or install
+`gremlinpython` with `pip install "odin-engine[gremlin]"` when using the
+corresponding backend module.

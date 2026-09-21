@@ -50,7 +50,7 @@ The repository ships a minimal `Dockerfile`. For a service, install the package 
 
 ```dockerfile
 FROM python:3.11-slim
-RUN pip install --no-cache-dir odin-engine
+RUN pip install --no-cache-dir "odin-engine[arango]"
 # ... copy your service code, set env, run
 ```
 

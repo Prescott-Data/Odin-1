@@ -115,10 +115,12 @@ retrieval-only backend must be passed with `auto_train=False`; a backend without
 training capabilities raises `BackendCapabilityError` if training is requested.
 `JanusGraphAccessor` ships for direct orchestrator composition:
 
+Install its optional driver first: `pip install "odin-engine[gremlin]"`.
+
 ```python
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import ConstantConfidence
-from retrieval.adapters import JanusGraphAccessor
+from retrieval.adapters_janus import JanusGraphAccessor
 
 orch = RetrievalOrchestrator(accessor=JanusGraphAccessor(graph),
                              edge_confidence=ConstantConfidence(0.8))

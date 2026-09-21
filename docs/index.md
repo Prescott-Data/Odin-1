@@ -85,7 +85,7 @@ Odin trains its NPLL model from your graph on first run and persists the weights
 ## Quickstart
 
 ```bash title="Install"
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
 
 ```python title="explore.py"

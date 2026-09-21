@@ -8,7 +8,13 @@ Odin's reference backend is [ArangoDB](https://www.arangodb.com/). This guide co
 
 ## Connecting
 
-The ArangoDB Python driver (`python-arango`) is installed automatically with `odin-engine` and imports as `arango`. You connect, select a database, and hand the resulting object to the engine:
+Install the ArangoDB Python driver with the `arango` extra. It imports as
+`arango`; connect, select a database, and hand the resulting object to the
+engine:
+
+```bash
+pip install "odin-engine[arango]"
+```
 
 ```python
 from arango import ArangoClient

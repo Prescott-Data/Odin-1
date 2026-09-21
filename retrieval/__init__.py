@@ -3,8 +3,7 @@ Retrieval components: budgets, PPR, beam search, adapters, and confidence provid
 """
 
 from .budget import SearchBudget, BudgetTracker
-from .adapters import GraphAccessor, KGCommunityAccessor, OverlayAccessor, JanusGraphAccessor
-from .adapters_arango import ArangoCommunityAccessor, GlobalGraphAccessor
+from .adapters import GraphAccessor, KGCommunityAccessor, OverlayAccessor
 from .cache import CachedGraphAccessor
 from .confidence import EdgeConfidenceProvider, ConstantConfidence, NPLLConfidence
 from .ppr import (
@@ -26,11 +25,10 @@ from .linker import CoherenceLinker, LinkerConfig, Mention
 from .metrics import MetricsLogger, JSONLSink, RetrievalMetrics, aggregate_latency_and_budget
 from .metrics_motifs import wedge_and_triad_closures
 from .eval import recall_at_k, expected_calibration_error, SimpleLLMCalibrator
-from .writers import PersistenceWriter, ArangoWriter, JanusGraphWriter
+from .writers import PersistenceWriter
 
 __all__ = [
-    'GraphAccessor', 'KGCommunityAccessor', 'OverlayAccessor', 'JanusGraphAccessor', 
-    'ArangoCommunityAccessor', 'GlobalGraphAccessor',
+    'GraphAccessor', 'KGCommunityAccessor', 'OverlayAccessor',
     'CachedGraphAccessor',
     'EdgeConfidenceProvider', 'ConstantConfidence', 'NPLLConfidence',
     'PushPPREngine', 'MonteCarloPPREngine', 'BiPPREngine', 'PPRParams',
@@ -44,7 +42,6 @@ __all__ = [
     'MetricsLogger', 'JSONLSink', 'RetrievalMetrics',
     'aggregate_latency_and_budget', 'wedge_and_triad_closures',
     'recall_at_k', 'expected_calibration_error', 'SimpleLLMCalibrator',
-    'PersistenceWriter', 'ArangoWriter', 'JanusGraphWriter',
+    'PersistenceWriter',
     'SearchBudget', 'BudgetTracker'
 ]
-
