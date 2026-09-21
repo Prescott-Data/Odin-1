@@ -46,7 +46,8 @@ def test_arango_accessors_return_an_empty_dict_for_absent_nodes():
 
     def absent_node(query, **kwargs):
         queries.append(query)
-        return iter([None])
+        # AQL FILTER removes the row; RETURN DOCUMENT alone yields null.
+        return iter([] if "FILTER d != null" in query else [None])
 
     db.aql.execute = absent_node
     accessors = (

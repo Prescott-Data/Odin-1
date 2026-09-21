@@ -266,7 +266,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             aql = "RETURN DOCUMENT(@id)"
         cur = self.db.aql.execute(aql, bind_vars={"id": node_id})
         res = list(cur)
-        return res[0] or {}
+        return (res[0] or {}) if res else {}
 
     # --------------------------
     # Stats / quick analytics
@@ -1155,7 +1155,7 @@ class GlobalGraphAccessor(GraphAccessor):
             aql = "RETURN DOCUMENT(@id)"
         cursor = self.db.aql.execute(aql, bind_vars={"id": node_id})
         result = list(cursor)
-        return result[0] or {}
+        return (result[0] or {}) if result else {}
 
     def degree(self, node: NodeId) -> int:
         """Out-degree of a node."""
