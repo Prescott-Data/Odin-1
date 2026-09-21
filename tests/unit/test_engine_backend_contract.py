@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from odin.engine import OdinEngine
+from retrieval.adapters import GraphAccessor
 from retrieval.backends.base import BackendCapabilityError, BackendConfigurationError
 
 
@@ -91,6 +92,30 @@ def test_raw_database_handles_raise_a_migration_error():
 def test_engine_rejects_an_incomplete_retrieval_accessor():
     with pytest.raises(BackendConfigurationError, match="iter_out"):
         OdinEngine(IncompleteAccessorBackend(), auto_train=False)
+
+
+@pytest.mark.parametrize("missing", [
+    "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
+])
+def test_engine_rejects_inherited_protocol_placeholders(missing):
+    implementations = {
+        name: method for name, method in vars(CompleteAccessor).items()
+        if callable(method) and name != missing
+    }
+    incomplete = type("Incomplete", (GraphAccessor,), implementations)
+    backend = RetrievalOnlyBackend()
+    backend.accessor = lambda *_: incomplete()
+    with pytest.raises(BackendConfigurationError, match=missing):
+        OdinEngine(backend, auto_train=False)
+
+
+def test_engine_accepts_concrete_protocol_subclass():
+    class Concrete(CompleteAccessor, GraphAccessor):
+        pass
+
+    backend = RetrievalOnlyBackend()
+    backend.accessor = lambda *_: Concrete()
+    assert OdinEngine(backend, auto_train=False).get_neighbors("missing")["neighbors"] == []
 
 
 def test_unexpected_bootstrap_failure_is_not_converted_to_constant_confidence():

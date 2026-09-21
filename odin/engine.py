@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
+from retrieval.adapters import GraphAccessor
 from retrieval.backends.base import (
     BackendCapabilityError,
     BackendConfigurationError,
@@ -125,7 +126,12 @@ class OdinEngine:
         required_methods = (
             "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
         )
-        missing = [name for name in required_methods if not callable(getattr(accessor, name, None))]
+        missing = []
+        for name in required_methods:
+            method = getattr(accessor, name, None)
+            implementation = getattr(method, "__func__", method)
+            if not callable(method) or implementation is getattr(GraphAccessor, name):
+                missing.append(name)
         if missing:
             raise BackendConfigurationError(
                 "Backend accessor is missing required GraphAccessor methods: "
