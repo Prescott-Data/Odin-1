@@ -12,7 +12,7 @@ from retrieval.adapters import GraphAccessor
 
 Triple = Tuple[str, str, str]
 MODEL_KEY = "npll_current"
-ARTIFACT_VERSION = "3.0"
+ARTIFACT_VERSION = "5.0"
 
 
 class BackendError(RuntimeError):
@@ -143,7 +143,12 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
     require(type(document) is dict and json_value(document), "Artifact must be finite JSON")
     require(document.get("version") == ARTIFACT_VERSION, "Unsupported model artifact version")
     require(document.get("model_type") == "npll" and
-            document.get("storage_type") == "weights_only", "Invalid model artifact type")
+            document.get("storage_type") == "deterministic_initialization", "Invalid model artifact type")
+    state = document.get("inference_state")
+    require(isinstance(state, dict), "Missing complete inference state")
+    require(isinstance(state.get("config"), dict) and state["config"], "Invalid inference configuration")
+    require(type(state.get("initialization_seed")) is int and state["initialization_seed"] >= 0,
+            "Invalid deterministic initialization seed")
     digest = document.get("data_hash")
     require(isinstance(digest, str) and len(digest) == 64 and
             all(c in "0123456789abcdef" for c in digest), "Invalid snapshot fingerprint")

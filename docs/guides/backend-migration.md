@@ -87,9 +87,9 @@ returns `None` rather than probing assumed collection names.
 | `get_config("ArangoDB_Triples")` | `get_config("OdinTriples")` |
 
 The writer imports also move out of `retrieval.writers`. Unknown configuration
-names raise `ValueError`; `OdinTriples` preserves the previously effective
-training settings under an explicit name. Old imports and raw database handles
-are not supported through compatibility aliases.
+names raise `ValueError`; `OdinTriples` provides an explicit compact production
+profile. Old imports and raw database handles are not supported through
+compatibility aliases.
 
 Direct bootstrap users now inject capabilities:
 

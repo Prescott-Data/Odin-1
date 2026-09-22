@@ -103,7 +103,8 @@ See [Backend migration](../guides/backend-migration.md).
 ## NPLL dataset configuration
 
 `get_config("OdinTriples")` in `npll.utils.config` selects the explicit
-production graph configuration. It preserves the settings previously obtained
-through the FB15k-237 fallback, including `max_epochs=200`. Bootstrap separately
-sets its trainer budget to 10 epochs and up to 5 E-M iterations per epoch.
+production graph configuration. Its 32-dimensional entity/relation embeddings,
+64-dimensional rules, and 64-unit scorer are sized for production graph
+lifecycle operation. Bootstrap separately sets its trainer budget to 10 epochs
+and up to 5 E-M iterations per epoch.
 Unknown names, including the retired `ArangoDB_Triples`, raise `ValueError`.

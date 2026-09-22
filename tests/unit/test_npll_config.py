@@ -7,16 +7,16 @@ import pytest
 from npll.utils.config import FB15K_237_CONFIG, default_config, get_config
 
 
-def test_odin_config_has_its_own_identity_without_retuning(capsys):
+def test_odin_config_has_a_compact_explicit_production_profile(capsys):
     config = get_config("OdinTriples")
     assert config.dataset_name == "OdinTriples"
     assert default_config is config
     assert config is not FB15K_237_CONFIG
-    actual = asdict(config)
-    previous = asdict(FB15K_237_CONFIG)
-    del actual["dataset_name"]
-    del previous["dataset_name"]
-    assert actual == previous
+    assert config.entity_embedding_dim == 32
+    assert config.relation_embedding_dim == 32
+    assert config.rule_embedding_dim == 64
+    assert config.scoring_hidden_dim == 64
+    assert asdict(config) != asdict(FB15K_237_CONFIG)
     assert capsys.readouterr().out == ""
 
 

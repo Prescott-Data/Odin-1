@@ -7,7 +7,7 @@ accessor and caches neighbor lookups.
 """
 
 from __future__ import annotations
-from typing import Iterable, Optional, List, Tuple
+from typing import Dict, Iterable, Optional, List, Tuple
 from collections import OrderedDict
 
 from .adapters import GraphAccessor, NodeId, RelId
@@ -41,6 +41,7 @@ class CachedGraphAccessor:
         # LRU caches for outbound and inbound neighbors
         self._out_cache: OrderedDict[NodeId, List[Tuple[NodeId, RelId, float]]] = OrderedDict()
         self._in_cache: OrderedDict[NodeId, List[Tuple[NodeId, RelId, float]]] = OrderedDict()
+        self._out_edge_cache: OrderedDict[NodeId, List[Dict[str, object]]] = OrderedDict()
         
         # Stats for monitoring
         self._hits = 0
@@ -83,6 +84,19 @@ class CachedGraphAccessor:
         self._in_cache[node] = neighbors
         
         return iter(neighbors)
+
+    def iter_out_edges(self, node: NodeId) -> Iterable[Dict[str, object]]:
+        """Get complete outbound assertions with caching, never triple reconstruction."""
+        if node in self._out_edge_cache:
+            self._out_edge_cache.move_to_end(node)
+            self._hits += 1
+            return iter(self._out_edge_cache[node])
+        self._misses += 1
+        edges = list(self.base.iter_out_edges(node))
+        if len(self._out_edge_cache) >= self.cache_size:
+            self._out_edge_cache.popitem(last=False)
+        self._out_edge_cache[node] = edges
+        return iter(edges)
     
     def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
         """Pass through to base accessor (no caching)."""
@@ -104,6 +118,7 @@ class CachedGraphAccessor:
         """Clear all caches. Useful for memory management or testing."""
         self._out_cache.clear()
         self._in_cache.clear()
+        self._out_edge_cache.clear()
         self._hits = 0
         self._misses = 0
     
@@ -123,6 +138,7 @@ class CachedGraphAccessor:
             "total_requests": total,
             "hit_rate": hit_rate,
             "out_cache_size": len(self._out_cache),
+            "out_edge_cache_size": len(self._out_edge_cache),
             "in_cache_size": len(self._in_cache),
             "max_cache_size": self.cache_size,
             "out_cache_utilization": len(self._out_cache) / self.cache_size,

@@ -28,8 +28,25 @@ from .core.logical_rules import LogicalRule, Atom, Variable, RuleType
 from .npll_model import create_initialized_npll_model, NPLLModel
 from .training.npll_trainer import TrainingConfig, TrainingResult, create_trainer
 from .utils.config import get_config
+from .utils.config import NPLLConfig
 
 logger = logging.getLogger(__name__)
+
+
+def scoring_initialization_seed(snapshot: TrainingSnapshot) -> int:
+    """Derive a stable scorer initialization from the exact graph snapshot."""
+    return int(snapshot.data_hash[:16], 16) % (2 ** 63 - 1)
+
+
+def create_snapshot_initialized_model(snapshot: TrainingSnapshot, kg: KnowledgeGraph,
+                                      rules: List[LogicalRule], config: NPLLConfig) -> NPLLModel:
+    """Create the untrained scorer deterministically without mutating caller RNG state."""
+    cuda_devices = list(range(torch.cuda.device_count())) if config.device.startswith("cuda") else []
+    with torch.random.fork_rng(devices=cuda_devices):
+        torch.manual_seed(scoring_initialization_seed(snapshot))
+        if cuda_devices:
+            torch.cuda.manual_seed_all(scoring_initialization_seed(snapshot))
+        return create_initialized_npll_model(kg, rules, config)
 
 
 class TrainingError(RuntimeError):
@@ -176,8 +193,13 @@ class KnowledgeBootstrapper:
             report = TrainingReport.from_dict(doc["training_report"])
         except (TypeError, ValueError) as exc:
             raise CorruptModelError("Invalid training report") from exc
-        config = get_config("OdinTriples")
-        model = create_initialized_npll_model(kg, rules, config)
+        inference_state = doc["inference_state"]
+        if inference_state["initialization_seed"] != scoring_initialization_seed(snapshot):
+            raise CorruptModelError("Model initialization seed does not match the graph snapshot")
+        config_data = {**inference_state["config"]}
+        config_data["temperature"] = float(config_data["temperature"])
+        config = NPLLConfig(**config_data)
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
         with torch.no_grad():
             model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
         logger.info("Model rebuilt with saved weights (trained: %s)", doc["trained_at"])
@@ -200,10 +222,12 @@ class KnowledgeBootstrapper:
         logger.info(f"Built KG: {len(kg.entities)} entities, {len(kg.relations)} relations, {len(kg.known_facts)} facts")
         
         # Create unknown facts for training (10%)
-        known_facts_list = list(kg.known_facts)
-        random.seed(42)
+        known_facts_list = sorted(kg.known_facts, key=lambda fact: (
+            fact.head.name, fact.relation.name, fact.tail.name,
+        ))
+        sampling_rng = random.Random(42)
         num_unknown = max(1, len(known_facts_list) // 10)
-        unknown_facts = random.sample(known_facts_list, num_unknown)
+        unknown_facts = sampling_rng.sample(known_facts_list, num_unknown)
         
         for fact in unknown_facts:
             kg.known_facts.remove(fact)
@@ -219,7 +243,7 @@ class KnowledgeBootstrapper:
         
         # 4. Initialize Model
         config = get_config("OdinTriples")
-        model = create_initialized_npll_model(kg, rules, config)
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
         
         # 5. Train
         train_config = TrainingConfig(
@@ -247,19 +271,23 @@ class KnowledgeBootstrapper:
                 f"final_elbo={report.final_elbo:.6f}). Edge confidences may be poorly calibrated."
             )
         
-        # 6. Save ONLY weights to database
-        self._save_weights(model, kg, rules, snapshot.data_hash, report, expected_revision)
+        # 6. Save learned rule weights and deterministic scorer initialization metadata.
+        self._save_weights(model, kg, rules, snapshot, report, expected_revision)
         
         return model, report
 
     def _save_weights(self, model: NPLLModel, kg: KnowledgeGraph,
-                      rules: List[LogicalRule], data_hash: str,
+                      rules: List[LogicalRule], snapshot: TrainingSnapshot,
                       report: TrainingReport, expected_revision: Optional[str]):
         doc = {
             "model_type": "npll",
-            "storage_type": "weights_only",
+            "storage_type": "deterministic_initialization",
+            "inference_state": {
+                "config": {**asdict(model.config), "temperature": float(model.config.temperature)},
+                "initialization_seed": scoring_initialization_seed(snapshot),
+            },
             "trained_at": report.trained_at,
-            "data_hash": data_hash,
+            "data_hash": snapshot.data_hash,
             "rule_weights": model.mln.rule_weights.detach().cpu().tolist(),
             "schema_snapshot": {
                 "entity_count": len(kg.entities),

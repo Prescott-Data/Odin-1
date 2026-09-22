@@ -16,6 +16,13 @@ class EdgeView(NamedTuple):
     npll_posterior: Optional[float]
     calibration: Optional[float]
     sources: List[str]             # doc/text ids from inline fields & EXTRACTED_FROM
+    assertion: Dict[str, Any]
+
+
+def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
+    return {**edge.assertion, "_id": edge.edge_id, "u": node,
+            "rel": edge.relation, "v": edge.neighbor_id, "weight": edge.weight,
+            "provenance": {"assertion": edge.assertion, "sources": edge.sources}}
 
 
 class ArangoCommunityAccessor(GraphAccessor):
@@ -222,6 +229,10 @@ class ArangoCommunityAccessor(GraphAccessor):
     # --------------------------
     def iter_out_rich(self, node: NodeId) -> Iterable[EdgeView]:
         yield from self._iter_neighbors(node, direction="OUTBOUND", rich=True)
+
+    def iter_out_edges(self, node: NodeId):
+        for edge in self.iter_out_rich(node):
+            yield edge_record(node, edge)
 
     def iter_in_rich(self, node: NodeId) -> Iterable[EdgeView]:
         yield from self._iter_neighbors(node, direction="INBOUND", rich=True)
@@ -1034,7 +1045,8 @@ class ArangoCommunityAccessor(GraphAccessor):
             raw_confidence: {f"e['{self.edge_raw_conf_prop}']" if self.edge_raw_conf_prop else 'null'},
             npll_posterior: {f"e['{self.edge_npll_post_prop}']" if self.edge_npll_post_prop else 'null'},
             calibration: {f"e['{self.edge_calibration_prop}']" if self.edge_calibration_prop else 'null'},
-            sources: _sources
+            sources: _sources,
+            assertion: e
           }}
         """
 
@@ -1060,6 +1072,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                     npll_posterior=d.get("npll_posterior"),
                     calibration=d.get("calibration"),
                     sources=d.get("sources") or [],
+                    assertion=d["assertion"],
                 )
             else:
                 yield d["v_id"], d["rel"], float(d["weight"])
@@ -1144,6 +1157,10 @@ class GlobalGraphAccessor(GraphAccessor):
     def iter_out_rich(self, node: NodeId) -> Iterable[EdgeView]:
         """Rich outbound edges with cross-community metadata."""
         yield from self._iter_neighbors_global(node, direction="OUTBOUND")
+
+    def iter_out_edges(self, node: NodeId):
+        for edge in self.iter_out_rich(node):
+            yield edge_record(node, edge)
 
     def iter_in_rich(self, node: NodeId) -> Iterable[EdgeView]:
         """Rich inbound edges with cross-community metadata."""
@@ -1357,7 +1374,8 @@ class GlobalGraphAccessor(GraphAccessor):
             rel: rel,
             base_weight: base_weight,
             edge_id: e._id,
-            sources: []
+            sources: [],
+            assertion: e
           }}
         """
         
@@ -1404,6 +1422,7 @@ class GlobalGraphAccessor(GraphAccessor):
                 npll_posterior=None,
                 calibration=None,
                 sources=d.get("sources") or [],
+                assertion=d["assertion"],
             )
 
     # --------------------------

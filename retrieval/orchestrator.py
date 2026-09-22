@@ -303,7 +303,7 @@ class RetrievalOrchestrator:
         tm.mark("beam_done")
 
         # ---- Scoring ----
-        candidate_paths = [[(e["u"], e["rel"], e["v"]) for e in p.get("edges", [])] for p in path_out.get("paths", [])]
+        candidate_paths = [path["edges"] for path in path_out["paths"]]
         scored = score_paths_and_insight(
             accessor=self.A,
             community_id=params.community_id,
@@ -445,19 +445,20 @@ class RetrievalOrchestrator:
 
                 norm_edges.append(
                     {
+                        **e,
                         "u": u,
                         "v": v,
                         "relation": rel,
                         "u_label": e.get("u_label") or _label(u),
                         "v_label": e.get("v_label") or _label(v),
-                        "confidence": e.get("confidence", e.get("weight", 1.0)),
+                        "confidence": e["confidence"],
                         "created_at": ts,  # ISO or epoch; aggregator can parse both
                         "provenance": prov,
                         "_id": e.get("_id", e.get("id")),
                     }
                 )
 
-            out.append({"id": p.get("id"), "score": p.get("score"), "edges": norm_edges})
+            out.append({**p, "id": p.get("id"), "edges": norm_edges})
 
         return out
 

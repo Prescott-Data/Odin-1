@@ -27,6 +27,11 @@ class MockAccessor:
     
     def iter_in(self, node):
         return iter([])
+
+    def iter_out_edges(self, node):
+        return ({"_id": f"test/{node}/{index}", "u": node, "rel": relation,
+                 "v": neighbor, "weight": weight, "provenance": None}
+                for index, (neighbor, relation, weight) in enumerate(self.iter_out(node)))
     
     def nodes(self, community_id=None):
         return iter([f"node_{i}" for i in range(100)])

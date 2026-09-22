@@ -20,6 +20,9 @@ class CompleteAccessor:
     def iter_in(self, node):
         return iter(())
 
+    def iter_out_edges(self, node):
+        return iter(())
+
     def nodes(self, community_id):
         return iter(())
 
@@ -99,7 +102,7 @@ def test_engine_rejects_an_incomplete_retrieval_accessor():
 
 
 @pytest.mark.parametrize("missing", [
-    "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
+    "iter_out", "iter_in", "iter_out_edges", "nodes", "degree", "get_node", "community_seed_norm",
 ])
 def test_engine_rejects_inherited_protocol_placeholders(missing):
     implementations = {

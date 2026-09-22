@@ -125,9 +125,15 @@ KINSHIP_CONFIG = NPLLConfig(
 )
 
 
-# Preserve the effective settings previously obtained through the FB15k fallback,
-# while giving production graph training its own explicit configuration identity.
-ODIN_TRIPLES_CONFIG = NPLLConfig(dataset_name="OdinTriples", max_epochs=200)
+# Explicit compact production graph configuration. NPLL's scorer is initialized
+# deterministically from the graph snapshot, and the training loop optimizes rule
+# weights, so benchmark-scale scorer dimensions add memory cost without learned
+# retrieval capacity in the current lifecycle.
+ODIN_TRIPLES_CONFIG = NPLLConfig(
+    dataset_name="OdinTriples", entity_embedding_dim=32,
+    relation_embedding_dim=32, rule_embedding_dim=64, scoring_hidden_dim=64,
+    max_epochs=200,
+)
 
 
 def get_config(dataset_name: str) -> NPLLConfig:

@@ -124,7 +124,7 @@ class OdinEngine:
             )
         accessor = accessor_factory(community_id, community_mode)
         required_methods = (
-            "iter_out", "iter_in", "nodes", "degree", "get_node", "community_seed_norm",
+            "iter_out", "iter_in", "iter_out_edges", "nodes", "degree", "get_node", "community_seed_norm",
         )
         missing = []
         for name in required_methods:

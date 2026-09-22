@@ -46,6 +46,17 @@ class JanusGraphAccessor(GraphAccessor):
         for row in rows:
             yield row["neighbor"], row["rel"], float(row["weight"])
 
+    def iter_out_edges(self, node: NodeId):
+        rows = (self.graph.V(node).outE()
+                .project("id", "neighbor", "rel", "weight", "properties")
+                .by(__.id_()).by(__.inV().id_()).by(__.label())
+                .by(__.coalesce(__.values(self.weight_property), __.constant(1.0)))
+                .by(__.value_map()).toList())
+        for row in rows:
+            yield {"_id": str(row["id"]), "u": node, "v": row["neighbor"],
+                   "rel": row["rel"], "weight": float(row["weight"]),
+                   "provenance": {"assertion": row["properties"]}}
+
     def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
         if community_id:
             rows = (

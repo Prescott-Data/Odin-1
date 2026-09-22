@@ -103,7 +103,10 @@ def model_artifact(relation_count=1, history_length=2):
     return {
         "version": ARTIFACT_VERSION,
         "model_type": "npll",
-        "storage_type": "weights_only",
+        "storage_type": "deterministic_initialization",
+        "inference_state": {
+            "config": {"temperature": 1.0}, "initialization_seed": 0,
+        },
         "trained_at": "2026-09-21T00:00:00Z",
         "data_hash": "a" * 64,
         "rule_weights": [0.5],

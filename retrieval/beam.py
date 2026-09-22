@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, Optional, Set
 from dataclasses import dataclass
 import heapq, math, time
+from itertools import count
 from .adapters import GraphAccessor, NodeId, RelId
 from .confidence import EdgeConfidenceProvider, ConstantConfidence
 from .budget import SearchBudget, BudgetTracker
@@ -47,9 +48,10 @@ def beam_search(
     ppr = {n: p for n, p in ppr_scores}
     edge_type_prior = edge_type_prior or {}
 
-    heap: List[Tuple[float, List[NodeId], List[Tuple[NodeId, RelId, NodeId]]]] = []
+    heap = []
+    sequence = count()
     for s in seeds:
-        heapq.heappush(heap, (0.0, [s], []))
+        heapq.heappush(heap, (0.0, next(sequence), [s], []))
 
     best_paths = []
 
@@ -62,16 +64,17 @@ def beam_search(
 
     early_stop_reason = None
     for hop in range(1, beam_params.hop_limit + 1):
-        next_heap: List[Tuple[float, List[NodeId], List[Tuple[NodeId, RelId, NodeId]]]] = []
+        next_heap = []
         while heap and not bt.over():
-            logscore, path_nodes, path_edges = heapq.heappop(heap)
+            logscore, _, path_nodes, path_edges = heapq.heappop(heap)
             u = path_nodes[-1]
             bt.tick_nodes(1)
-            out_iter = accessor.iter_out(u)
+            out_iter = accessor.iter_out_edges(u)
             if beam_params.max_out_degree is not None:
                 # Degree cap: take only first N neighbors
                 out_iter = list(out_iter)[: beam_params.max_out_degree]
-            for v, rel, _ in out_iter:
+            for edge in out_iter:
+                v, rel = edge["v"], edge["rel"]
                 if bt.over():
                     break
                 bt.tick_edges(1)
@@ -82,8 +85,8 @@ def beam_search(
                 inc = score_extension(u, rel, v)
                 new_score = logscore + inc
                 new_nodes = path_nodes + [v]
-                new_edges = path_edges + [(u, rel, v)]
-                heapq.heappush(next_heap, (new_score, new_nodes, new_edges))
+                new_edges = path_edges + [edge]
+                heapq.heappush(next_heap, (new_score, next(sequence), new_nodes, new_edges))
                 if len(next_heap) > beam_params.beam_width:
                     heapq.heappop(next_heap)
             if bt.timed_out():
@@ -91,7 +94,7 @@ def beam_search(
                 break
 
         next_heap.sort(key=lambda x: x[0], reverse=True)
-        for sc, nodes, edges in next_heap:
+        for sc, _, nodes, edges in next_heap:
             best_paths.append((sc, nodes, edges))
             bt.tick_paths(1)
             if bt.over():
@@ -116,12 +119,11 @@ def beam_search(
             {
                 "score": float(sc),
                 "nodes": ns,
-                "edges": [{"u": u, "rel": r, "v": v} for (u, r, v) in es],
+                "edges": es,
             }
             for sc, ns, es in best_paths[: beam_params.max_paths]
         ],
         "used_budget": bt.usage.__dict__,
         "trace": {"beam_width": beam_params.beam_width, "hop_limit": beam_params.hop_limit, "early_stop_reason": early_stop_reason},
     }
-
 

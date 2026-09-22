@@ -20,6 +20,11 @@ class MockGraphAccessor(GraphAccessor):
 
     def iter_out(self, node: NodeId) -> List[Tuple[NodeId, str, float]]:
         return self._graph.get(node, [])
+
+    def iter_out_edges(self, node: NodeId):
+        return ({"_id": f"test/{node}/{index}", "u": node, "rel": relation,
+                 "v": neighbor, "weight": weight, "provenance": None}
+                for index, (neighbor, relation, weight) in enumerate(self.iter_out(node)))
     
     def out_neighbors(self, node: NodeId) -> List[NodeId]:
         return [v for v, _, _ in self.iter_out(node)]

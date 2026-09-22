@@ -1,4 +1,6 @@
 from __future__ import annotations
+import hashlib
+import json
 from typing import Iterable, Tuple, Protocol, List, Dict, Optional
 
 NodeId = str
@@ -22,6 +24,10 @@ class GraphAccessor(Protocol):
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
         """Optional mapping from external IDs to internal; default passthrough."""
         return seeds
+
+    def iter_out_edges(self, node: NodeId) -> Iterable[Dict[str, object]]:
+        """Yield exact assertions with _id, u, rel, v, weight and provenance."""
+        ...
 
     def nodes(self, community_id: str) -> Iterable[NodeId]:
         """All node IDs in this community."""
@@ -67,6 +73,13 @@ class KGCommunityAccessor:
 
     def nodes(self, community_id: str):
         return list(self.allowed)
+
+    def iter_out_edges(self, node: NodeId):
+        for neighbor, relation, weight in self.iter_out(node):
+            identity = json.dumps([node, relation, neighbor], ensure_ascii=False)
+            yield {"_id": "kg/" + hashlib.sha256(identity.encode()).hexdigest(),
+                   "u": node, "rel": relation, "v": neighbor, "weight": weight,
+                   "provenance": None, "assertion_origin": "knowledge_graph_fact"}
 
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
         return seeds
@@ -119,6 +132,14 @@ class OverlayAccessor:
 
     def community_seed_norm(self, community_id: str, seeds: list[NodeId]) -> list[NodeId]:
         return getattr(self.base, 'community_seed_norm', lambda cid, s: s)(community_id, seeds)
+
+    def iter_out_edges(self, node: NodeId):
+        yield from self.base.iter_out_edges(node)
+        for index, (neighbor, relation, weight) in enumerate(self._overlay.get(node, [])):
+            identity = json.dumps([self.cid, node, index], ensure_ascii=False)
+            yield {"_id": "overlay/" + hashlib.sha256(identity.encode()).hexdigest(),
+                   "u": node, "rel": relation, "v": neighbor, "weight": weight,
+                   "provenance": None, "assertion_origin": "overlay"}
 
     def nodes(self, community_id: str):
         return getattr(self.base, 'nodes', lambda cid: [])(community_id)
