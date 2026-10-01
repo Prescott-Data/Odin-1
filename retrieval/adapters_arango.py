@@ -23,16 +23,13 @@ class EdgeView(NamedTuple):
 
 
 def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
-    from .evidence import exclude_vectors
-    assertion, excluded = exclude_vectors(edge.assertion, "provenance.assertion")
-    return {"_id": edge.edge_id, "u": node, "rel": edge.relation,
+    return clean_evidence({"_id": edge.edge_id, "u": node, "rel": edge.relation,
             "v": edge.neighbor_id, "weight": edge.weight,
             "created_at": edge.timestamp, "valid_from": edge.valid_from,
             "valid_to": edge.valid_to, "status": edge.status,
             "source_confidence": edge.raw_confidence,
             "npll_posterior": edge.npll_posterior, "calibration": edge.calibration,
-            "provenance": {"assertion": assertion, "sources": edge.sources},
-            "odin_excluded_vector_fields": excluded}
+            "provenance": {"assertion": edge.assertion, "sources": edge.sources}})
 
 
 

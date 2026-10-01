@@ -159,3 +159,19 @@ def test_vector_exemption_preserves_embedding_source_text_and_rejects_metadata_c
         "odin_excluded_vector_fields": ["nested.embedding"]}
     with pytest.raises(ValueError, match="reserved"):
         clean_evidence({"embedding": [1], "odin_excluded_vector_fields": "source evidence"})
+
+
+def test_edge_record_excludes_source_vectors_before_normalization_without_metadata_collision():
+    from retrieval.adapters_arango import EdgeView, edge_record
+    edge = EdgeView('N/b', 'Exact Relation', 1.0, 'E/1', None, None,
+                    None, None, None, None,
+                    [{'_id': 'Sources/1', 'embedding': [1, 2], 'text': 'complete source'}],
+                    {'_id': 'E/1', 'embedding': [3], 'text': 'complete assertion'})
+    record = edge_record('N/a', edge)
+    assert record['odin_excluded_vector_fields'] == [
+        'provenance.assertion.embedding', 'provenance.sources[0].embedding']
+    record['confidence'] = 0.7
+    normalized = RetrievalOrchestrator(object())._normalize_paths_for_aggregators(
+        [{'edges': [record]}])[0]['edges'][0]
+    assert normalized['provenance']['sources'][0]['text'] == 'complete source'
+    assert normalized['relation'] == 'Exact Relation'
