@@ -253,7 +253,9 @@ class ArangoBackend:
             )
         provenance_collection = self.graph.provenance_edge_collection
         if provenance_collection and not self.db.has_collection(provenance_collection):
-            provenance_collection = None
+            raise BackendConfigurationError(
+                f"Configured provenance collection does not exist: {provenance_collection}"
+            )
         return ArangoCommunityAccessor(
             self.db,
             community_id=community_id,

@@ -180,7 +180,7 @@ def test_backend_namespaces_separate_communities_modes_and_databases():
             ArangoBackend(db, ARANGO_GRAPH).model_store("a", "mapping").namespace)
 
 
-def test_backend_disables_absent_optional_provenance_collection():
+def test_backend_requires_configured_provenance_collection():
     db = FakeArango()
     assert ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none").prov_edges_col is None
 
@@ -193,6 +193,10 @@ def test_backend_disables_absent_optional_provenance_collection():
         ArangoBackend(db, graph_with_provenance).accessor("global", "none").prov_edges_col
         == "Provenance"
     )
+
+    missing = replace(ARANGO_GRAPH, provenance_edge_collection="Missing")
+    with pytest.raises(BackendConfigurationError, match="Missing"):
+        ArangoBackend(db, missing).accessor("global", "none")
 
 
 def test_global_access_requires_explicit_bridge_collections():
