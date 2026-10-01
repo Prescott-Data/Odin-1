@@ -179,7 +179,7 @@ def test_configured_weight_and_property_scope_fields(db):
 
 def test_lossless_roundtrip_and_concurrent_replacement(db):
     backend = ArangoBackend(db, ARANGO_GRAPH)
-    store = backend.model_store("global", "none")
+    store = backend.model_store()
     artifact = model_artifact(101, 120)
     revision = store.save(MODEL_KEY, artifact, expected_revision=None)
     assert store.load(MODEL_KEY).document == artifact
@@ -188,7 +188,7 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
         candidate = model_artifact(101, 120)
         candidate["rule_weights"] = [weight]
         try:
-            backend.model_store("global", "none").save(
+            backend.model_store().save(
                 MODEL_KEY, candidate, expected_revision=revision,
             )
             return "saved"
@@ -201,7 +201,7 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
     del latest.document["evidence"]
     store.save(MODEL_KEY, latest.document, expected_revision=latest.revision)
     assert store.load(MODEL_KEY).document == latest.document
-    assert ArangoBackend(db, ARANGO_GRAPH).model_store("other", "none").load(MODEL_KEY).document == latest.document
+    assert ArangoBackend(db, ARANGO_GRAPH).model_store().load(MODEL_KEY).document == latest.document
 
 
 def test_real_train_save_reload_and_serve(db, monkeypatch):
@@ -210,7 +210,7 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
 
     configure_fast_training(monkeypatch)
     backend = ArangoBackend(db, ARANGO_GRAPH)
-    store = backend.model_store("global", "none")
+    store = backend.model_store()
     first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert first.source == "trained"
     second = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()

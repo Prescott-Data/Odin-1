@@ -133,7 +133,7 @@ without NPLL. Failed retraining preserves the active model, report, and scoring
 components; it raises instead of publishing partial replacement state.
 
 Direct bootstrap callers now construct
-`KnowledgeBootstrapper(backend.triple_source(), backend.model_store(community_id, community_mode))`.
+`KnowledgeBootstrapper(backend.triple_source(), backend.model_store())`.
 See the [backend contracts](../development/backend-contracts.md) for the snapshot,
 artifact schema, migration, and concurrency details.
 

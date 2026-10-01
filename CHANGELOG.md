@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `TrainingBackend.model_store()` and `ArangoBackend.model_store()` take no
+  community arguments. Model storage belongs to the global training scope;
+  callers must migrate directly to the new signature.
 - Public backend contracts now live under `odin.backends`; the former
   `retrieval.backends` modules are removed without compatibility aliases.
 - Neural scorers train on known facts and several seeded uniform head/tail

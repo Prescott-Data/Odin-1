@@ -796,7 +796,7 @@ graph = ArangoGraphConfig(
 )
 backend = ArangoBackend(db, graph)
 bootstrapper = KnowledgeBootstrapper(
-    backend.triple_source(), backend.model_store("my_community", "mapping")
+    backend.triple_source(), backend.model_store()
 )
 bootstrap_result = bootstrapper.ensure_model_ready()
 npll_model = bootstrap_result.model

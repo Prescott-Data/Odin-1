@@ -168,19 +168,19 @@ def test_concurrent_creation_and_replacement_reject_stale_writers():
 def test_global_training_namespace_is_shared_across_retrieval_scopes():
     db = FakeArango()
     backend = ArangoBackend(db, ARANGO_GRAPH)
-    a = backend.model_store("a", "mapping")
-    b = backend.model_store("b", "mapping")
-    unscoped = backend.model_store("a", "none")
+    a = backend.model_store()
+    b = backend.model_store()
+    unscoped = backend.model_store()
     a.save(MODEL_KEY, model_artifact(), expected_revision=None)
     assert b.load(MODEL_KEY).document == model_artifact()
     assert unscoped.load(MODEL_KEY).document == model_artifact()
     other = FakeArango()
     other.name = "other_graph"
-    assert (ArangoBackend(other, ARANGO_GRAPH).model_store("a", "mapping").namespace !=
-            ArangoBackend(db, ARANGO_GRAPH).model_store("a", "mapping").namespace)
+    assert (ArangoBackend(other, ARANGO_GRAPH).model_store().namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store().namespace)
     alternate_graph = replace(ARANGO_GRAPH, relation_field="predicate")
-    assert (ArangoBackend(db, alternate_graph).model_store("a", "mapping").namespace !=
-            ArangoBackend(db, ARANGO_GRAPH).model_store("a", "mapping").namespace)
+    assert (ArangoBackend(db, alternate_graph).model_store().namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store().namespace)
 
 
 def test_backend_requires_configured_provenance_collection():
@@ -344,9 +344,9 @@ def test_engine_retrieval_scope_does_not_duplicate_global_models():
     )
     _, store = engine._training_capabilities()
 
-    assert store.namespace == backend.model_store("global", "none").namespace
+    assert store.namespace == backend.model_store().namespace
     changed_retrieval = replace(ARANGO_GRAPH_WITH_MEMBERSHIP, edge_timestamp_field="observed_at")
-    assert store.namespace == ArangoBackend(backend.db, changed_retrieval).model_store("b", "none").namespace
+    assert store.namespace == ArangoBackend(backend.db, changed_retrieval).model_store().namespace
 
 
 def test_absence_corruption_and_backend_failure_are_distinct():
@@ -723,3 +723,10 @@ def test_global_signal_helpers_return_tail_evidence_without_default_limits():
     db.aql.execute = lambda query, **kwargs: iter(rows)
     assert accessor.get_top_bridges() == rows
     assert accessor.get_strongest_affinities() == rows
+
+
+def test_model_store_has_no_retrieval_scope_arguments():
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
+    assert backend.model_store().namespace
+    with pytest.raises(TypeError):
+        backend.model_store('tenant', 'mapping')

@@ -326,7 +326,7 @@ class ArangoBackend:
     def triple_source(self) -> ArangoTripleSource:
         return ArangoTripleSource(self.db, self.graph)
 
-    def model_store(self, community_id: str, community_mode: str) -> ArangoModelStore:
+    def model_store(self) -> ArangoModelStore:
         namespace = json.dumps([
             self.db.name, "global-training",
             self.graph.node_collection, self.graph.edge_collection,

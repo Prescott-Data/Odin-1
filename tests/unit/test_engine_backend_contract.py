@@ -50,7 +50,7 @@ class NullTrainingBackend(RetrievalOnlyBackend):
     def triple_source(self):
         return None
 
-    def model_store(self, community_id, community_mode):
+    def model_store(self):
         return None
 
 
@@ -146,7 +146,7 @@ class TrainingBackend(RetrievalOnlyBackend):
     def triple_source(self):
         return self.source
 
-    def model_store(self, community_id, community_mode):
+    def model_store(self):
         return self.store
 
 

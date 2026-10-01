@@ -146,7 +146,7 @@ class OdinEngine:
                 + ", ".join(missing)
             )
         source = self.backend.triple_source()
-        store = self.backend.model_store(self.community_id, self.community_mode)
+        store = self.backend.model_store()
         unavailable = [
             name for name, capability in (("triple_source", source), ("model_store", store))
             if capability is None

@@ -104,7 +104,7 @@ from npll import KnowledgeBootstrapper
 
 bootstrap = KnowledgeBootstrapper(
     backend.triple_source(),
-    backend.model_store("global", "none"),
+    backend.model_store(),
 )
 ready = bootstrap.ensure_model_ready()
 ```
