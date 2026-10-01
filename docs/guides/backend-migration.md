@@ -76,6 +76,15 @@ raise and are not cached as missing data. `backend.global_accessor()` is availab
 when either signal is configured; it uses the same metadata mapping as ordinary
 retrieval. Affinity needs mapped membership or a mapped community property.
 
+Community signals are optional retrieval features for users with existing clusters;
+training and model storage do not require them. A configured membership mapping
+must resolve each entity to a single community after any configured algorithm
+filter. Duplicate rows for the same community are accepted. Distinct community
+values raise `BackendConfigurationError("Ambiguous community membership for <entity_id>")`
+during affinity lookup, which propagates from `retrieve()`. Support for scoring
+entities with multiple community memberships is deferred; Odin does not choose an
+arbitrary membership or combine affinities under a new scoring rule.
+
 ## Update imports and direct component calls
 
 | Previous API | Current API |

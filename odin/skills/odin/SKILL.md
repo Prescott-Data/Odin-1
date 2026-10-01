@@ -151,7 +151,11 @@ timestamp field. Application documents and vectors are returned unchanged;
 model-input filtering belongs to the consuming tool layer.
 Bridge/affinity mappings require explicit entity, strength, community, endpoint,
 and score fields. Algorithm filters require explicit field mappings and values.
-Use full Arango document IDs in bridge and membership records.
+Use full Arango document IDs in bridge and membership records. Community signals
+are optional retrieval features and have no role in model storage. Configured
+membership lookup requires one distinct community per entity after algorithm
+filtering; multiple distinct memberships raise `BackendConfigurationError` during
+scoring. Multi-membership scoring is deferred.
 
 Global training artifacts are shared across retrieval communities. Neural scorers
 learn from known facts and uniform corruptions of both endpoints; E-M holdout
