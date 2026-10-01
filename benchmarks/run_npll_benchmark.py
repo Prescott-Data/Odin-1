@@ -15,6 +15,7 @@ import argparse
 import json
 import logging
 import time
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
@@ -24,6 +25,9 @@ import torch
 from benchmarks.datasets import load_fb15k237, load_wn18rr, dataset_to_kg, BenchmarkDataset
 from benchmarks.metrics import LinkPredictionEvaluator, evaluate_rankings
 from npll import NPLLModel
+from npll.bootstrap import create_snapshot_trained_model
+from odin.backends.base import TrainingSnapshot
+from npll.training.npll_trainer import TrainingConfig, create_trainer
 from npll.core import KnowledgeGraph, RuleGenerator
 from npll.utils import NPLLConfig, get_config
 
@@ -46,23 +50,20 @@ def load_dataset(name: str) -> BenchmarkDataset:
 
 def create_npll_model(kg: KnowledgeGraph, config: NPLLConfig) -> NPLLModel:
     """Create and initialize NPLL model."""
-    model = NPLLModel(config)
     
     # Generate rules from the knowledge graph
     logger.info("Generating logical rules...")
-    rule_gen = RuleGenerator()
-    rules = rule_gen.generate_rules(kg, max_chain_length=2)
-    
-    # If no rules generated, add universal rules
-    if not rules:
-        logger.warning("No rules generated, adding universal fallback rules")
-        rules = rule_gen.generate_universal_rules(kg)
-    
-    logger.info(f"Generated {len(rules)} rules")
-    
-    # Initialize with KG and rules
-    model.initialize(kg, rules)
-    
+    generator = RuleGenerator(kg)
+    rules = (generator.generate_relation_priors() + generator.generate_simple_rules(min_support=1) +
+             generator.generate_symmetry_rules(min_support=1))
+    snapshot = TrainingSnapshot(tuple((f.head.name, f.relation.name, f.tail.name)
+                                     for f in kg.known_facts | kg.unknown_facts))
+    observed = sorted(kg.known_facts, key=lambda f: (f.head.name, f.relation.name, f.tail.name))
+    for fact in random.Random(42).sample(observed, max(1, len(observed) // 10)):
+        kg.known_facts.remove(fact)
+        kg.add_unknown_fact(fact.head.name, fact.relation.name, fact.tail.name)
+    model = create_snapshot_trained_model(snapshot, kg, rules, config)
+
     return model
 
 
@@ -71,12 +72,10 @@ def train_npll(model: NPLLModel, epochs: int = 10) -> Dict[str, Any]:
     logger.info(f"Training NPLL for {epochs} epochs...")
     start_time = time.time()
     
-    training_state = model.train_model(
-        num_epochs=epochs,
-        em_iterations=5,
-        verbose=True,
-    )
-    
+    training_state = create_trainer(model, TrainingConfig(
+        num_epochs=epochs, max_em_iterations_per_epoch=5, save_checkpoints=False,
+    )).train()
+
     training_time = time.time() - start_time
     
     return {
@@ -119,13 +118,8 @@ def evaluate_npll(
     
     # Define scoring function using NPLL
     def score_fn(h: str, r: str, t: str) -> float:
-        try:
-            # Use NPLL model to score the triple
-            scores = model.score_triples([(h, r, t)])
-            return float(scores[0]) if scores else 0.0
-        except Exception:
-            return 0.0
-    
+        return model.predict_single_triple(h, r, t)["probability"]
+
     # Run evaluation
     start_time = time.time()
     metrics = evaluator.evaluate_batch(test_triples, score_fn, verbose=True)
