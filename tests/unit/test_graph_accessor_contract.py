@@ -175,3 +175,27 @@ def test_arango_accessors_return_an_empty_dict_for_absent_nodes():
         assert accessor.get_node("Records/missing", fields=["kind"]) == {}
 
     assert all("FILTER d != null" in query for query in queries[1::2])
+
+
+def test_arango_field_and_collection_names_are_bound_and_vectors_are_excluded():
+    db = FakeArango()
+    accessor = ArangoCommunityAccessor(db, community_id="group", community_mode="property",
+                                      community_property="tenant' field",
+                                      nodes_collection="Nodes odd", edges_collection="Edges odd",
+                                      relation_property="predicate' field",
+                                      edge_provenance_fields=["source' field"])
+    accessor.get_node("Nodes odd/a", fields=["name' field"])
+    list(accessor.nodes())
+    list(accessor.iter_out_edges("Nodes odd/a"))
+    accessor.get_edge_provenance("Edges odd/a")
+    assert all("' field" not in query and "Nodes odd" not in query and "Edges odd" not in query
+               for query in db.queries)
+    assert db.query_arguments[0]["bind_vars"]["fields"] == ["_id", "name' field"]
+    assert db.query_arguments[2]["bind_vars"]["@edges"] == "Edges odd"
+    db.aql.execute = lambda *args, **kwargs: iter([
+        {"source_id": "Sources/a", "document": {"embedding": [1], "text": "complete tail"}}])
+    result = ArangoCommunityAccessor.get_document_content(
+        db, "Sources/a", text_collection="Sources", table_collection="Tables",
+        image_collection="Images", document_collection="Documents")
+    assert result["document"] == {"text": "complete tail"}
+    assert result["odin_excluded_vector_fields"] == ["document.embedding"]

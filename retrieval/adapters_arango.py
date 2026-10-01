@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Iterable, Tuple, Optional, List, Dict, Any, NamedTuple
 
 from .adapters import GraphAccessor, NodeId, RelId
+from .evidence import clean_evidence
 
 
 class EdgeView(NamedTuple):
@@ -218,12 +219,12 @@ class ArangoCommunityAccessor(GraphAccessor):
         cid = community_id or self._cid
         if self.community_mode == "property":
             aql = f"""
-            FOR v IN {self.nodes_col}
-              FILTER v.{self.community_prop} == @cid
+            FOR v IN @@nodes
+              FILTER v[@community_field] == @cid
               RETURN v._id
             """
             cursor = self.db.aql.execute(
-                aql, bind_vars={"cid": cid}, batch_size=self.aql_batch_size, stream=self.aql_stream
+                aql, bind_vars={"cid": cid, "@nodes": self.nodes_col, "community_field": self.community_prop}, batch_size=self.aql_batch_size, stream=self.aql_stream
             )
         elif self.community_mode == "mapping":
             bind = {"cid": cid, "@mcol": self.membership_col,
@@ -243,11 +244,11 @@ class ArangoCommunityAccessor(GraphAccessor):
             )
         else:  # community_mode == "none"
             aql = f"""
-            FOR v IN {self.nodes_col}
+            FOR v IN @@nodes
               RETURN v._id
             """
             cursor = self.db.aql.execute(
-                aql, batch_size=self.aql_batch_size, stream=self.aql_stream
+                aql, bind_vars={"@nodes": self.nodes_col}, batch_size=self.aql_batch_size, stream=self.aql_stream
             )
         for vid in cursor:
             yield vid
@@ -259,13 +260,13 @@ class ArangoCommunityAccessor(GraphAccessor):
         )
         aql = f"""
         RETURN LENGTH(
-          FOR e IN {self.edges_col}
+          FOR e IN @@edges
             {hint_clause}
             FILTER e._from == @node
             RETURN 1
         )
         """
-        bind = {"node": node}
+        bind = {"node": node, "@edges": self.edges_col}
         if self.outbound_index_hint:
             bind["idx"] = self.outbound_index_hint
         cur = self.db.aql.execute(aql, bind_vars=bind)
@@ -306,7 +307,7 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         aql = f"""
         LET e = DOCUMENT(@eid)
-        LET inline_candidates = [{", ".join([f"e['{f}']" for f in self.edge_prov_fields])}]
+        LET inline_candidates = (FOR field IN @inline_fields RETURN e[field])
         LET inline = (
           FOR x IN inline_candidates
             FILTER x != null
@@ -317,23 +318,24 @@ class ArangoCommunityAccessor(GraphAccessor):
         )
         RETURN UNIQUE(APPEND(inline, via_edges))
         """
-        cur = self.db.aql.execute(aql, bind_vars={"eid": edge_id}, batch_size=self.aql_batch_size, stream=self.aql_stream)
+        bind = {"eid": edge_id, "inline_fields": self.edge_prov_fields}
+        if self.prov_edges_col:
+            bind.update({"@provenance_edges": self.prov_edges_col,
+                         "provenance_targets": self.prov_target_cols})
+        cur = self.db.aql.execute(aql, bind_vars=bind, batch_size=self.aql_batch_size, stream=self.aql_stream)
         out = list(cur)
         return out[0] if out else []
 
     def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, Any]:
+        bind = {"id": node_id}
         if fields:
-            proj = ", ".join([f"{f}: d.{f}" for f in fields])
-            aql = f"LET d = DOCUMENT(@id) FILTER d != null RETURN {{ _id: d._id, {proj} }}"
+            aql = "LET d = DOCUMENT(@id) FILTER d != null RETURN KEEP(d, @fields)"
+            bind["fields"] = list(dict.fromkeys(["_id", *fields]))
         else:
             aql = "RETURN DOCUMENT(@id)"
-        cur = self.db.aql.execute(aql, bind_vars={"id": node_id})
-        res = list(cur)
-        return (res[0] or {}) if res else {}
+        rows = list(self.db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence((rows[0] or {}) if rows else {})
 
-    # --------------------------
-    # Stats / quick analytics
-    # --------------------------
     @staticmethod
     def get_top_n_entities_by_degree(
         db,
@@ -342,7 +344,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         time_window: Optional[Tuple[str, str]] = None,
         time_property: Optional[str] = None,
     ) -> List[dict]:
-        bind: Dict[str, Any] = {}
+        bind: Dict[str, Any] = {"@edges": edges_collection}
         where = ""
         if time_window:
             if time_property is None:
@@ -353,14 +355,14 @@ class ArangoCommunityAccessor(GraphAccessor):
         if limit:
             bind["lim"] = limit
         aql = f"""
-        FOR e IN {edges_collection}
+        FOR e IN @@edges
           {where}
           COLLECT entity = e._from WITH COUNT INTO degree
           SORT degree DESC
           {limit_clause}
           RETURN {{ "entity": entity, "degree": degree }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     @staticmethod
     def get_entity_type_counts(
@@ -369,12 +371,12 @@ class ArangoCommunityAccessor(GraphAccessor):
         type_property: str,
     ) -> List[dict]:
         aql = f"""
-        FOR doc IN {nodes_collection}
-          COLLECT t = doc.{type_property} WITH COUNT INTO c
+        FOR doc IN @@nodes
+          COLLECT t = doc[@type_field] WITH COUNT INTO c
           SORT c DESC
           RETURN {{ "type": t, "count": c }}
         """
-        return list(db.aql.execute(aql))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars={"@nodes": nodes_collection, "type_field": type_property})))
 
     @staticmethod
     def get_relationship_type_counts(
@@ -384,7 +386,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         time_window: Optional[Tuple[str, str]] = None,
         time_property: Optional[str] = None,
     ) -> List[dict]:
-        bind: Dict[str, Any] = {"rel_prop": relation_property}
+        bind: Dict[str, Any] = {"@edges": edges_collection, "rel_prop": relation_property}
         where = "FILTER HAS(rel, @rel_prop)"
         if time_window:
             if time_property is None:
@@ -392,13 +394,13 @@ class ArangoCommunityAccessor(GraphAccessor):
             where += " AND HAS(rel, @ts) AND rel[@ts] >= @start_ts AND rel[@ts] <= @end_ts"
             bind.update({"ts": time_property, "start_ts": time_window[0], "end_ts": time_window[1]})
         aql = f"""
-        FOR rel IN {edges_collection}
+        FOR rel IN @@edges
           {where}
           COLLECT t = rel[@rel_prop] WITH COUNT INTO c
           SORT c DESC
           RETURN {{ "type": t, "count": c }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     @staticmethod
     def get_community_summaries(
@@ -421,6 +423,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         )
         limit_clause = "LIMIT @skip, @limit" if limit is not None else ""
         bind: Dict[str, Any] = {
+            "@communities": communities_collection,
             "community_id_property": community_id_property,
             "summary_property": summary_property,
             "size_property": size_property,
@@ -429,7 +432,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         if limit is not None:
             bind.update({"skip": skip, "limit": limit})
         aql = f"""
-        FOR c IN {communities_collection}
+        FOR c IN @@communities
           {filter_clause}
           SORT c[@community_id_property] ASC
           {limit_clause}
@@ -441,7 +444,7 @@ class ArangoCommunityAccessor(GraphAccessor):
               document: c
           }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     @staticmethod
     def get_unique_table_headers(
@@ -450,12 +453,12 @@ class ArangoCommunityAccessor(GraphAccessor):
         headers_property: str,
     ) -> List[List[str]]:
         aql = f"""
-        FOR t IN {tables_collection}
+        FOR t IN @@tables
           FILTER HAS(t, @hp)
           COLLECT h = t[@hp]
           RETURN h
         """
-        return list(db.aql.execute(aql, bind_vars={"hp": headers_property}))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars={"hp": headers_property, "@tables": tables_collection})))
 
     # --------------------------
     # Bridge / GNN Integration Methods (Mirrored from GlobalGraphAccessor)
@@ -589,7 +592,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             {limit_clause}
             RETURN {{ entity: entity, degree: degree }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     @staticmethod
     def get_recent_entities(
@@ -618,6 +621,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         """
         bind: Dict[str, Any] = {
             "since": since,
+            "@nodes": nodes_collection,
             "created_prop": created_at_property,
             "updated_prop": updated_at_property,
         }
@@ -645,7 +649,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["limit"] = limit
         
         aql = f"""
-        FOR e IN {nodes_collection}
+        FOR e IN @@nodes
             FILTER (HAS(e, @created_prop) AND e[@created_prop] >= @since)
                 OR (HAS(e, @updated_prop) AND e[@updated_prop] >= @since)
             {community_filter}
@@ -658,7 +662,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: e
             }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     @staticmethod
     def search_entities(
@@ -689,6 +693,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         bind: Dict[str, Any] = {
             "query": f"%{query.lower()}%",
             "search_fields": search_fields,
+            "@nodes": nodes_collection,
         }
         
         community_filter = ""
@@ -714,7 +719,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["limit"] = limit
         
         aql = f"""
-        FOR e IN {nodes_collection}
+        FOR e IN @@nodes
             LET matched_fields = (
                 FOR field IN @search_fields
                     FILTER HAS(e, field) AND LOWER(TO_STRING(e[field])) LIKE @query
@@ -729,7 +734,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: e
             }}
         """
-        return list(db.aql.execute(aql, bind_vars=bind))
+        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
 
     # ════════════════════════════════════════════════════════════════
     # CONTENT HYDRATION (for agent reasoning)
@@ -782,7 +787,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             "doc_id": doc_id,
             "source_type": collection,
         }))
-        return result[0] if result else None
+        return clean_evidence(result[0]) if result else None
 
     @staticmethod
     def get_entity_sources(
@@ -813,9 +818,9 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: source
             }}
         """
-        return list(db.aql.execute(aql, bind_vars={
+        return clean_evidence(list(db.aql.execute(aql, bind_vars={
             "entity_id": entity_id,
-        }))
+        })))
 
     @staticmethod
     def search_content(
@@ -910,7 +915,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             """
             results.extend(list(db.aql.execute(aql_image, bind_vars=bind)))
         
-        return results
+        return clean_evidence(results)
 
     # --------------------------
     # Internal neighbor routine
@@ -920,6 +925,7 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         bind: Dict[str, Any] = {
             "node": node,
+            "@edges": self.edges_col,
             "rel_prop": self.rel_prop,
             "priors_map": self.type_priors,
         }
@@ -942,7 +948,8 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         # Community filter
         if self.community_mode == "property":
-            filters.append(f"v.{self.community_prop} == @cid")
+            bind["community_field"] = self.community_prop
+            filters.append("v[@community_field] == @cid")
         elif self.community_mode == "mapping":
             bind.update({"@mcol": self.membership_col, "m_ent": self.memb_ent_field, "m_com": self.memb_com_field})
             guard = self._algorithm_filter("m", self.membership_algorithm_field, bind)
@@ -966,7 +973,8 @@ class ArangoCommunityAccessor(GraphAccessor):
             filters.append("!(e[@rel_prop] IN @disallowed_relations)")
         if self.allowed_neighbor_types:
             bind["allowed_neighbor_types"] = self.allowed_neighbor_types
-            filters.append(f"v.{self.node_type_prop} IN @allowed_neighbor_types")
+            bind["node_type_field"] = self.node_type_prop
+            filters.append("v[@node_type_field] IN @allowed_neighbor_types")
 
         # Time window filter on edge timestamp
         if self.time_window and self.ts_prop:
@@ -1053,7 +1061,7 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         aql = f"""
         LET priors = @priors_map
-        FOR v, e IN 1..1 {direction} @node {self.edges_col}
+        FOR v, e IN 1..1 {direction} @node @@edges
           {hint}
           FILTER {filters_str}
           LET _rel = e[@rel_prop]

@@ -95,11 +95,12 @@ class ArangoSchemaInspector:
         fields = set()
         if count > 0:
             cursor = self.db.aql.execute(
-                f"""
-                FOR doc IN {collection_name}
-                LIMIT {max(1, self.max_sample_docs)}
-                RETURN doc
                 """
+                FOR doc IN @@collection
+                LIMIT @sample_limit
+                RETURN doc
+                """, bind_vars={"@collection": collection_name,
+                                  "sample_limit": max(1, self.max_sample_docs)}
             )
             for document in cursor:
                 fields.update(document.keys())
@@ -118,11 +119,12 @@ class ArangoSchemaInspector:
         to_collections = set()
         if count > 0:
             cursor = self.db.aql.execute(
-                f"""
-                FOR edge IN {collection_name}
-                LIMIT {max(1, self.max_sample_docs)}
-                RETURN edge
                 """
+                FOR edge IN @@collection
+                LIMIT @sample_limit
+                RETURN edge
+                """, bind_vars={"@collection": collection_name,
+                                  "sample_limit": max(1, self.max_sample_docs)}
             )
             for edge in cursor:
                 fields.update(edge.keys())

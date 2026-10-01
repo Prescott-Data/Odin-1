@@ -19,3 +19,13 @@ def exclude_vectors(value, path=""):
             return [visit(child, f"{current}[{index}]") for index, child in enumerate(item)]
         return item
     return visit(value, path), excluded
+
+
+def clean_evidence(value):
+    """Remove only exempt vectors and declare every excluded path on each record."""
+    if isinstance(value, list):
+        return [clean_evidence(record) for record in value]
+    clean, excluded = exclude_vectors(value)
+    if excluded and isinstance(clean, dict):
+        clean["odin_excluded_vector_fields"] = excluded
+    return clean

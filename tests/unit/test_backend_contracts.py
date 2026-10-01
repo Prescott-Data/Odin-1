@@ -270,7 +270,7 @@ def test_property_community_mode_requires_and_uses_an_explicit_field_mapping():
     graph = replace(ARANGO_GRAPH, community_property_field="tenant_code")
     accessor = ArangoBackend(db, graph).accessor("tenant-a", "property")
     assert list(accessor.nodes()) == []
-    assert "tenant_code" in db.queries[0]
+    assert db.query_arguments[0]["bind_vars"]["community_field"] == "tenant_code"
     assert "community_id" not in db.queries[0]
 
 
