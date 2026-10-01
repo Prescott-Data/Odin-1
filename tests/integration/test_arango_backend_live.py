@@ -201,7 +201,7 @@ def test_lossless_roundtrip_and_concurrent_replacement(db):
     del latest.document["evidence"]
     store.save(MODEL_KEY, latest.document, expected_revision=latest.revision)
     assert store.load(MODEL_KEY).document == latest.document
-    assert ArangoBackend(db, ARANGO_GRAPH).model_store("other", "none").load(MODEL_KEY) is None
+    assert ArangoBackend(db, ARANGO_GRAPH).model_store("other", "none").load(MODEL_KEY).document == latest.document
 
 
 def test_real_train_save_reload_and_serve(db, monkeypatch):
@@ -222,6 +222,8 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
         "ExtractedEntities/A", "Submitted By", "ExtractedEntities/B",
     )
     assert math.isfinite(confidence) and 0 <= confidence <= 1
+    assert NPLLConfidence(first.model).confidence(
+        "ExtractedEntities/A", "Submitted By", "ExtractedEntities/B") == confidence
 
 
 def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
