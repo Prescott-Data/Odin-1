@@ -39,13 +39,66 @@ See [Production Deployment](../guides/production.md).
 | `BackendCapabilityError` | Supply the requested capability, or explicitly disable training for a retrieval-only backend. |
 | `npll.TrainingError` | Inspect the exception cause and verify the graph contains valid training triples. Failed retraining leaves the active serving state intact. |
 | `BackendIOError` | Check database connectivity, access permissions, and the original exception cause. |
-| `CorruptModelError` | Inspect the stored artifact against the current schema; do not treat corruption as an absent model. |
+| `CorruptModelError` | Follow the recovery procedure below to inspect and remove the affected saved artifact, then train a replacement. |
+| `NewerModelVersionError` | Upgrade Odin to a reader supporting the stored artifact version; older workers must not overwrite it. |
 | `ModelConflictError` | Another writer changed the artifact. Coordinate training and load the current artifact rather than blindly overwriting it. |
 
 Invalid triple identities raise `BackendError`; Arango entity IDs and relation
 labels must be non-empty strings, and entity types must be strings when present.
 See [Backend migration](../guides/backend-migration.md) for import changes and
 the first-startup retraining requirement.
+
+## Recovering from `CorruptModelError`
+
+A corrupt model is not automatically overwritten. `retrain_model()` and forced
+bootstrap retraining still validate the saved artifact, so they do not bypass
+this error. For ArangoDB, export the affected document for diagnosis, stop workers
+that might train against the same graph, remove that specific saved document, and
+initialize Odin again to train a replacement.
+
+Use the same connected database and `ArangoGraphConfig` as the failing engine.
+`OdinModels` stores an envelope containing `namespace`, `model_key`, and `artifact`.
+Its `_key` is SHA-256 of compact UTF-8 JSON `[namespace, model_key]`, so the key is
+a hash rather than the literal `npll_current`. The namespace covers the database
+and training graph mappings; retrieval communities share this artifact.
+
+```python
+import hashlib
+import json
+from pathlib import Path
+
+from odin import OdinEngine
+from odin.backends.arango import ArangoBackend
+from odin.backends.base import MODEL_KEY
+
+# db and graph are the exact connected handle and mapping used by your engine.
+backend = ArangoBackend(db, graph)
+store = backend.model_store()
+payload = json.dumps([store.namespace, MODEL_KEY],
+                     ensure_ascii=False, separators=(",", ":"))
+storage_key = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+collection = db.collection("OdinModels")
+saved = collection.get(storage_key)  # Raw read works even when artifact validation fails.
+if saved is None:
+    raise RuntimeError("No saved model found for this database and graph mapping")
+
+Path(f"odin-corrupt-model-{storage_key}.json").write_text(
+    json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
+
+# Delete only the inspected revision. A concurrent replacement makes this fail.
+collection.delete({"_key": storage_key, "_rev": saved["_rev"]}, check_rev=True)
+engine = OdinEngine(backend, auto_train=True)
+```
+
+In the ArangoDB web UI, open `OdinModels`, locate the computed `_key`, export the
+complete document, and delete only that document before restarting workers.
+Do not delete the entire collection: it may contain models for other graphs.
+If the error is `NewerModelVersionError`, preserve the artifact and upgrade the
+reader instead; a newer artifact is not corruption.
+
+See [Model Lifecycle](../guides/npll-lifecycle.md) for training failures and
+revision conflicts. No Neo4j recovery procedure is provided until its model
+store is implemented.
 
 ---
 

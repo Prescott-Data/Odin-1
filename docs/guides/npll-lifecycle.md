@@ -134,6 +134,10 @@ exception as their cause. An empty graph also makes engine initialization fail
 when training is requested. Choose `auto_train=False` explicitly for retrieval
 without NPLL. Failed retraining preserves the active model, report, and scoring
 components; it raises instead of publishing partial replacement state.
+For corrupt Arango artifacts, follow the [recovery procedure](../reference/troubleshooting.md#recovering-from-corruptmodelerror):
+identify and export the hashed `OdinModels` document, delete that inspected
+revision, then initialize Odin to train again. Forced retraining does not bypass
+artifact validation.
 
 Direct bootstrap callers now construct
 `KnowledgeBootstrapper(backend.triple_source(), backend.model_store())`.
