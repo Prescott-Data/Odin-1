@@ -6,7 +6,7 @@ from npll.core.knowledge_graph import load_knowledge_graph_from_triples
 from npll.utils.config import get_config
 
 
-def test_scorer_rejects_independent_random_corruptions_across_vocabulary():
+def test_scorer_rejects_independent_random_corruptions_across_vocabulary(record_property):
     entities = [f'Nodes/{i:04}' for i in range(80)]
     triples = [(h, f'predicate {r}', entities[(i + r + 1) % 80])
                for i, h in enumerate(entities) for r in range(3)]
@@ -28,6 +28,8 @@ def test_scorer_rejects_independent_random_corruptions_across_vocabulary():
                 [h for h, _, _ in rows], [r for _, r, _ in rows], [t for _, _, t in rows]
             ).sigmoid().mean().item()
     positive, negative = mean_score(triples), mean_score(negatives)
+    record_property("observed_mean_score", positive)
+    record_property("unseen_negative_mean_score", negative)
     assert positive > 0.8, (positive, negative)
     assert negative < 0.3, (positive, negative)
     assert positive - negative > 0.5
@@ -43,3 +45,33 @@ def test_scorer_does_not_supervise_em_holdout(monkeypatch):
     model = create_snapshot_trained_model(snapshot, kg, [], config)
     # One supervised positive, two distinct unobserved candidates on each side.
     assert model.scorer_training['example_count'] == 5
+
+
+def test_scorer_distinguishes_random_sparse_graph_from_unseen_random_non_edges(record_property):
+    rng = random.Random(518)
+    entities = [f'Nodes/{i:04}' for i in range(120)]
+    facts = set()
+    while len(facts) < 600:
+        h, t = rng.sample(entities, 2)
+        facts.add((h, f'exact predicate {rng.randrange(4)}', t))
+    snapshot = TrainingSnapshot(tuple(facts))
+    kg = load_knowledge_graph_from_triples(snapshot.triples, 'random graph')
+    model = create_snapshot_trained_model(snapshot, kg, [], get_config('OdinTriples'))
+    negatives = []
+    while len(negatives) < 1000:
+        h, t = rng.sample(entities, 2)
+        triple = (h, f'exact predicate {rng.randrange(4)}', t)
+        if triple not in facts:
+            negatives.append(triple)
+    def mean(rows):
+        rows = list(rows)
+        with torch.no_grad():
+            return model.scoring_module.forward_with_names(
+                [h for h, _, _ in rows], [r for _, r, _ in rows], [t for _, _, t in rows]
+            ).sigmoid().mean().item()
+    observed, unobserved = mean(facts), mean(negatives)
+    record_property("observed_mean_score", observed)
+    record_property("unseen_negative_mean_score", unobserved)
+    assert observed > 0.8, (observed, unobserved)
+    assert unobserved < 0.3, (observed, unobserved)
+    assert observed - unobserved > 0.5
