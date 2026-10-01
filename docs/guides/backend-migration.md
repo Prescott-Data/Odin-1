@@ -137,7 +137,7 @@ and loss history. Reload loads parameters without training. Device and Torch
 version differences do not invalidate the artifact. Obsolete version/config schemas
 are retrained and replaced by CAS; damaged current artifacts raise. Scores are
 identical on the same runtime, while numerical differences across hardware remain
-possible. Evidence records still exclude internal vectors.
+possible. Odin returns complete application records, including embedding fields.
 
 `GlobalGraphAccessor` shares explicit mappings with the community accessor. Its old
 keyword constructor, traversal weight bonus, `min_affinity_threshold` and
@@ -190,10 +190,11 @@ invalidates a model when training evidence changes.
 `get_document_content` returns `{source_id, source_type, document}` or `None`.
 `get_entity_sources` returns every matching `{source_id, source_type, edge, document}`.
 `search_content` returns complete `{source_id, source_type, document}` records.
-Documents and edges retain all non-vector fields, without content slicing.
-Excluded internal vector paths appear in `odin_excluded_vector_fields`.
-Traversal edges retain the raw document once under `provenance.assertion`, expose
-mapped metadata as canonical fields, and record `odin_excluded_vector_fields`.
+Documents and edges retain every field, including `embedding`, `npll_embedding`
+and `transe_embedding`, without content slicing or exclusion markers.
+Traversal edges retain the complete raw document once under `provenance.assertion`
+and expose mapped metadata as canonical fields. Model-input filtering belongs
+to the consuming application, after it receives Odin results.
 
 Construct `ArangoWriter(db, graph, confidence_field="certainty", metadata_field="evidence")`
 with a connected database and explicit fields. Pass full document IDs for both

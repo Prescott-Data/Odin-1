@@ -30,6 +30,8 @@ Rule mining and grounding use bounded observed joins and confidence thresholds.
 Global accessor traversal bonuses and the unused engine global accessor are removed.
 Signal helpers return every record; their limit argument is removed. Membership
 ambiguity raises and lookup results are cached. Writers preserve user metadata.
+Odin returns complete application documents and vectors without exclusion markers;
+model-input filtering belongs to consuming applications.
 Training failures raise; constant confidence requires explicit
 `auto_train=False`. Failed retraining preserves the active serving state.
 

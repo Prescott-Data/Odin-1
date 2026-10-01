@@ -34,13 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their `limit` argument is removed. The unused `engine.global_accessor` is removed;
   direct callers use `backend.global_accessor()`.
 - Ambiguous community membership raises; successful lookups use a bounded cache.
-  Invalid `current_only` mappings fail at construction. Evidence exclusions use
-  `odin_excluded_vector_fields` consistently. Writers preserve user metadata.
+  Invalid `current_only` mappings fail at construction. Odin preserves all
+  application fields, including embedding vectors, and adds no exclusion markers.
+  Model-input filtering belongs to consuming applications. Writers preserve user metadata.
 - Removed `ArangoCommunityAccessor`, `GlobalGraphAccessor`, `JanusGraphAccessor`,
   `ArangoWriter`, and `JanusGraphWriter` from top-level `retrieval` exports.
   Import accessors and writers from their concrete modules.
 - Standalone content helpers return complete `document` records and source helpers
-  return complete `edge`/`document` records. Vector exclusions are explicitly recorded.
+  return complete `edge`/`document` records, including numeric embedding fields.
   Traversal assertions are stored once under `provenance.assertion`.
 - Extracted Arango training-snapshot reads and model persistence into
   `odin.backends`, with `GraphBackend`, `TripleSource`, and `ModelStore`

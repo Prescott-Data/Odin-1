@@ -40,7 +40,8 @@ metadata influences retrieval only through its mapping; a raw field named
 
 Retrieved edge confidence comes from the configured confidence provider. The full
 raw assertion is retained under `provenance.assertion`, independent of mapped
-metadata. Internal numeric vector fields are excluded and their paths are recorded.
+metadata. Every application field, including numeric embedding vectors, is
+preserved. Callers apply model-input filtering at their tool boundary.
 
 ## Communities scope the graph
 

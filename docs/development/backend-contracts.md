@@ -116,7 +116,8 @@ weights. Its convergence report describes that loop, not scorer calibration.
 Learned scorer tensors are persisted as a base64 binary state dictionary with a
 SHA-256 checksum, loaded with Torch weights-only deserialization and strict tensor
 name, shape and finiteness checks. This model state is separate from evidence
-records, which exclude internal vectors. Reload initializes the architecture and
+records, which preserve application fields including vectors. Consumers apply
+their own model-input filtering. Reload initializes the architecture and
 loads tensors without replay or floating-point loss comparisons. Device and Torch
 version changes do not invalidate reuse. Semantic profile or recipe changes retrain.
 Cross-backend retrieval parity and Neo4j live tests are not established yet.
