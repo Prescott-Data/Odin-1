@@ -156,6 +156,15 @@ class KnowledgeGraph:
         
         return triple
     
+    def hold_out_fact(self, fact: Triple) -> None:
+        """Move a known fact to the latent E-M set without supervising the scorer."""
+        if fact not in self._known_facts:
+            raise ValueError("Holdout must be a known fact")
+        self._known_facts.remove(fact)
+        self._unknown_facts.add(fact)
+        self._stats['num_known_facts'] = len(self._known_facts)
+        self._stats['num_unknown_facts'] = len(self._unknown_facts)
+
     def add_unknown_fact(self, head: str, relation: str, tail: str) -> Triple:
         """Add unknown fact to U set (for inference)"""
         head_entity = self.add_entity(head)

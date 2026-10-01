@@ -49,7 +49,7 @@ def create_snapshot_initialized_model(snapshot: TrainingSnapshot, kg: KnowledgeG
         return create_initialized_npll_model(kg, rules, config)
 
 
-SCORER_RECIPE = "observed-vs-corrupted-v1"
+SCORER_RECIPE = "uniform-endpoint-corruptions-v2"
 
 
 def create_snapshot_trained_model(snapshot, kg, rules, config):
@@ -66,23 +66,33 @@ def create_snapshot_trained_model(snapshot, kg, rules, config):
         model = create_snapshot_initialized_model(snapshot, kg, rules, config)
         facts = set(snapshot.triples)
         entities = sorted({v for h, _, t in facts for v in (h, t)})
-        relations = sorted({r for _, r, _ in facts})
+        rng = random.Random(scoring_initialization_seed(snapshot))
+        positives = sorted((f.head.name, f.relation.name, f.tail.name) for f in kg.known_facts)
         examples = []
         labels = []
-        for h, r, t in snapshot.triples:
+        for h, r, t in positives:
             examples.append((h, r, t))
             labels.append(1.0)
-            candidates = ((h, r, other) for other in entities)
-            negative = next((candidate for candidate in candidates if candidate not in facts), None)
-            if negative is None:
-                negative = next(((other, r, t) for other in entities
-                                 if (other, r, t) not in facts), None)
-            if negative is None:
-                negative = next(((h, other, t) for other in relations
-                                 if (h, other, t) not in facts), None)
-            if negative is not None:
-                examples.append(negative)
-                labels.append(0.0)
+            for axis in (0, 2):
+                selected = set()
+                for _ in range(config.scorer_negatives_per_side * 20):
+                    candidate = (rng.choice(entities), r, t) if axis == 0 else (h, r, rng.choice(entities))
+                    if candidate not in facts:
+                        selected.add(candidate)
+                    if len(selected) == config.scorer_negatives_per_side:
+                        break
+                if len(selected) < config.scorer_negatives_per_side:
+                    shuffled = list(entities)
+                    rng.shuffle(shuffled)
+                    for other in shuffled:
+                        candidate = (other, r, t) if axis == 0 else (h, r, other)
+                        if candidate not in facts:
+                            selected.add(candidate)
+                        if len(selected) == config.scorer_negatives_per_side:
+                            break
+                for candidate in sorted(selected):
+                    examples.append(candidate)
+                    labels.append(0.0)
         if not any(label == 0.0 for label in labels):
             raise TrainingError("Snapshot has no unobserved corruptions for scorer training")
         scorer = model.scoring_module
@@ -91,15 +101,19 @@ def create_snapshot_trained_model(snapshot, kg, rules, config):
         device = next(scorer.parameters()).device
         losses = []
         for _ in range(config.scorer_epochs):
+            order = list(range(len(examples)))
+            rng.shuffle(order)
             total = 0.0
             for start in range(0, len(examples), config.batch_size):
-                batch = examples[start:start + config.batch_size]
-                targets = torch.tensor(labels[start:start + config.batch_size], device=device)
+                indices = order[start:start + config.batch_size]
+                batch = [examples[i] for i in indices]
+                targets = torch.tensor([labels[i] for i in indices], device=device)
                 optimizer.zero_grad()
                 logits = scorer.forward_with_names([h for h, _, _ in batch],
                                                    [r for _, r, _ in batch],
                                                    [t for _, _, t in batch])
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, targets)
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                    logits, targets, pos_weight=torch.tensor(labels.count(0.0) / labels.count(1.0), device=device))
                 if not torch.isfinite(loss):
                     raise TrainingError("Scorer training produced a non-finite loss")
                 loss.backward()
@@ -313,12 +327,11 @@ class KnowledgeBootstrapper:
             fact.head.name, fact.relation.name, fact.tail.name,
         ))
         sampling_rng = random.Random(42)
-        num_unknown = max(1, len(known_facts_list) // 10)
+        num_unknown = min(len(known_facts_list) - 1, max(1, len(known_facts_list) // 10))
         unknown_facts = sampling_rng.sample(known_facts_list, num_unknown)
         
         for fact in unknown_facts:
-            kg.known_facts.remove(fact)
-            kg.add_unknown_fact(fact.head.name, fact.relation.name, fact.tail.name)
+            kg.hold_out_fact(fact)
         
         # 3. Generate Rules
         rules = self._generate_smart_rules(kg)

@@ -132,8 +132,8 @@ def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors(
     snapshot = TrainingSnapshot(tuple(triples))
     kg = load_knowledge_graph_from_triples(snapshot.triples)
     rules = KnowledgeBootstrapper(MemorySource(), MemoryStore())._generate_smart_rules(kg)
-    config = NPLLConfig(entity_embedding_dim=8, relation_embedding_dim=8,
-                        scoring_hidden_dim=8, rule_embedding_dim=8, device="cpu")
+    config = NPLLConfig(entity_embedding_dim=32, relation_embedding_dim=32,
+                        scoring_hidden_dim=64, rule_embedding_dim=64, device="cpu")
     initial = create_snapshot_initialized_model(snapshot, kg, rules, config)
     model = create_snapshot_trained_model(snapshot, kg, rules, config)
     scorer = NPLLConfidence(model)

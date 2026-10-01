@@ -29,6 +29,7 @@ class NPLLConfig:
     temperature: float = 1.0  # Temperature scaling for calibration
     
     # Training Hyperparameters (Paper Section 5)
+    scorer_negatives_per_side: int = 4
     scorer_epochs: int = 100
     scorer_learning_rate: float = 0.003
     learning_rate: float = 0.0005  # Initial learning rate from paper

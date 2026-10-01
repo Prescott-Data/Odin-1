@@ -59,9 +59,8 @@ def create_npll_model(kg: KnowledgeGraph, config: NPLLConfig) -> NPLLModel:
     snapshot = TrainingSnapshot(tuple((f.head.name, f.relation.name, f.tail.name)
                                      for f in kg.known_facts | kg.unknown_facts))
     observed = sorted(kg.known_facts, key=lambda f: (f.head.name, f.relation.name, f.tail.name))
-    for fact in random.Random(42).sample(observed, max(1, len(observed) // 10)):
-        kg.known_facts.remove(fact)
-        kg.add_unknown_fact(fact.head.name, fact.relation.name, fact.tail.name)
+    for fact in random.Random(42).sample(observed, min(len(observed) - 1, max(1, len(observed) // 10))):
+        kg.hold_out_fact(fact)
     model = create_snapshot_trained_model(snapshot, kg, rules, config)
 
     return model
