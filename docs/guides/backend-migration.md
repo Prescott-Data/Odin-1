@@ -184,7 +184,7 @@ invalidates a model when training evidence changes.
 Documents and edges retain all non-vector fields, without content slicing.
 Excluded internal vector paths appear in `odin_excluded_vector_fields`.
 Traversal edges retain the raw document once under `provenance.assertion`, expose
-mapped metadata as canonical fields, and record `excluded_vector_fields`.
+mapped metadata as canonical fields, and record `odin_excluded_vector_fields`.
 
 Construct `ArangoWriter(db, graph, confidence_field="certainty", metadata_field="evidence")`
 with a connected database and explicit fields. Pass full document IDs for both

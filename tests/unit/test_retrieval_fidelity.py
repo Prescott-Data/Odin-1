@@ -100,7 +100,7 @@ def test_arango_metadata_uses_only_mapped_fields_and_excludes_nested_vectors():
     assert "assertion" not in record
     assert record["provenance"]["assertion"]["created_at"] == "unmapped"
     assert record["provenance"]["assertion"]["nested"] == [{"text": "tail evidence"}]
-    assert record["excluded_vector_fields"] == ["provenance.assertion.embedding",
+    assert record["odin_excluded_vector_fields"] == ["provenance.assertion.embedding",
                                                 "provenance.assertion.nested[0].npll_embedding"]
     mapped = edge_record("nodes/a", edge._replace(timestamp="2026-10-01"))
     mapped["confidence"] = 0.4

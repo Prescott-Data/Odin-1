@@ -32,7 +32,7 @@ def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
             "source_confidence": edge.raw_confidence,
             "npll_posterior": edge.npll_posterior, "calibration": edge.calibration,
             "provenance": {"assertion": assertion, "sources": edge.sources},
-            "excluded_vector_fields": excluded}
+            "odin_excluded_vector_fields": excluded}
 
 
 
