@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from .base import PersistenceWriter
 from odin.backends.arango import ArangoGraphConfig
 from odin.backends.base import BackendConfigurationError, BackendIOError
-from retrieval.evidence import clean_evidence
+from copy import deepcopy
 
 
 class ArangoWriter(PersistenceWriter):
@@ -33,12 +33,12 @@ class ArangoWriter(PersistenceWriter):
             raise BackendConfigurationError("Writer endpoints must be full Arango document IDs")
         if not isinstance(rel, str) or not rel:
             raise BackendConfigurationError("Writer relation must be a non-empty string")
-        document = clean_evidence({
+        document = {
             "_from": src_entity, "_to": dst_entity,
             self.graph.relation_field: rel,
             self.confidence_field: float(confidence),
-            self.metadata_field: metadata or {},
-        })
+            self.metadata_field: deepcopy(metadata) if metadata is not None else {},
+        }
         try:
             self.db.collection(self.graph.edge_collection).insert(document)
         except Exception as exc:
