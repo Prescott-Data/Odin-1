@@ -24,7 +24,7 @@ from retrieval.backends.base import (
 )
 
 from .core.knowledge_graph import KnowledgeGraph, load_knowledge_graph_from_triples
-from .core.logical_rules import LogicalRule, Atom, Variable, RuleType
+from .core.logical_rules import LogicalRule, RuleGenerator
 from .npll_model import create_initialized_npll_model, NPLLModel
 from .training.npll_trainer import TrainingConfig, TrainingResult, create_trainer
 from .utils.config import get_config
@@ -318,120 +318,11 @@ class KnowledgeBootstrapper:
         self.model_store.save(MODEL_KEY, doc, expected_revision=expected_revision)
 
     def _generate_smart_rules(self, kg: KnowledgeGraph) -> List[LogicalRule]:
-        """
-        Generates domain-appropriate rules based on available relations.
-        """
-        rules = []
-        relations = {r.name: r for r in kg.relations}
-        x, y, z = Variable("?x"), Variable("?y"), Variable("?z")
-        
-        logger.info(f"Generating rules for {len(relations)} relation types...")
-        
-        # --- HEALTHCARE DOMAIN ---
-        if 'has_claim' in relations and 'submitted_by_provider' in relations and 'treated_by' in relations:
-            rules.append(LogicalRule(
-                rule_id="hc_claim_provider_link",
-                body=[
-                    Atom(relations['has_claim'], (x, y)),
-                    Atom(relations['submitted_by_provider'], (y, z))
-                ],
-                head=Atom(relations['treated_by'], (x, z)),
-                confidence=0.7
-            ))
-            logger.info("  + Added: hc_claim_provider_link")
-        
-        if 'diagnosed_with' in relations and 'indicates' in relations:
-            target_rel = relations.get('recommended_procedure') or relations.get('related_to')
-            if target_rel:
-                rules.append(LogicalRule(
-                    rule_id="hc_diagnosis_procedure",
-                    body=[
-                        Atom(relations['diagnosed_with'], (x, y)),
-                        Atom(relations['indicates'], (y, z))
-                    ],
-                    head=Atom(target_rel, (x, z)),
-                    confidence=0.6
-                ))
-                logger.info("  + Added: hc_diagnosis_procedure")
-
-        if 'works_at' in relations and 'located_at' in relations:
-            target_rel = relations.get('affiliated_with') or relations.get('related_to')
-            if target_rel:
-                rules.append(LogicalRule(
-                    rule_id="hc_provider_facility",
-                    body=[
-                        Atom(relations['works_at'], (x, y)),
-                        Atom(relations['located_at'], (y, z))
-                    ],
-                    head=Atom(target_rel, (x, z)),
-                    confidence=0.6
-                ))
-                logger.info("  + Added: hc_provider_facility")
-
-        # --- INSURANCE DOMAIN ---
-        if 'policyholder' in relations and 'claim_number' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="ins_policy_claim",
-                body=[
-                    Atom(relations['policyholder'], (x, y)),
-                    Atom(relations['claim_number'], (x, z))
-                ],
-                head=Atom(relations['related_to'], (y, z)),
-                confidence=0.8
-            ))
-            logger.info("  + Added: ins_policy_claim")
-
-        if 'assessor' in relations and 'insurer' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="ins_assessor_insurer",
-                body=[
-                    Atom(relations['assessor'], (x, y)),
-                    Atom(relations['insurer'], (z, y))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                confidence=0.7
-            ))
-            logger.info("  + Added: ins_assessor_insurer")
-
-        # --- GENERIC RULES ---
-        if 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="gen_transitivity",
-                body=[
-                    Atom(relations['related_to'], (x, y)),
-                    Atom(relations['related_to'], (y, z))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                rule_type=RuleType.TRANSITIVITY,
-                confidence=0.5
-            ))
-            logger.info("  + Added: gen_transitivity")
-
-        if 'has_type' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="gen_type_cooccurrence",
-                body=[
-                    Atom(relations['has_type'], (x, y)),
-                    Atom(relations['has_type'], (z, y))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                confidence=0.3
-            ))
-            logger.info("  + Added: gen_type_cooccurrence")
-
-        # Fallback
-        if not rules:
-            logger.warning("No domain rules matched. Creating fallback.")
-            rel = min(kg.relations, key=lambda relation: relation.name)
-            rules.append(LogicalRule(
-                rule_id="fallback_self",
-                body=[Atom(rel, (x, y))],
-                head=Atom(rel, (x, y)),
-                confidence=0.5
-            ))
-        
-        logger.info(f"Total rules: {len(rules)}")
-        return rules
+        """Generate unconditional priors and supported motifs for the exact vocabulary."""
+        generator = RuleGenerator(kg)
+        return (generator.generate_relation_priors() +
+                generator.generate_simple_rules(min_support=1) +
+                generator.generate_symmetry_rules(min_support=1))
 
 
 def create_bootstrapper(triple_source: TripleSource, model_store: ModelStore) -> KnowledgeBootstrapper:

@@ -84,6 +84,7 @@ class RuleType(Enum):
     EQUALITY = "equality"  # Equality rules
     TRANSITIVITY = "transitivity"  # Transitive rules
     SYMMETRY = "symmetry"  # Symmetric rules
+    PRIOR = "prior"  # Unconditional relation prior
     GENERAL = "general"  # General first-order rules
 
 
@@ -102,8 +103,8 @@ class LogicalRule:
     
     def __post_init__(self):
         """Validate rule structure"""
-        if not self.body:
-            raise ValueError("Rule body cannot be empty")
+        if not self.body and self.rule_type != RuleType.PRIOR:
+            raise ValueError("Only relation prior rules may have an empty body")
         
         if not isinstance(self.head, Atom):
             raise ValueError("Rule head must be an Atom")
@@ -116,7 +117,7 @@ class LogicalRule:
         head_vars = self.head.get_variables()
         
         # All head variables should appear in body
-        if not head_vars.issubset(body_vars):
+        if self.rule_type != RuleType.PRIOR and not head_vars.issubset(body_vars):
             logger.warning(f"Rule {self.rule_id}: Head variables not in body")
     
     def get_all_variables(self) -> Set[Variable]:
@@ -139,13 +140,13 @@ class LogicalRule:
         Generate ground rules by substituting variables with entities
         """
         ground_rules = []
-        entities = list(kg.entities)
+        entities = sorted(kg.entities, key=lambda entity: entity.name)
         
         if not entities:
             return ground_rules
         
         # Get all variables that need to be substituted
-        variables = list(self.get_all_variables())
+        variables = sorted(self.get_all_variables(), key=lambda variable: variable.name)
         
         if not variables:
             # Already ground rule
@@ -294,8 +295,8 @@ class GroundRule:
     
     def __post_init__(self):
         """Validate ground rule"""
-        if not self.body_facts:
-            raise ValueError("Ground rule body cannot be empty")
+        if not self.body_facts and self.parent_rule.rule_type != RuleType.PRIOR:
+            raise ValueError("Only relation prior ground rules may have an empty body")
         
         if not isinstance(self.head_fact, Triple):
             raise ValueError("Ground rule head must be a Triple")
@@ -353,82 +354,70 @@ class GroundRule:
 
 
 class RuleGenerator:
-    """Generate logical rules from knowledge graph patterns"""
-    
+    """Mine rules from observed facts, never from vacuously true implications."""
+
     def __init__(self, kg: KnowledgeGraph):
         self.kg = kg
-    
-    def generate_simple_rules(self, min_support: int = 2, 
-                            max_rule_length: int = 3) -> List[LogicalRule]:
-        """
-        Generate simple logical rules from knowledge graph patterns
-        """
+        self.facts = {(f.head.name, f.relation.name, f.tail.name)
+                      for f in kg.known_facts | kg.unknown_facts}
+        self.relations = {r.name: r for r in kg.relations}
+
+    @staticmethod
+    def _id(kind, names):
+        import hashlib
+        import json
+        return kind + "_" + hashlib.sha256(json.dumps(names, ensure_ascii=False).encode()).hexdigest()
+
+    def generate_relation_priors(self):
+        """Every relation gets a non-tautological prior, independent of mined motifs."""
+        x, y = Variable("x"), Variable("y")
+        possible = max(1, len(self.kg.entities) ** 2)
         rules = []
-        
-        # Generate  transitivity rules: R1(x,y) ∧ R2(y,z) ⇒ R3(x,z)
-        relations = list(self.kg.relations)
-        
-        for r1, r2, r3 in itertools.combinations_with_replacement(relations, 3):
-            if r1 == r2 == r3:  # Skip trivial cases
-                continue
-            
-            # Create variables
-            x, y, z = Variable('x'), Variable('y'), Variable('z')
-            
-            # Create atoms
-            atom1 = Atom(predicate=r1, arguments=(x, y))
-            atom2 = Atom(predicate=r2, arguments=(y, z))
-            head_atom = Atom(predicate=r3, arguments=(x, z))
-            
-            rule = LogicalRule(
-                rule_id=f"trans_{r1.name}_{r2.name}_{r3.name}",
-                body=[atom1, atom2],
-                head=head_atom,
-                rule_type=RuleType.TRANSITIVITY,
-                confidence=0.5  # Will be learned
-            )
-            
-            # Check support by grounding rule
-            ground_rules = rule.generate_ground_rules(self.kg, max_groundings=100)
-            
-            # Count supporting instances
-            support_count = sum(1 for gr in ground_rules 
-                              if gr.evaluate_truth_value(self.kg))
-            
-            if support_count >= min_support:
-                rule.support = support_count
-                rules.append(rule)
-        
-        logger.info(f"Generated {len(rules)} rules with min support {min_support}")
+        for name, relation in sorted(self.relations.items()):
+            support = sum(1 for _, r, _ in self.facts if r == name)
+            rules.append(LogicalRule(
+                self._id("prior", [name]), [], Atom(relation, (x, y)),
+                rule_type=RuleType.PRIOR, confidence=support / possible, support=support))
         return rules
-    
-    def generate_symmetry_rules(self, min_support: int = 2) -> List[LogicalRule]:
-        """Generate symmetry rules: R(x,y) ⇒ R(y,x)"""
+
+    def generate_simple_rules(self, min_support=2, max_rule_length=3):
+        """Count complete observed two-edge joins and their observed conclusions."""
+        from collections import defaultdict
+        outgoing = defaultdict(list)
+        conclusions = defaultdict(set)
+        for u, r, v in sorted(self.facts):
+            outgoing[u].append((r, v))
+            conclusions[(u, v)].add(r)
+        bodies = defaultdict(set)
+        supports = defaultdict(set)
+        for u, r1, v in sorted(self.facts):
+            for r2, w in outgoing[v]:
+                bodies[(r1, r2)].add((u, v, w))
+                for r3 in conclusions[(u, w)]:
+                    supports[(r1, r2, r3)].add((u, v, w))
+        x, y, z = Variable("x"), Variable("y"), Variable("z")
         rules = []
-        
-        for relation in self.kg.relations:
-            x, y = Variable('x'), Variable('y')
-            
-            body_atom = Atom(predicate=relation, arguments=(x, y))
-            head_atom = Atom(predicate=relation, arguments=(y, x))
-            
-            rule = LogicalRule(
-                rule_id=f"sym_{relation.name}",
-                body=[body_atom],
-                head=head_atom,
-                rule_type=RuleType.SYMMETRY,
-                confidence=0.5
-            )
-            
-            # Check support
-            ground_rules = rule.generate_ground_rules(self.kg, max_groundings=100)
-            support_count = sum(1 for gr in ground_rules 
-                              if gr.evaluate_truth_value(self.kg))
-            
-            if support_count >= min_support:
-                rule.support = support_count
-                rules.append(rule)
-        
+        for names, instances in sorted(supports.items()):
+            if len(instances) < min_support:
+                continue
+            r1, r2, r3 = (self.relations[name] for name in names)
+            rules.append(LogicalRule(
+                self._id("chain", names), [Atom(r1, (x, y)), Atom(r2, (y, z))],
+                Atom(r3, (x, z)), rule_type=RuleType.TRANSITIVITY,
+                confidence=len(instances) / len(bodies[names[:2]]), support=len(instances)))
+        return rules
+
+    def generate_symmetry_rules(self, min_support=2):
+        x, y = Variable("x"), Variable("y")
+        rules = []
+        for name, relation in sorted(self.relations.items()):
+            pairs = {(u, v) for u, r, v in self.facts if r == name and u != v}
+            support = sum(1 for u, v in pairs if (v, u) in pairs)
+            if support >= min_support:
+                rules.append(LogicalRule(
+                    self._id("symmetry", [name]), [Atom(relation, (x, y))],
+                    Atom(relation, (y, x)), rule_type=RuleType.SYMMETRY,
+                    confidence=support / len(pairs), support=support))
         return rules
 
 

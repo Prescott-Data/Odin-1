@@ -176,6 +176,11 @@ def test_failed_retraining_preserves_complete_serving_state(failure_stage):
     backend = TrainingBackend()
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()

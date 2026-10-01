@@ -388,6 +388,11 @@ def test_rule_generation_change_is_staleness_not_corruption():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
@@ -421,6 +426,11 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
     with patch.object(store, "load", side_effect=change_graph), \
          patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
@@ -438,6 +448,11 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
@@ -461,6 +476,11 @@ def test_bootstrap_propagates_store_errors(error, operation):
     with patch.object(store, operation, side_effect=error("failure")), \
          patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
@@ -474,6 +494,11 @@ def test_force_retrain_uses_revision_read_before_training():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
@@ -555,6 +580,11 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(kg, rules, config):
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
         create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()

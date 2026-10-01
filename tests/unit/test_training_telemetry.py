@@ -98,6 +98,11 @@ class TestBootstrapResultThreading:
         with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as trainer:
             model = create_model.return_value
+            def initialize(kg, rules, config):
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
             model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             trainer.return_value.train.return_value = make_training_result(converged=False)
@@ -109,7 +114,7 @@ class TestBootstrapResultThreading:
         assert result.model is not None
         assert result.report == trained.report
         assert result.report.converged is False
-        assert model.mln.rule_weights.item() == 0.5
+        assert torch.all(model.mln.rule_weights == 0.5)
         assert source.calls == 2
         assert store.saves == 1
 
@@ -130,6 +135,11 @@ class TestBootstrapResultThreading:
         with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
+            def initialize(kg, rules, config):
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
             model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
@@ -156,6 +166,11 @@ class TestBootstrapResultThreading:
              patch("npll.bootstrap.create_trainer") as create_trainer_mock, \
              caplog.at_level(logging.WARNING, logger="npll.bootstrap"):
             model = create_model.return_value
+            def initialize(kg, rules, config):
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
             model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
