@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
 from retrieval.backends.base import (
-    ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelStore, StoredModel,
+    ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelConflictError, ModelStore, StoredModel,
     TrainingSnapshot, TripleSource, validate_model_artifact,
 )
 
@@ -166,9 +166,21 @@ class KnowledgeBootstrapper:
         
         # Train new model
         logger.info("Training new NPLL model...")
-        model, report = self._train_and_save_weights(
-            snapshot, stored.revision if stored is not None else None,
-        )
+        try:
+            model, report = self._train_and_save_weights(
+                snapshot, stored.revision if stored is not None else None,
+            )
+        except ModelConflictError:
+            if force_retrain:
+                raise
+            winner = self.model_store.load(MODEL_KEY)
+            if winner is not None:
+                validate_model_artifact(winner.document)
+            model, report = self._load_model_with_weights(snapshot, winner)
+            if model is None:
+                raise ModelConflictError("Concurrent model does not match the training contract")
+            return BootstrapResult(model=model, source="cached_weights",
+                                   data_hash=current_hash, report=report)
         source = "trained" if model else "failed"
         return BootstrapResult(model=model, source=source, data_hash=current_hash, report=report)
 

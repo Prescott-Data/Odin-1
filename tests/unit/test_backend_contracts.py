@@ -1,6 +1,7 @@
 """Regression tests for snapshot identity and complete, atomic persistence."""
 
 from dataclasses import FrozenInstanceError, replace
+from copy import deepcopy
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +21,7 @@ from retrieval.backends.base import (
     BackendIOError,
     CorruptModelError,
     ModelConflictError,
+    StoredModel,
     TrainingSnapshot,
     validate_model_artifact,
 )
@@ -539,3 +541,26 @@ def test_signal_errors_are_not_cached_as_absence():
     assert accessor.is_bridge("Records/a") is None
     assert accessor.get_affinity("a", "b") == 0.0
     assert len(db.queries) == 2
+
+
+def test_first_boot_conflict_reloads_only_a_matching_winner():
+    source = MemorySource([("A", "r", "B")])
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(source, store)
+    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        winner = bootstrap.ensure_model_ready()
+        saved = store.load(MODEL_KEY)
+        with patch.object(store, "load", side_effect=[None, saved]), \
+             patch.object(store, "save", side_effect=ModelConflictError("raced")):
+            result = bootstrap.ensure_model_ready()
+        assert result.source == "cached_weights"
+        assert result.data_hash == winner.data_hash
+        stale = deepcopy(saved.document)
+        stale["data_hash"] = "b" * 64
+        with patch.object(store, "load", side_effect=[None, StoredModel(stale, "2")]), \
+             patch.object(store, "save", side_effect=ModelConflictError("raced")):
+            with pytest.raises(ModelConflictError, match="training contract"):
+                bootstrap.ensure_model_ready()
