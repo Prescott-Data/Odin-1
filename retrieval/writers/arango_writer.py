@@ -2,27 +2,45 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 
 from .base import PersistenceWriter
+from retrieval.backends.arango import ArangoGraphConfig
+from retrieval.backends.base import BackendConfigurationError, BackendIOError
+from retrieval.evidence import clean_evidence
+
 
 class ArangoWriter(PersistenceWriter):
-    """
-    Implementation of the PersistenceWriter protocol for ArangoDB.
-    """
-    def __init__(self, arango_client, database: str, persist_threshold: float = 0.8):
-        self.client = arango_client
-        self.db = self.client.db(database)
+    """Persist links through a connected database and explicit field mappings."""
+
+    def __init__(self, db, graph: ArangoGraphConfig, *, confidence_field: str,
+                 metadata_field: str, persist_threshold: float = 0.8):
+        fields = (confidence_field, metadata_field)
+        if any(not isinstance(field, str) or not field for field in fields):
+            raise BackendConfigurationError("Writer confidence and metadata fields are required")
+        reserved = {"_from", "_to", "_id", "_key", "_rev", graph.relation_field}
+        if len(set(fields)) != len(fields) or any(field in reserved for field in fields):
+            raise BackendConfigurationError("Writer fields must be distinct from graph identities")
+        self.db = db
+        self.graph = graph
+        self.confidence_field = confidence_field
+        self.metadata_field = metadata_field
         self.persist_threshold = persist_threshold
 
-    def maybe_write_link(self, src_entity: str, rel: str, dst_entity: str, confidence: float, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    def maybe_write_link(self, src_entity: str, rel: str, dst_entity: str,
+                         confidence: float, metadata: Optional[Dict[str, Any]] = None) -> bool:
         if confidence < self.persist_threshold:
             return False
-        
-        edges = self.db.collection('kg_edges')
-        doc = {
-            '_from': f'entities/{src_entity}',
-            '_to': f'entities/{dst_entity}',
-            'relation': rel,
-            'confidence': float(confidence),
-            'metadata': metadata or {},
-        }
-        edges.insert(doc)
+        if any(not isinstance(value, str) or "/" not in value or
+               not all(value.split("/", 1)) for value in (src_entity, dst_entity)):
+            raise BackendConfigurationError("Writer endpoints must be full Arango document IDs")
+        if not isinstance(rel, str) or not rel:
+            raise BackendConfigurationError("Writer relation must be a non-empty string")
+        document = clean_evidence({
+            "_from": src_entity, "_to": dst_entity,
+            self.graph.relation_field: rel,
+            self.confidence_field: float(confidence),
+            self.metadata_field: metadata or {},
+        })
+        try:
+            self.db.collection(self.graph.edge_collection).insert(document)
+        except Exception as exc:
+            raise BackendIOError("Could not persist configured Arango link") from exc
         return True
