@@ -74,10 +74,6 @@ class OdinEngine:
         )
         self.accessor = CachedGraphAccessor(base_accessor, cache_size=cache_size)
         
-        # Global accessor for cross-community queries
-        global_accessor = getattr(self.backend, "global_accessor", None)
-        self.global_accessor = global_accessor() if callable(global_accessor) else None
-        
         # 2. Load/Train NPLL Model
         self.npll_model: Optional[NPLLModel] = None
         self.training_report: Optional[TrainingReport] = None

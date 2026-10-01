@@ -71,7 +71,7 @@ def test_retrieval_only_backend_initializes_when_training_is_disabled():
 
     assert backend.accessor_calls == [("fraud", "mapping")]
     assert engine.backend is backend
-    assert engine.global_accessor is None
+    assert not hasattr(engine, "global_accessor")
     assert engine.has_npll is False
 
 
