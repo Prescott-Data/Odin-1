@@ -17,12 +17,21 @@ class EdgeView(NamedTuple):
     calibration: Optional[float]
     sources: List[str]             # source IDs from configured inline/provenance mappings
     assertion: Dict[str, Any]
+    timestamp: Optional[str] = None
 
 
 def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
-    return {**edge.assertion, "_id": edge.edge_id, "u": node,
-            "rel": edge.relation, "v": edge.neighbor_id, "weight": edge.weight,
-            "provenance": {"assertion": edge.assertion, "sources": edge.sources}}
+    from .evidence import exclude_vectors
+    assertion, excluded = exclude_vectors(edge.assertion, "provenance.assertion")
+    return {"_id": edge.edge_id, "u": node, "rel": edge.relation,
+            "v": edge.neighbor_id, "weight": edge.weight,
+            "created_at": edge.timestamp, "valid_from": edge.valid_from,
+            "valid_to": edge.valid_to, "status": edge.status,
+            "source_confidence": edge.raw_confidence,
+            "npll_posterior": edge.npll_posterior, "calibration": edge.calibration,
+            "provenance": {"assertion": assertion, "sources": edge.sources},
+            "excluded_vector_fields": excluded}
+
 
 
 class ArangoCommunityAccessor(GraphAccessor):
@@ -53,6 +62,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         edge_valid_from_property: Optional[str] = None,
         edge_valid_to_property: Optional[str] = None,
         edge_status_property: Optional[str] = None,
+        allowed_edge_statuses: Optional[List[str]] = None,
         # Community scoping (mapping mode by default)
         community_mode: str = "none",  # "none" | "mapping" | "property"
         community_property: Optional[str] = None,
@@ -148,6 +158,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         self.ts_prop = edge_timestamp_property
         self.edge_valid_from_prop = edge_valid_from_property
         self.edge_valid_to_prop = edge_valid_to_property
+        self.allowed_edge_statuses = allowed_edge_statuses
         self.edge_status_prop = edge_status_property
 
         self.community_mode = community_mode
@@ -285,8 +296,9 @@ class ArangoCommunityAccessor(GraphAccessor):
         # Build the provenance edges clause safely (avoid nested f-strings)
         prov_edges_clause = (
             f"""
-            FOR p IN {self.prov_edges_col}
+            FOR p IN @@provenance_edges
               FILTER p._from IN [e._from, e._to]
+              FILTER LENGTH(@provenance_targets) == 0 OR PARSE_IDENTIFIER(p._to).collection IN @provenance_targets
               RETURN p._to
             """
             if self.prov_edges_col else "[]"
@@ -962,21 +974,25 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["ts_prop"] = self.ts_prop
             filters.append("HAS(e, @ts_prop) AND e[@ts_prop] >= @start_ts AND e[@ts_prop] <= @end_ts")
 
-        # Current-only validity wrt as_of
-        if self.current_only and self.as_of:
+        # Validity fields are strictly opt-in; an active filter needs a mapping.
+        if self.current_only:
+            if not self.as_of or not (self.edge_valid_from_prop or self.edge_valid_to_prop):
+                raise ValueError("current_only requires as_of and a configured validity field")
             bind["as_of"] = self.as_of
-            vf_prop = self.edge_valid_from_prop or "valid_from"
-            vt_prop = self.edge_valid_to_prop or "valid_to"
-            filters.append(
-                f"( (HAS(e, '{vf_prop}') ? e['{vf_prop}'] <= @as_of : true) "
-                f"AND (HAS(e, '{vt_prop}') ? (e['{vt_prop}'] == null OR e['{vt_prop}'] >= @as_of) : true) )"
-            )
+            if self.edge_valid_from_prop:
+                bind["valid_from_field"] = self.edge_valid_from_prop
+                filters.append("(e[@valid_from_field] == null OR e[@valid_from_field] <= @as_of)")
+            if self.edge_valid_to_prop:
+                bind["valid_to_field"] = self.edge_valid_to_prop
+                filters.append("(e[@valid_to_field] == null OR e[@valid_to_field] >= @as_of)")
 
-        # Optional status guard
-        status_guard = ""
-        if self.edge_status_prop:
-            status_guard = "LET _status = e[@status_prop]"
-            bind["status_prop"] = self.edge_status_prop
+        # Mapping status exposes metadata. Filtering requires explicit allowed values.
+        if self.allowed_edge_statuses is not None:
+            if not self.edge_status_prop:
+                raise ValueError("allowed_edge_statuses requires edge_status_property")
+            bind["status_field"] = self.edge_status_prop
+            bind["allowed_statuses"] = self.allowed_edge_statuses
+            filters.append("e[@status_field] IN @allowed_statuses")
 
         # Recency decay: 2^(- age_days / half_life)
         recency_clause = "1.0"
@@ -1012,19 +1028,34 @@ class ArangoCommunityAccessor(GraphAccessor):
         # Build the src edges clause safely
         src_edges_clause = (
             f"""
-            FOR p IN {self.prov_edges_col}
+            FOR p IN @@provenance_edges
               FILTER p._from IN [e._from, e._to]
+              FILTER LENGTH(@provenance_targets) == 0 OR PARSE_IDENTIFIER(p._to).collection IN @provenance_targets
               RETURN p._to
             """
             if self.prov_edges_col else "[]"
         )
+
+        if self.prov_edges_col:
+            bind["@provenance_edges"] = self.prov_edges_col
+            bind["provenance_targets"] = self.prov_target_cols
+        expressions = {}
+        for name, field in (("vf", self.edge_valid_from_prop), ("vt", self.edge_valid_to_prop),
+                            ("status", self.edge_status_prop), ("timestamp", self.ts_prop),
+                            ("raw_confidence", self.edge_raw_conf_prop),
+                            ("npll_posterior", self.edge_npll_post_prop),
+                            ("calibration", self.edge_calibration_prop)):
+            expressions[name] = "null"
+            if field:
+                bind[f"meta_{name}"] = field
+                expressions[name] = f"e[@meta_{name}]"
+        bind["inline_provenance_fields"] = self.edge_prov_fields
 
         aql = f"""
         LET priors = @priors_map
         FOR v, e IN 1..1 {direction} @node {self.edges_col}
           {hint}
           FILTER {filters_str}
-          {status_guard}
           LET _rel = e[@rel_prop]
           LET _prior = TO_NUMBER(NOT_NULL(priors[_rel], 1.0))
           LET _base_w = {weight_clause}
@@ -1032,12 +1063,12 @@ class ArangoCommunityAccessor(GraphAccessor):
           LET _conf   = {conf_clause}
           LET _w_eff  = TO_NUMBER(_base_w) * TO_NUMBER(_prior) * TO_NUMBER(_rec) * TO_NUMBER(_conf)
 
-          LET _vf = {f"e['{self.edge_valid_from_prop}']" if self.edge_valid_from_prop else 'null'}
-          LET _vt = {f"e['{self.edge_valid_to_prop}']" if self.edge_valid_to_prop else 'null'}
-          LET _status2 = {f"e['{self.edge_status_prop}']" if self.edge_status_prop else 'null'}
+          LET _vf = {expressions["vf"]}
+          LET _vt = {expressions["vt"]}
+          LET _status2 = {expressions["status"]}
 
           // Provenance: configured inline fields and provenance edges for both endpoints
-          LET _src_inline_candidates = [{", ".join([f"e['{f}']" for f in self.edge_prov_fields])}]
+          LET _src_inline_candidates = (FOR field IN @inline_provenance_fields RETURN e[field])
           LET _src_inline = (
             FOR x IN _src_inline_candidates
               FILTER x != null
@@ -1053,12 +1084,13 @@ class ArangoCommunityAccessor(GraphAccessor):
             rel: _rel,
             weight: _w_eff,
             edge_id: e._id,
+            timestamp: {expressions["timestamp"]},
             valid_from: _vf,
             valid_to: _vt,
             status: _status2,
-            raw_confidence: {f"e['{self.edge_raw_conf_prop}']" if self.edge_raw_conf_prop else 'null'},
-            npll_posterior: {f"e['{self.edge_npll_post_prop}']" if self.edge_npll_post_prop else 'null'},
-            calibration: {f"e['{self.edge_calibration_prop}']" if self.edge_calibration_prop else 'null'},
+            raw_confidence: {expressions["raw_confidence"]},
+            npll_posterior: {expressions["npll_posterior"]},
+            calibration: {expressions["calibration"]},
             sources: _sources,
             assertion: e
           }}
@@ -1087,6 +1119,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                     calibration=d.get("calibration"),
                     sources=d.get("sources") or [],
                     assertion=d["assertion"],
+                    timestamp=d.get("timestamp"),
                 )
             else:
                 yield d["v_id"], d["rel"], float(d["weight"])

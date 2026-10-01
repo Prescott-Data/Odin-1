@@ -427,7 +427,7 @@ class RetrievalOrchestrator:
                 rel = e.get("rel") or e.get("relation") or e.get("relationship")
 
                 # Timestamp: prefer provided; else ts_lookup fallback (seconds)
-                ts = e.get("created_at", e.get("timestamp"))
+                ts = e.get("created_at")
                 if ts is None and self.ts_lookup and (u is not None and v is not None and rel is not None):
                     try:
                         ts_lookup_val = self.ts_lookup(u, str(rel), v)
@@ -437,11 +437,6 @@ class RetrievalOrchestrator:
 
                 # Provenance
                 prov = e.get("provenance")
-                if prov is None:
-                    # Common alternates
-                    doc_id = e.get("source_doc") or e.get("doc_id")
-                    if doc_id:
-                        prov = {"document_id": doc_id}
 
                 norm_edges.append(
                     {

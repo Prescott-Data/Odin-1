@@ -82,3 +82,41 @@ def test_parallel_assertions_and_long_tail_evidence_survive_scoring_and_normaliz
         assert edge["relation"] == "requires"
         assert edge["confidence"] == 0.37
         assert path["decomp"]["edge_confidences"] == [0.37]
+
+
+def test_arango_metadata_uses_only_mapped_fields_and_excludes_nested_vectors():
+    from retrieval.adapters_arango import EdgeView, edge_record
+    assertion = {"_id": "edges/a", "created_at": "unmapped", "timestamp": "unmapped",
+                 "source_doc": "unmapped", "embedding": [1, 2],
+                 "nested": [{"npll_embedding": [3], "text": "tail evidence"}],
+                 "predicate": "Submitted By", "observed_at": "2026-10-01"}
+    edge = EdgeView("nodes/b", "Submitted By", 1.0, "edges/a", None, None,
+                    None, None, None, None, [], assertion)
+    record = edge_record("nodes/a", edge)
+    assert record["created_at"] is None
+    assert "assertion" not in record
+    assert record["provenance"]["assertion"]["created_at"] == "unmapped"
+    assert record["provenance"]["assertion"]["nested"] == [{"text": "tail evidence"}]
+    assert record["excluded_vector_fields"] == ["provenance.assertion.embedding",
+                                                "provenance.assertion.nested[0].npll_embedding"]
+    mapped = edge_record("nodes/a", edge._replace(timestamp="2026-10-01"))
+    mapped["confidence"] = 0.4
+    normalized = RetrievalOrchestrator(object())._normalize_paths_for_aggregators(
+        [{"edges": [mapped]}])[0]["edges"][0]
+    assert normalized["created_at"] == "2026-10-01"
+    assert normalized["relation"] == "Submitted By"
+
+
+def test_arango_validity_filter_never_guesses_fields():
+    import pytest
+    from retrieval.adapters_arango import ArangoCommunityAccessor
+    from tests.utils.backend_fakes import FakeArango
+    db = FakeArango()
+    args = dict(community_id="global", nodes_collection="Nodes", edges_collection="Edges",
+                relation_property="predicate", current_only=True, as_of="2026-10-01")
+    with pytest.raises(ValueError, match="configured validity"):
+        list(ArangoCommunityAccessor(db, **args).iter_out("Nodes/a"))
+    accessor = ArangoCommunityAccessor(db, edge_valid_from_property="starts' at", **args)
+    list(accessor.iter_out("Nodes/a"))
+    assert "starts' at" not in db.queries[-1]
+    assert db.query_arguments[-1]["bind_vars"]["valid_from_field"] == "starts' at"
