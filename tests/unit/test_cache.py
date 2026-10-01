@@ -183,3 +183,16 @@ class TestCachedGraphAccessor:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_ppr_and_beam_share_one_complete_assertion_fetch():
+    base = MockAccessor()
+    cached = CachedGraphAccessor(base, cache_size=2)
+    triples = list(cached.iter_out("A"))
+    edges = list(cached.iter_out_edges("A"))
+    assert base.out_calls == 1
+    assert [(e["v"], e["rel"], e["weight"]) for e in edges] == triples
+    cached.clear_cache()
+    assert list(cached.iter_out_edges("A")) == edges
+    assert list(cached.iter_out("A")) == triples
+    assert base.out_calls == 2

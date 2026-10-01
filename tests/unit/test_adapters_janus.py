@@ -69,8 +69,9 @@ class _FakeTraversal:
     # terminals --------------------------------------------------------------
     def _out_rows(self):
         return [
-            {"neighbor": d, "rel": r, "weight": w if w is not None else 1.0}
-            for s, r, d, w in self.edges if s == self.node
+            {"id": index, "neighbor": d, "rel": r,
+             "weight": w if w is not None else 1.0, "properties": {"weight": w}}
+            for index, (s, r, d, w) in enumerate(self.edges) if s == self.node
         ]
 
     def _in_rows(self):

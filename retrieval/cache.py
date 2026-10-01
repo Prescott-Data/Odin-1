@@ -39,7 +39,6 @@ class CachedGraphAccessor:
         self.cache_size = cache_size
         
         # LRU caches for outbound and inbound neighbors
-        self._out_cache: OrderedDict[NodeId, List[Tuple[NodeId, RelId, float]]] = OrderedDict()
         self._in_cache: OrderedDict[NodeId, List[Tuple[NodeId, RelId, float]]] = OrderedDict()
         self._out_edge_cache: OrderedDict[NodeId, List[Dict[str, object]]] = OrderedDict()
         
@@ -48,24 +47,10 @@ class CachedGraphAccessor:
         self._misses = 0
     
     def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """Get outbound neighbors with caching."""
-        if node in self._out_cache:
-            # Cache hit - move to end (LRU)
-            self._out_cache.move_to_end(node)
-            self._hits += 1
-            return iter(self._out_cache[node])
-        
-        # Cache miss - fetch from base accessor
-        self._misses += 1
-        neighbors = list(self.base.iter_out(node))
-        
-        # Store in cache with LRU eviction
-        if len(self._out_cache) >= self.cache_size:
-            self._out_cache.popitem(last=False)  # Remove oldest
-        self._out_cache[node] = neighbors
-        
-        return iter(neighbors)
-    
+        """Project PPR triples from the same cached assertions used by beam search."""
+        return ((edge["v"], edge["rel"], float(edge["weight"]))
+                for edge in self.iter_out_edges(node))
+
     def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         """Get inbound neighbors with caching."""
         if node in self._in_cache:
@@ -116,7 +101,6 @@ class CachedGraphAccessor:
     
     def clear_cache(self):
         """Clear all caches. Useful for memory management or testing."""
-        self._out_cache.clear()
         self._in_cache.clear()
         self._out_edge_cache.clear()
         self._hits = 0
@@ -137,11 +121,11 @@ class CachedGraphAccessor:
             "misses": self._misses,
             "total_requests": total,
             "hit_rate": hit_rate,
-            "out_cache_size": len(self._out_cache),
+            "out_cache_size": len(self._out_edge_cache),
             "out_edge_cache_size": len(self._out_edge_cache),
             "in_cache_size": len(self._in_cache),
             "max_cache_size": self.cache_size,
-            "out_cache_utilization": len(self._out_cache) / self.cache_size,
+            "out_cache_utilization": len(self._out_edge_cache) / self.cache_size,
             "in_cache_utilization": len(self._in_cache) / self.cache_size,
         }
     
@@ -156,11 +140,7 @@ class CachedGraphAccessor:
         """
         if direction == "out":
             for node in nodes:
-                if node not in self._out_cache:
-                    neighbors = list(self.base.iter_out(node))
-                    if len(self._out_cache) >= self.cache_size:
-                        self._out_cache.popitem(last=False)
-                    self._out_cache[node] = neighbors
+                list(self.iter_out_edges(node))
         elif direction == "in":
             for node in nodes:
                 if node not in self._in_cache:
