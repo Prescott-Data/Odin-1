@@ -105,6 +105,9 @@ class CachedGraphAccessor:
         self._out_edge_cache.clear()
         self._hits = 0
         self._misses = 0
+        clear = getattr(self.base, "clear_cache", None)
+        if callable(clear):
+            clear()
     
     def cache_stats(self) -> dict:
         """

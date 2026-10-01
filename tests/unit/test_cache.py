@@ -196,3 +196,11 @@ def test_ppr_and_beam_share_one_complete_assertion_fetch():
     assert list(cached.iter_out_edges("A")) == edges
     assert list(cached.iter_out("A")) == triples
     assert base.out_calls == 2
+
+
+def test_clear_cache_invalidates_underlying_signal_caches():
+    from unittest.mock import Mock
+    base = Mock()
+    accessor = CachedGraphAccessor(base)
+    accessor.clear_cache()
+    base.clear_cache.assert_called_once_with()
