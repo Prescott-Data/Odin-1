@@ -26,21 +26,21 @@ Duplicates are retained. SHA-256 covers the UTF-8 JSON serialization of these
 exact tuples (`ensure_ascii=False`, compact separators). There is no separate
 fingerprint query, count-based identity, or second extraction during bootstrap.
 Two sources returning the same triples get the same fingerprint, irrespective
-of database or iteration order. Database/community identity belongs to the
+of database or iteration order. Backend training scope belongs to the
 store namespace, not the training-data digest.
 
 Arango extracts relationship and type triples in one AQL query. Entity IDs are
 full `_id` strings, matching retrieval. Relationship labels preserve case and
 spaces; missing or non-string labels fail extraction. Type triples are
 `(entity._id, "has_type", entity.type)`, with a string type value. Dangling
-relationships are excluded, as in the previous extractor. Training continues
-to use the global `ExtractedEntities` / `ExtractedRelationships` graph;
+relationships are excluded, as in the previous extractor. Training uses the globally configured node and edge collections;
 training is global even when retrieval is scoped to a community.
 
 This intentionally replaces the old bare-key/lowercased training identities.
 Existing weights must be retrained; there is no compatibility lookup.
-The pre-existing generic self-rule is selected by the minimum relation name
-so that reloading cannot attach its weight to an arbitrary set iteration result.
+Rules contain unconditional relation priors plus chains and symmetry supported by
+observed facts. False premises do not count as support. Exact relation names,
+ordered joins, and deterministic rule IDs are preserved for arbitrary vocabularies.
 
 ## Model artifacts and concurrency
 
@@ -48,22 +48,24 @@ so that reloading cannot attach its weight to an arbitrary set iteration result.
 when absent. `save(key, document, expected_revision=...)` returns the new opaque
 revision. A `None` expected revision means create only. An existing revision
 means replace only if the artifact has not changed. Bootstrap reads this token
-before training, including forced retraining. It does not retry a rejected save.
+before training, including forced retraining. It does not retry a rejected save. Startup may reload a fully matching winner;
+forced retraining still propagates conflicts.
 
-The Arango namespace is the canonical JSON array of database name, entity
-collection, relationship collection, community ID, and community mode. The
-storage key hashes `[namespace, logical_model_key]`; both original values are
-also stored and checked on load. Two communities cannot overwrite each other's
-artifacts even though training currently reads the global graph.
+The Arango namespace is the canonical JSON array of database name, global training
+scope, node collection, edge collection, relation field, and entity type field.
+The storage key hashes `[namespace, logical_model_key]`; both values are checked
+on load. Retrieval communities share this global artifact.
 
 The envelope contains `namespace`, `model_key`, and the complete `artifact`,
 alongside Arango `_key` / `_rev` metadata. Create uses non-overwriting insert.
 Update uses document replacement with `_rev` and `check_rev=True`, so removed
 nested fields are actually removed and competing writers cannot silently win.
 
-Artifact version `3.0` requires:
+Artifact version `6.0` requires:
 
 - `model_type`, `storage_type`, `trained_at`, `data_hash`, and `version`;
+- `inference_state` with the complete config, seed, scorer recipe, runtime version,
+  example count, full loss history, and explicitly excluded embedding paths;
 - all `rule_weights` and ordered `rules` (ID, text, confidence);
 - `schema_snapshot` with entity, relation, and fact counts and every relation name;
 - a complete `training_report`, including both iteration histories and convergence criteria.
@@ -104,9 +106,16 @@ Live checks in `tests/integration/test_arango_backend_live.py` create a disposab
 database and verify AQL identity, actual revision conflicts, complete artifact
 round-trip, and real training followed by reload and scoring.
 
-The persistence contract covers the existing weights-only artifact. It does
-not assert identical neural scores after rebuilding a fresh model: embeddings
-and scoring-network parameters are not persisted by the existing design.
+The neural scorer learns observed triples against deterministic unobserved
+corruptions, including relation-conditioned scores. Such corruptions are training
+examples, not proof that a relationship is false. Learned edge confidence is not
+source truth or a calibrated probability. The E-M loop separately learns MLN rule
+weights. Its convergence report describes that loop, not scorer calibration.
+
+Internal embeddings are excluded from persistence. Reload replays the complete
+scorer training recipe on the same snapshot, verifies its loss history, and applies
+the saved rule weights. Replay incurs computation at startup. Changes to the
+runtime, profile, or recipe invalidate reuse; malformed artifacts fail clearly.
 Cross-backend retrieval parity and Neo4j live tests are not established yet.
 
 Run the live tests with an account allowed to create databases:

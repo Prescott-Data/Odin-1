@@ -103,9 +103,12 @@ def model_artifact(relation_count=1, history_length=2):
     return {
         "version": ARTIFACT_VERSION,
         "model_type": "npll",
-        "storage_type": "deterministic_initialization",
+        "storage_type": "deterministic_training",
         "inference_state": {
             "config": {"temperature": 1.0}, "initialization_seed": 0,
+            "scorer_training": {"recipe": "observed-vs-corrupted-v1", "torch_version": "test",
+                                "loss_history": [0.5], "example_count": 2,
+                                "excluded_vector_fields": []},
         },
         "trained_at": "2026-09-21T00:00:00Z",
         "data_hash": "a" * 64,

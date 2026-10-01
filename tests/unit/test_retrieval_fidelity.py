@@ -49,7 +49,7 @@ def test_bootstrap_persists_small_deterministic_state_and_reloads_exact_scores()
     assert NPLLConfidence(trained.model).confidence_batch(source.triples) == \
         NPLLConfidence(reloaded.model).confidence_batch(source.triples)
     state = store.load("npll_current").document["inference_state"]
-    assert set(state) == {"config", "initialization_seed"}
+    assert set(state) == {"config", "initialization_seed", "scorer_training"}
 
 
 class ParallelAccessor:
@@ -120,3 +120,29 @@ def test_arango_validity_filter_never_guesses_fields():
     list(accessor.iter_out("Nodes/a"))
     assert "starts' at" not in db.queries[-1]
     assert db.query_arguments[-1]["bind_vars"]["valid_from_field"] == "starts' at"
+
+
+def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors():
+    from npll.bootstrap import create_snapshot_trained_model
+    triples = [("Records/a", "submitted_by", "Records/b"),
+               ("Records/b", "approved_by", "Records/a")]
+    snapshot = TrainingSnapshot(tuple(triples))
+    kg = load_knowledge_graph_from_triples(snapshot.triples)
+    rules = KnowledgeBootstrapper(MemorySource(), MemoryStore())._generate_smart_rules(kg)
+    config = NPLLConfig(entity_embedding_dim=8, relation_embedding_dim=8,
+                        scoring_hidden_dim=8, rule_embedding_dim=8, device="cpu")
+    initial = create_snapshot_initialized_model(snapshot, kg, rules, config)
+    model = create_snapshot_trained_model(snapshot, kg, rules, config)
+    scorer = NPLLConfidence(model)
+    positive = scorer.confidence("Records/a", "submitted_by", "Records/b")
+    negative = scorer.confidence("Records/a", "submitted_by", "Records/a")
+    assert positive > negative
+    assert positive != NPLLConfidence(initial).confidence(*triples[0])
+    losses = model.scorer_training["loss_history"]
+    assert len(losses) == config.scorer_epochs
+    assert losses[-1] < losses[0]
+    torch.manual_seed(1987)
+    replayed = create_snapshot_trained_model(snapshot, kg, rules, config)
+    assert replayed.scorer_training == model.scorer_training
+    assert NPLLConfidence(replayed).confidence_batch(triples) == scorer.confidence_batch(triples)
+    assert model.scorer_training["excluded_vector_fields"]

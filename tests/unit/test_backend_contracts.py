@@ -386,9 +386,12 @@ def test_rule_generation_change_is_staleness_not_corruption():
     source = MemorySource([("A", "r", "B")])
     store = MemoryStore()
     bootstrap = KnowledgeBootstrapper(source, store)
-    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -424,9 +427,12 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
         return None
 
     with patch.object(store, "load", side_effect=change_graph), \
-         patch("npll.bootstrap.create_initialized_npll_model") as create, \
+         patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -435,7 +441,7 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         result = bootstrap.ensure_model_ready()
-        kg = create.call_args.args[0]
+        kg = create.call_args.args[1]
     assert source.calls == 1
     assert result.data_hash == expected.data_hash
     assert {(t.head.name, t.relation.name, t.tail.name) for t in kg.known_facts} == set(expected.triples)
@@ -446,9 +452,12 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
     source = MemorySource([("A", "r%03d" % i, "B") for i in range(101)])
     store = MemoryStore()
     bootstrap = KnowledgeBootstrapper(source, store)
-    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -474,9 +483,12 @@ def test_bootstrap_propagates_store_errors(error, operation):
     store = MemoryStore()
     bootstrap = KnowledgeBootstrapper(MemorySource([("A", "r", "B")]), store)
     with patch.object(store, operation, side_effect=error("failure")), \
-         patch("npll.bootstrap.create_initialized_npll_model") as create, \
+         patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -492,9 +504,12 @@ def test_force_retrain_uses_revision_read_before_training():
     store = MemoryStore()
     source = MemorySource([("A", "r", "B")])
     bootstrap = KnowledgeBootstrapper(source, store)
-    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -578,9 +593,12 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
     source = MemorySource([("A", "r", "B")])
     store = MemoryStore()
     bootstrap = KnowledgeBootstrapper(source, store)
-    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value

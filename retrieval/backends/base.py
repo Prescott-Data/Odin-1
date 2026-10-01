@@ -12,7 +12,7 @@ from retrieval.adapters import GraphAccessor
 
 Triple = Tuple[str, str, str]
 MODEL_KEY = "npll_current"
-ARTIFACT_VERSION = "5.0"
+ARTIFACT_VERSION = "6.0"
 
 
 class BackendError(RuntimeError):
@@ -143,12 +143,23 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
     require(type(document) is dict and json_value(document), "Artifact must be finite JSON")
     require(document.get("version") == ARTIFACT_VERSION, "Unsupported model artifact version")
     require(document.get("model_type") == "npll" and
-            document.get("storage_type") == "deterministic_initialization", "Invalid model artifact type")
+            document.get("storage_type") == "deterministic_training", "Invalid model artifact type")
     state = document.get("inference_state")
     require(isinstance(state, dict), "Missing complete inference state")
     require(isinstance(state.get("config"), dict) and state["config"], "Invalid inference configuration")
     require(type(state.get("initialization_seed")) is int and state["initialization_seed"] >= 0,
             "Invalid deterministic initialization seed")
+    recipe = state.get("scorer_training")
+    require(isinstance(recipe, dict), "Missing scorer training evidence")
+    require(isinstance(recipe.get("recipe"), str) and bool(recipe["recipe"]), "Invalid scorer recipe")
+    require(isinstance(recipe.get("torch_version"), str), "Missing scorer runtime version")
+    require(isinstance(recipe.get("loss_history"), list) and bool(recipe["loss_history"]) and
+            all(number(v) for v in recipe["loss_history"]), "Incomplete scorer loss history")
+    require(count(recipe.get("example_count")) and recipe["example_count"] > 0,
+            "Invalid scorer example count")
+    require(isinstance(recipe.get("excluded_vector_fields"), list) and
+            all(isinstance(v, str) for v in recipe["excluded_vector_fields"]),
+            "Missing excluded vector paths")
     digest = document.get("data_hash")
     require(isinstance(digest, str) and len(digest) == 64 and
             all(c in "0123456789abcdef" for c in digest), "Invalid snapshot fingerprint")

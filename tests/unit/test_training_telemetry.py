@@ -95,10 +95,13 @@ class TestBootstrapResultThreading:
         source = MemorySource([("A", "r1", "B"), ("B", "r2", "C")])
         store = MemoryStore()
         bootstrapper = KnowledgeBootstrapper(source, store)
-        with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as trainer:
             model = create_model.return_value
-            def initialize(kg, rules, config):
+            def initialize(snapshot, kg, rules, config):
+                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model
@@ -132,10 +135,13 @@ class TestBootstrapResultThreading:
         )
         training_result = make_training_result(converged=False, convergence_epoch=None)
 
-        with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
-            def initialize(kg, rules, config):
+            def initialize(snapshot, kg, rules, config):
+                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model
@@ -162,11 +168,14 @@ class TestBootstrapResultThreading:
         )
         training_result = make_training_result(converged=False, convergence_epoch=None)
 
-        with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as create_trainer_mock, \
              caplog.at_level(logging.WARNING, logger="npll.bootstrap"):
             model = create_model.return_value
-            def initialize(kg, rules, config):
+            def initialize(snapshot, kg, rules, config):
+                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model

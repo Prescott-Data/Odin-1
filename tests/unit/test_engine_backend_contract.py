@@ -153,7 +153,7 @@ class TrainingBackend(RetrievalOnlyBackend):
 def test_exception_inside_trainer_fails_initialization_with_original_cause():
     backend = TrainingBackend()
     failure = RuntimeError("optimizer failed")
-    with patch("npll.bootstrap.create_initialized_npll_model"), \
+    with patch("npll.bootstrap.create_snapshot_trained_model"), \
          patch("npll.bootstrap.create_trainer") as trainer:
         trainer.return_value.train.side_effect = failure
         with pytest.raises(TrainingError) as raised:
@@ -174,9 +174,12 @@ def test_empty_training_graph_requires_explicit_retrieval_only_operation():
 @pytest.mark.parametrize("failure_stage", ["trainer", "empty_result", "serving_setup"])
 def test_failed_retraining_preserves_complete_serving_state(failure_stage):
     backend = TrainingBackend()
-    with patch("npll.bootstrap.create_initialized_npll_model") as create, \
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
-        def initialize(kg, rules, config):
+        def initialize(snapshot, kg, rules, config):
+            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value

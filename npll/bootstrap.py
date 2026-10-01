@@ -49,6 +49,73 @@ def create_snapshot_initialized_model(snapshot: TrainingSnapshot, kg: KnowledgeG
         return create_initialized_npll_model(kg, rules, config)
 
 
+SCORER_RECIPE = "observed-vs-corrupted-v1"
+
+
+def create_snapshot_trained_model(snapshot, kg, rules, config):
+    """Learn a scorer reproducibly; replay replaces persistence of internal vectors.
+
+    Negative examples are unobserved corruptions, not assertions of source falsity.
+    Every observed triple participates, in fixed order and complete batches.
+    """
+    if config.scorer_epochs <= 0 or config.scorer_learning_rate <= 0:
+        raise TrainingError("Scorer training requires positive epochs and learning rate")
+    devices = list(range(torch.cuda.device_count())) if config.device.startswith("cuda") else []
+    with torch.random.fork_rng(devices=devices):
+        torch.manual_seed(scoring_initialization_seed(snapshot))
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        facts = set(snapshot.triples)
+        entities = sorted({v for h, _, t in facts for v in (h, t)})
+        relations = sorted({r for _, r, _ in facts})
+        examples = []
+        labels = []
+        for h, r, t in snapshot.triples:
+            examples.append((h, r, t))
+            labels.append(1.0)
+            candidates = ((h, r, other) for other in entities)
+            negative = next((candidate for candidate in candidates if candidate not in facts), None)
+            if negative is None:
+                negative = next(((other, r, t) for other in entities
+                                 if (other, r, t) not in facts), None)
+            if negative is None:
+                negative = next(((h, other, t) for other in relations
+                                 if (h, other, t) not in facts), None)
+            if negative is not None:
+                examples.append(negative)
+                labels.append(0.0)
+        if not any(label == 0.0 for label in labels):
+            raise TrainingError("Snapshot has no unobserved corruptions for scorer training")
+        scorer = model.scoring_module
+        scorer.train()
+        optimizer = torch.optim.Adam(scorer.parameters(), lr=config.scorer_learning_rate)
+        device = next(scorer.parameters()).device
+        losses = []
+        for _ in range(config.scorer_epochs):
+            total = 0.0
+            for start in range(0, len(examples), config.batch_size):
+                batch = examples[start:start + config.batch_size]
+                targets = torch.tensor(labels[start:start + config.batch_size], device=device)
+                optimizer.zero_grad()
+                logits = scorer.forward_with_names([h for h, _, _ in batch],
+                                                   [r for _, r, _ in batch],
+                                                   [t for _, _, t in batch])
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, targets)
+                if not torch.isfinite(loss):
+                    raise TrainingError("Scorer training produced a non-finite loss")
+                loss.backward()
+                optimizer.step()
+                total += float(loss.detach()) * len(batch)
+            losses.append(total / len(examples))
+        scorer.eval()
+        scorer.requires_grad_(False)
+        model.scorer_training = {"recipe": SCORER_RECIPE, "torch_version": str(torch.__version__),
+                                 "loss_history": losses, "example_count": len(examples),
+                                 "excluded_vector_fields": [
+                                     "scoring_module.embedding_manager.entity_embeddings.embedding.weight",
+                                     "scoring_module.embedding_manager.relation_embeddings.embedding.weight"]}
+        return model
+
+
 class TrainingError(RuntimeError):
     """Requested NPLL training failed; callers must not serve substitute scores."""
 
@@ -211,7 +278,15 @@ class KnowledgeBootstrapper:
         config_data = {**inference_state["config"]}
         config_data["temperature"] = float(config_data["temperature"])
         config = NPLLConfig(**config_data)
-        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        if config_data != {**asdict(get_config("OdinTriples")),
+                           "temperature": float(get_config("OdinTriples").temperature)}:
+            return None, None
+        recipe = inference_state["scorer_training"]
+        if recipe["recipe"] != SCORER_RECIPE or recipe["torch_version"] != str(torch.__version__):
+            return None, None
+        model = create_snapshot_trained_model(snapshot, kg, rules, config)
+        if model.scorer_training != recipe:
+            raise CorruptModelError("Replayed scorer does not match its recorded training evidence")
         with torch.no_grad():
             model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
         logger.info("Model rebuilt with saved weights (trained: %s)", doc["trained_at"])
@@ -255,7 +330,7 @@ class KnowledgeBootstrapper:
         
         # 4. Initialize Model
         config = get_config("OdinTriples")
-        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        model = create_snapshot_trained_model(snapshot, kg, rules, config)
         
         # 5. Train
         train_config = TrainingConfig(
@@ -293,10 +368,11 @@ class KnowledgeBootstrapper:
                       report: TrainingReport, expected_revision: Optional[str]):
         doc = {
             "model_type": "npll",
-            "storage_type": "deterministic_initialization",
+            "storage_type": "deterministic_training",
             "inference_state": {
                 "config": {**asdict(model.config), "temperature": float(model.config.temperature)},
                 "initialization_seed": scoring_initialization_seed(snapshot),
+                "scorer_training": model.scorer_training,
             },
             "trained_at": report.trained_at,
             "data_hash": snapshot.data_hash,

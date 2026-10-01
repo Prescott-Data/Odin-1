@@ -84,6 +84,9 @@ class BilinearScoringFunction(nn.Module):
         Returns:
             scores: [batch_size] - g(l, eh, et) scores
         """
+        # Relation conditioning makes the same endpoints distinguishable by predicate.
+        head_embeddings = head_embeddings + relation_embeddings
+        tail_embeddings = tail_embeddings + relation_embeddings
         batch_size = head_embeddings.size(0)
         
         # Step 1: Compute bilinear term e^T_h W_R et

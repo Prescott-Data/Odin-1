@@ -8,13 +8,11 @@ The [NPLL](../concepts/npll.md) model is self-managing: it trains itself from yo
 
 ## The three phases
 
-```
-first run ──▶ train (2-5 min) ──▶ persist weights ──▶ ArangoDB
-                                                          │
-later runs ◀── rebuild (~30 s) ◀── load weights ◀────────┘
-```
-
-The **first run** does the heavy lifting. When you construct an `OdinEngine` and no model exists yet, `KnowledgeBootstrapper` extracts the graph's edge patterns and trains the model, usually in two to five minutes. Those learned weights are then **persisted** into an ArangoDB collection, so there are no `.pt` files to ship or mount. On every **subsequent run**, Odin loads the weights and rebuilds the model in about thirty seconds.
+The first startup trains the neural scorer against deterministic unobserved
+corruptions, then trains rule weights through E-M. It persists the complete training
+reports and scorer recipe. Later startups replay scorer training on the same
+snapshot and load the saved rule weights. Embedding vectors are not stored.
+Startup cost depends on graph size; replay is computation, not just a weight read.
 
 ## Controlling training at startup
 
@@ -91,12 +89,12 @@ ok = engine.retrain_model()   # returns True on success
     weights even if graph counts stay the same. A running engine does not watch
     for graph changes; call `retrain_model()` when it should learn a new snapshot.
 
-## Per-community models
+## Global training, scoped retrieval
 
-Model artifacts are namespaced by database, complete graph mapping, community
-ID, and community mode. Communities have separate stored artifacts. Training still
-reads the global graph; the community setting scopes
-retrieval, not the training snapshot:
+Arango reads the global configured graph for training. Retrieval communities share
+its model artifact. Node/edge collections, relation and type fields, database, and
+snapshot evidence determine model identity. Retrieval metadata mappings do not
+create additional copies:
 
 ```python
 from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
@@ -113,7 +111,7 @@ claims_backend = ArangoBackend(db, graph)
 supply_backend = ArangoBackend(db, graph)
 claims = OdinEngine(claims_backend, community_id="claims", community_mode="mapping")
 supply = OdinEngine(supply_backend, community_id="supply", community_mode="mapping")
-# Each trains or loads its own NPLL model on first use.
+# Both reuse the globally trained NPLL model.
 ```
 
 ## When things go wrong

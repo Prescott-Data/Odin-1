@@ -119,18 +119,20 @@ case and spaces. The fingerprint covers the extracted triples and entity types,
 so changing endpoints or types invalidates cached weights even when counts stay
 constant. Stored rules that differ from current generated rules trigger retraining.
 
-Artifacts live in `OdinModels`, namespaced by database, the complete graph
-mapping, community ID, and community mode. Old unscoped artifacts remain
-untouched and are not reused. Changing any mapping creates a distinct model
-namespace. Plan for training on the first startup after migration.
-Training still reads the global graph; community settings scope retrieval and
-artifact storage, not the training data.
+Artifacts live in `OdinModels`, namespaced by database and training collection/field
+mappings. Retrieval communities share the globally trained model. Changing bridge,
+affinity, timestamp, or retrieval scope settings does not duplicate it.
 
-Saves use revision-checked atomic replacement. Concurrent trainers can receive
-`ModelConflictError`; the engine does not silently overwrite the winning model.
-Artifacts preserve all relation names, rules, and training-report histories.
-The existing weights-only design does not persist embeddings or scoring-network
-parameters, so reloading does not guarantee identical neural scores.
+Saves use revision-checked atomic replacement. On a startup race, the losing worker
+loads the winner only after validating its snapshot, rules, configuration, and
+scorer recipe. Forced retraining conflicts still raise `ModelConflictError`.
+
+Artifact version `6.0` records the complete rule report and neural scorer training
+recipe, runtime version, example count, and loss history. Scorer parameters and
+internal embedding vectors are reconstructed by deterministic training replay;
+they are not persisted. Reload verifies replay evidence and preserves identical
+scores under the recorded runtime and configuration. Older artifacts fail the
+version boundary clearly and must be replaced through a deliberate migration.
 
 ## Choose training behavior explicitly
 
