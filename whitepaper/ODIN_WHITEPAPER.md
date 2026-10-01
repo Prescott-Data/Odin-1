@@ -407,11 +407,11 @@ graph = ArangoGraphConfig(
     relation_field="relation",
 )
 backend = ArangoBackend(db, graph)
-odin = OdinEngine(backend, community_id="healthcare")
+odin = OdinEngine(backend)
 
 # Use during agent exploration
 result = odin.retrieve(
-    seeds=["entity/patient_12345"],
+    seeds=["entities/patient_12345"],
     max_paths=50,
     hop_limit=3,
 )
