@@ -146,3 +146,13 @@ def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors(
     assert replayed.scorer_training == model.scorer_training
     assert NPLLConfidence(replayed).confidence_batch(triples) == scorer.confidence_batch(triples)
     assert model.scorer_training["excluded_vector_fields"]
+
+
+def test_vector_exemption_preserves_embedding_source_text_and_rejects_metadata_collisions():
+    import pytest
+    from retrieval.evidence import clean_evidence
+    assert clean_evidence({"embedding": "source description", "nested": {"embedding": [1, 2]}}) == {
+        "embedding": "source description", "nested": {},
+        "odin_excluded_vector_fields": ["nested.embedding"]}
+    with pytest.raises(ValueError, match="reserved"):
+        clean_evidence({"embedding": [1], "odin_excluded_vector_fields": "source evidence"})
