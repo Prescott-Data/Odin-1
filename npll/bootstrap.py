@@ -410,8 +410,8 @@ class KnowledgeBootstrapper:
         """Generate unconditional priors and supported motifs for the exact vocabulary."""
         generator = RuleGenerator(kg)
         return (generator.generate_relation_priors() +
-                generator.generate_simple_rules(min_support=1) +
-                generator.generate_symmetry_rules(min_support=1))
+                generator.generate_simple_rules(min_support=2, min_confidence=0.2) +
+                generator.generate_symmetry_rules(min_support=2, min_confidence=0.2))
 
 
 def create_bootstrapper(triple_source: TripleSource, model_store: ModelStore) -> KnowledgeBootstrapper:

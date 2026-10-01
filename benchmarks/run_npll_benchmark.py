@@ -54,8 +54,8 @@ def create_npll_model(kg: KnowledgeGraph, config: NPLLConfig) -> NPLLModel:
     # Generate rules from the knowledge graph
     logger.info("Generating logical rules...")
     generator = RuleGenerator(kg)
-    rules = (generator.generate_relation_priors() + generator.generate_simple_rules(min_support=1) +
-             generator.generate_symmetry_rules(min_support=1))
+    rules = (generator.generate_relation_priors() + generator.generate_simple_rules(min_support=2, min_confidence=0.2) +
+             generator.generate_symmetry_rules(min_support=2, min_confidence=0.2))
     snapshot = TrainingSnapshot(tuple((f.head.name, f.relation.name, f.tail.name)
                                      for f in kg.known_facts | kg.unknown_facts))
     observed = sorted(kg.known_facts, key=lambda f: (f.head.name, f.relation.name, f.tail.name))

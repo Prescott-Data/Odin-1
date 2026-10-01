@@ -411,40 +411,56 @@ class RuleGenerator:
                 rule_type=RuleType.PRIOR, confidence=support / possible, support=support))
         return rules
 
-    def generate_simple_rules(self, min_support=2, max_rule_length=3):
-        """Count complete observed two-edge joins and their observed conclusions."""
-        from collections import defaultdict
-        outgoing = defaultdict(list)
-        conclusions = defaultdict(set)
+    def generate_simple_rules(self, min_support=2, min_confidence=0.2, max_paths_per_node=1000):
+        """Stream sampled two-hop joins; bound hub work and retain no path sets.
+
+        Support and confidence describe the sampled join population. Sampling is
+        deterministic and uniform per middle node, not an alphabetical prefix.
+        """
+        if min_support < 1 or not 0 <= min_confidence <= 1 or max_paths_per_node < 1:
+            raise ValueError("Invalid rule mining thresholds")
+        incoming, outgoing, conclusions = defaultdict(list), defaultdict(list), defaultdict(set)
         for u, r, v in sorted(self.facts):
+            incoming[v].append((u, r))
             outgoing[u].append((r, v))
             conclusions[(u, v)].add(r)
-        bodies = defaultdict(set)
-        supports = defaultdict(set)
-        for u, r1, v in sorted(self.facts):
-            for r2, w in outgoing[v]:
-                bodies[(r1, r2)].add((u, v, w))
-                for r3 in conclusions[(u, w)]:
-                    supports[(r1, r2, r3)].add((u, v, w))
+        bodies, supports = defaultdict(int), defaultdict(int)
+        self.mining_report = {"possible_paths": 0, "sampled_paths": 0,
+                              "max_paths_per_node": max_paths_per_node,
+                              "min_support": min_support, "min_confidence": min_confidence}
+        for middle in sorted(set(incoming) & set(outgoing)):
+            left, right = incoming[middle], outgoing[middle]
+            possible = len(left) * len(right)
+            self.mining_report["possible_paths"] += possible
+            rng = random.Random(int(hashlib.sha256(middle.encode()).hexdigest()[:16], 16))
+            indices = sorted(rng.sample(range(possible), min(possible, max_paths_per_node)))
+            self.mining_report["sampled_paths"] += len(indices)
+            for index in indices:
+                u, r1 = left[index // len(right)]
+                r2, w = right[index % len(right)]
+                bodies[(r1, r2)] += 1
+                for r3 in conclusions.get((u, w), ()):
+                    supports[(r1, r2, r3)] += 1
         x, y, z = Variable("x"), Variable("y"), Variable("z")
         rules = []
-        for names, instances in sorted(supports.items()):
-            if len(instances) < min_support:
+        for names, support in sorted(supports.items()):
+            confidence = support / bodies[names[:2]]
+            if support < min_support or confidence < min_confidence:
                 continue
             r1, r2, r3 = (self.relations[name] for name in names)
             rules.append(LogicalRule(
                 self._id("chain", names), [Atom(r1, (x, y)), Atom(r2, (y, z))],
                 Atom(r3, (x, z)), rule_type=RuleType.TRANSITIVITY,
-                confidence=len(instances) / len(bodies[names[:2]]), support=len(instances)))
+                confidence=confidence, support=support))
         return rules
 
-    def generate_symmetry_rules(self, min_support=2):
+    def generate_symmetry_rules(self, min_support=2, min_confidence=0.2):
         x, y = Variable("x"), Variable("y")
         rules = []
         for name, relation in sorted(self.relations.items()):
             pairs = {(u, v) for u, r, v in self.facts if r == name and u != v}
             support = sum(1 for u, v in pairs if (v, u) in pairs)
-            if support >= min_support:
+            if support >= min_support and support / max(1, len(pairs)) >= min_confidence:
                 rules.append(LogicalRule(
                     self._id("symmetry", [name]), [Atom(relation, (x, y))],
                     Atom(relation, (y, x)), rule_type=RuleType.SYMMETRY,

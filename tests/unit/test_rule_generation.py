@@ -13,7 +13,7 @@ def test_arbitrary_vocabulary_has_non_tautological_priors_and_supported_chains()
     rules = KnowledgeBootstrapper(MemorySource(), MemoryStore())._generate_smart_rules(kg)
     assert {r.head.predicate.name for r in rules if r.rule_type == RuleType.PRIOR} == \
         {"submitted_by", "works for", "handled_by"}
-    chains = [r for r in rules if r.rule_type == RuleType.TRANSITIVITY]
+    chains = RuleGenerator(kg).generate_simple_rules(min_support=1)
     assert len(chains) == 1
     assert [a.predicate.name for a in chains[0].body] == ["submitted_by", "works for"]
     assert chains[0].head.predicate.name == "handled_by"
@@ -62,3 +62,19 @@ def test_groundings_include_observed_bodies_and_unbiased_prior_heads():
     assert sum(g.head_fact in kg.known_facts for g in grounded) == 120
     assert len({g.head_fact.head.name for g in grounded}) > 120
     assert [str(g) for g in groundings] == [str(g) for g in chain.generate_ground_rules(kg, 300)]
+
+
+def test_hub_mining_is_bounded_and_reports_sample_population():
+    triples = [(f'A/{i}', 'in', 'hub') for i in range(200)]
+    triples += [('hub', 'out', f'B/{i}') for i in range(200)]
+    generator = RuleGenerator(load_knowledge_graph_from_triples(triples))
+    assert generator.generate_simple_rules(max_paths_per_node=75) == []
+    assert generator.mining_report['possible_paths'] == 40000
+    assert generator.mining_report['sampled_paths'] == 75
+
+
+def test_low_confidence_coincidences_are_not_mined_as_rules():
+    triples = [('a', 'r1', 'hub'), ('a', 'r3', 'b/0')]
+    triples += [('hub', 'r2', f'b/{i}') for i in range(30)]
+    generator = RuleGenerator(load_knowledge_graph_from_triples(triples))
+    assert generator.generate_simple_rules(min_support=1, min_confidence=0.2) == []
