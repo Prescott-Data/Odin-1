@@ -47,9 +47,9 @@ def db():
         for key in ("A", "B", "C"):
             entities.insert({"_key": key, "type": "Person"})
         edges.insert({"_key": "ab", "_from": "ExtractedEntities/A",
-                      "_to": "ExtractedEntities/B", "relationship": "related_to"})
+                      "_to": "ExtractedEntities/B", "relationship": "Submitted By"})
         edges.insert({"_key": "bc", "_from": "ExtractedEntities/B",
-                      "_to": "ExtractedEntities/C", "relationship": "related_to"})
+                      "_to": "ExtractedEntities/C", "relationship": "Submitted By"})
         yield database
     finally:
         system.delete_database(name)
@@ -87,8 +87,8 @@ def test_snapshot_tracks_same_count_mutations_and_types(db):
     source = ArangoBackend(db, ARANGO_GRAPH).triple_source()
     first = source.snapshot()
     expected = [("ExtractedEntities/" + key, "has_type", "Person") for key in ("A", "B", "C")]
-    expected += [("ExtractedEntities/A", "related_to", "ExtractedEntities/B"),
-                 ("ExtractedEntities/B", "related_to", "ExtractedEntities/C")]
+    expected += [("ExtractedEntities/A", "Submitted By", "ExtractedEntities/B"),
+                 ("ExtractedEntities/B", "Submitted By", "ExtractedEntities/C")]
     assert first == TrainingSnapshot(expected)
     db.collection("ExtractedRelationships").update({"_key": "ab", "_to": "ExtractedEntities/C"})
     second = source.snapshot()
@@ -111,6 +111,8 @@ def test_configured_bridge_affinity_and_membership_queries(db):
     bridges.insert({
         "_key": "a",
         "entity_key": "ExtractedEntities/A",
+        "bridge_strength": 2,
+        "home_community": "claims",
         "algorithm": "leiden",
     })
     affinity.insert({
@@ -145,6 +147,9 @@ def test_configured_bridge_affinity_and_membership_queries(db):
 
     global_accessor = backend.global_accessor()
     assert global_accessor.get_entity_community("ExtractedEntities/A") == "claims"
+    engine = OdinEngine(backend, auto_train=False)
+    result = engine.retrieve(["ExtractedEntities/A"], hop_limit=2)
+    assert any(0.75 in path["decomp"]["affinity_scores"] for path in result["paths"])
 
 
 def test_configured_weight_and_property_scope_fields(db):
@@ -157,7 +162,7 @@ def test_configured_weight_and_property_scope_fields(db):
 
     uniform = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
     assert list(uniform.iter_out("ExtractedEntities/A")) == [
-        ("ExtractedEntities/B", "related_to", 1.0),
+        ("ExtractedEntities/B", "Submitted By", 1.0),
     ]
 
     graph = replace(
@@ -167,7 +172,7 @@ def test_configured_weight_and_property_scope_fields(db):
     )
     weighted = ArangoBackend(db, graph).accessor("claims", "property")
     assert list(weighted.iter_out("ExtractedEntities/A")) == [
-        ("ExtractedEntities/B", "related_to", 0.75),
+        ("ExtractedEntities/B", "Submitted By", 0.75),
     ]
     assert set(weighted.nodes()) == {"ExtractedEntities/A", "ExtractedEntities/B"}
 
@@ -214,7 +219,7 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
     assert first.data_hash == second.data_hash
     assert first.model.mln.rule_weights.tolist() == second.model.mln.rule_weights.tolist()
     confidence = NPLLConfidence(second.model).confidence(
-        "ExtractedEntities/A", "related_to", "ExtractedEntities/B",
+        "ExtractedEntities/A", "Submitted By", "ExtractedEntities/B",
     )
     assert math.isfinite(confidence) and 0 <= confidence <= 1
 
@@ -238,7 +243,7 @@ def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
     assert result["paths"]
     assert all(path["edges"] for path in result["paths"])
     assert any(
-        edge["relation"] == "related_to"
+        edge["relation"] == "Submitted By"
         for path in result["paths"]
         for edge in path["edges"]
     )

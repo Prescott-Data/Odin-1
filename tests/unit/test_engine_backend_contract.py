@@ -209,3 +209,32 @@ def test_failed_retraining_preserves_complete_serving_state(failure_stage):
         assert engine.get_status() == previous_status
         if failure_stage != "serving_setup":
             assert backend.store.saves == 1
+
+
+def test_engine_scores_configured_cross_community_affinity_during_global_retrieval():
+    from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+    from tests.utils.backend_fakes import FakeArango
+    db = FakeArango()
+    graph = ArangoGraphConfig("Records", "Links", "predicate",
+                              membership_collection="Memberships", membership_entity_field="record",
+                              membership_community_field="group",
+                              affinity_collection="Affinities", affinity_from_field="left",
+                              affinity_to_field="right", affinity_score_field="strength")
+    def query(aql, bind_vars=None, **kwargs):
+        bind = bind_vars or {}
+        if "RETURN LENGTH" in aql:
+            return iter([1 if bind["node"] == "Records/a" else 0])
+        if "@affinity_col" in bind:
+            return iter([0.75])
+        if "@membership_col" in bind:
+            return iter(["one" if bind["entity_id"] == "Records/a" else "two"])
+        if "FOR v, e" in aql and bind.get("node") == "Records/a":
+            return iter([{"v_id": "Records/b", "rel": "Submitted By", "weight": 1.0,
+                          "edge_id": "Links/ab", "assertion": {"predicate": "Submitted By"},
+                          "sources": []}])
+        return iter([])
+    db.aql.execute = query
+    engine = OdinEngine(ArangoBackend(db, graph), auto_train=False, community_mode="none")
+    result = engine.retrieve(["Records/a"], hop_limit=1)
+    assert result["paths"]
+    assert all(path["decomp"]["affinity_scores"] == [0.75] for path in result["paths"])
