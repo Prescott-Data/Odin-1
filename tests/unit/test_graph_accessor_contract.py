@@ -146,7 +146,7 @@ def test_static_arango_helpers_query_only_supplied_schema_fields():
     assert ".name" not in generated_aql
     assert ".text" not in generated_aql
     assert any(bind.get("search_fields") == ["title", "details"] for bind in generated_bind_values)
-    assert any(bind.get("text_search_fields") == ["body"] for bind in generated_bind_values)
+    assert any(bind.get("search_fields") == ["body"] for bind in generated_bind_values)
 
 
 def test_arango_accessors_return_an_empty_dict_for_absent_nodes():

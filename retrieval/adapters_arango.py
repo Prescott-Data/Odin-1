@@ -806,7 +806,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             Complete provenance-edge and source-document records.
         """
         aql = f"""
-        FOR edge IN {extracted_from_collection}
+        FOR edge IN @@provenance_edges
             FILTER edge._from == @entity_id
             LET source = DOCUMENT(edge._to)
             FILTER source != null
@@ -819,7 +819,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             }}
         """
         return clean_evidence(list(db.aql.execute(aql, bind_vars={
-            "entity_id": entity_id,
+            "entity_id": entity_id, "@provenance_edges": extracted_from_collection,
         })))
 
     @staticmethod
@@ -861,60 +861,24 @@ class ArangoCommunityAccessor(GraphAccessor):
             if not requested_collections[collection]:
                 raise ValueError(f"search fields are required for {collection}")
 
-        bind: Dict[str, Any] = {
-            "query": f"%{query.lower()}%",
-            "text_collection": text_collection,
-            "table_collection": table_collection,
-            "image_collection": image_collection,
-            "text_search_fields": text_search_fields,
-            "table_search_fields": table_search_fields,
-            "image_search_fields": image_search_fields,
-        }
-        
         results = []
-        
-        # Search configured text collection
-        if text_collection in content_types:
-            aql_text = f"""
-            FOR tb IN {text_collection}
-                FILTER ANY field IN @text_search_fields
-                    SATISFIES HAS(tb, field) AND LOWER(TO_STRING(tb[field])) LIKE @query END
-                RETURN {{
-                    source_id: tb._id,
-                    source_type: @text_collection,
-                    document: tb
-                }}
+        for collection in content_types:
+            query_aql = """
+            FOR document IN @@sources
+              LET matched = (
+                FOR field IN @search_fields
+                  FILTER HAS(document, field) AND LOWER(TO_STRING(document[field])) LIKE @query
+                  RETURN field
+              )
+              FILTER LENGTH(matched) > 0
+              RETURN {source_id: document._id, source_type: @source_type, document: document}
             """
-            results.extend(list(db.aql.execute(aql_text, bind_vars=bind)))
-        
-        # Search configured table collection
-        if table_collection in content_types:
-            aql_table = f"""
-            FOR t IN {table_collection}
-                FILTER ANY field IN @table_search_fields
-                    SATISFIES HAS(t, field) AND LOWER(TO_STRING(t[field])) LIKE @query END
-                RETURN {{
-                    source_id: t._id,
-                    source_type: @table_collection,
-                    document: t
-                }}
-            """
-            results.extend(list(db.aql.execute(aql_table, bind_vars=bind)))
-        
-        # Search configured image collection
-        if image_collection in content_types:
-            aql_image = f"""
-            FOR img IN {image_collection}
-                FILTER ANY field IN @image_search_fields
-                    SATISFIES HAS(img, field) AND LOWER(TO_STRING(img[field])) LIKE @query END
-                RETURN {{
-                    source_id: img._id,
-                    source_type: @image_collection,
-                    document: img
-                }}
-            """
-            results.extend(list(db.aql.execute(aql_image, bind_vars=bind)))
-        
+            results.extend(list(db.aql.execute(query_aql, bind_vars={
+                "@sources": collection, "source_type": collection,
+                "search_fields": requested_collections[collection],
+                "query": f"%{query.lower()}%",
+            })))
+
         return clean_evidence(results)
 
     # --------------------------
