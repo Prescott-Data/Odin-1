@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import Mock, MagicMock
 from odin.schema import inspect_schema
 from odin.backends.arango import ArangoBackend, ArangoGraphConfig
-from odin.backends.base import BackendCapabilityError
+from odin.backends.base import BackendCapabilityError, BackendIOError
 from odin.backends.arango_schema import (
     ArangoSchemaInspector,
     CollectionSchema,
@@ -25,12 +25,13 @@ def mock_db():
 @pytest.fixture
 def mock_collections():
     """Mock collection metadata."""
+    # python-arango reports collection types as strings.
     return [
-        {'name': 'ExtractedEntities', 'type': 2},  # Document collection
-        {'name': 'ExtractedRelationships', 'type': 3},  # Edge collection
-        {'name': 'Documents', 'type': 2},
-        {'name': 'EXTRACTED_FROM', 'type': 3},
-        {'name': '_system', 'type': 2},  # System collection (should be ignored)
+        {'name': 'ExtractedEntities', 'type': 'document'},
+        {'name': 'ExtractedRelationships', 'type': 'edge'},
+        {'name': 'Documents', 'type': 'document'},
+        {'name': 'EXTRACTED_FROM', 'type': 'edge'},
+        {'name': '_system', 'type': 'document'},  # System collection (should be ignored)
     ]
 
 
@@ -251,6 +252,18 @@ class TestArangoSchemaInspector:
         all_names.extend([edge['name'] for edge in schema['edges']])
         assert '_system' not in all_names
 
+    def test_collections_are_classified_by_python_arango_type(self, mock_db, mock_collections):
+        mock_db.collections.return_value = mock_collections
+        mock_db.collection.return_value.count.return_value = 0
+        schema = ArangoSchemaInspector(mock_db).get_schema_map()
+        assert [c['name'] for c in schema['collections']] == ['ExtractedEntities', 'Documents']
+        assert [e['name'] for e in schema['edges']] == ['ExtractedRelationships', 'EXTRACTED_FROM']
+
+    def test_unknown_collection_type_raises(self, mock_db):
+        mock_db.collections.return_value = [{'name': 'Mystery', 'type': 3}]
+        with pytest.raises(BackendIOError, match='Unexpected Arango collection type'):
+            ArangoSchemaInspector(mock_db).get_schema_map()
+
 
 class TestConvenienceFunction:
     """Test the convenience function."""
@@ -297,7 +310,7 @@ def test_public_schema_refresh_uses_a_backend_owned_cache(mock_db):
     backend = ArangoBackend(mock_db, ArangoGraphConfig("Records", "Links", "predicate"))
     assert inspect_schema(backend)["collections"] == []
     assert mock_db.collections.call_count == 1
-    mock_db.collections.return_value = [{"name": "new-collection", "type": 2}]
+    mock_db.collections.return_value = [{"name": "new-collection", "type": "document"}]
     mock_db.collection.return_value.count.return_value = 0
     assert inspect_schema(backend)["collections"] == []
     assert mock_db.collections.call_count == 1

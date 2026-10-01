@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass
 import json
 from typing import Any, Dict, List, Optional
 
+from .base import BackendIOError
+
 
 @dataclass
 class CollectionSchema:
@@ -73,13 +75,18 @@ class ArangoSchemaInspector:
             collection_name = collection_info["name"]
             if collection_name.startswith("_"):
                 continue
-            if collection_info["type"] == 3:
+            collection_type = collection_info["type"]
+            if collection_type == "edge":
                 edge_collections.append(
                     self._inspect_edge_collection(collection_name)
                 )
-            else:
+            elif collection_type == "document":
                 document_collections.append(
                     self._inspect_document_collection(collection_name)
+                )
+            else:
+                raise BackendIOError(
+                    f"Unexpected Arango collection type {collection_type!r} for {collection_name}"
                 )
         return SchemaMap(
             database_name=self.db.name,
