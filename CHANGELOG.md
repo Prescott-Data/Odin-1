@@ -19,7 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Artifact version `7.0` stores learned scorer tensors in a checked binary blob
   alongside complete training evidence; reload performs no scorer training.
   Device and Torch version differences do not invalidate learned state.
-  Obsolete artifact/config schemas retrain; damaged current artifacts raise.
+  Older numeric artifact versions and stale configuration schemas retrain;
+  newer artifact versions raise `NewerModelVersionError` without being replaced.
+  Damaged current artifacts raise.
 - Rule grounding uses observed bodies and sampled contrasts across the vocabulary.
   Chain mining samples at most 1,000 paths per middle node, requires support >= 2
   and confidence >= 0.2, and reuses bounded sampled joins during grounding.

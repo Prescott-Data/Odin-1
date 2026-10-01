@@ -24,7 +24,8 @@ Training fingerprints cover the exact extracted triples. Model artifacts are
 shared by global training scope, complete, and replaced only when their stored revision matches.
 Scorers train on known facts and uniform corruptions of both endpoints, excluding
 the E-M holdout. Artifact version `7.0` loads learned tensor state without training
-and keeps complete loss histories. Obsolete schemas retrain; damaged blobs raise.
+and keeps complete loss histories. Older artifact versions and stale config schemas
+retrain; newer artifact versions raise without being replaced. Damaged blobs raise.
 Device and Torch version differences do not invalidate learned state.
 Rule mining and grounding use bounded observed joins and confidence thresholds.
 Global accessor traversal bonuses and the unused engine global accessor are removed.

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from npll.bootstrap import KnowledgeBootstrapper
 from npll.utils.config import get_config
-from odin.backends.base import CorruptModelError, MODEL_KEY, StoredModel
+from odin.backends.base import CorruptModelError, NewerModelVersionError, MODEL_KEY, StoredModel
 from retrieval.confidence import NPLLConfidence
 from tests.utils.backend_fakes import MemorySource, MemoryStore
 from tests.unit.test_training_telemetry import make_training_result
@@ -38,7 +38,6 @@ def test_reload_loads_scorer_weights_without_training_or_runtime_invalidation():
 
 @pytest.mark.parametrize('change', [
     lambda d: d.update(version='6.0'),
-    lambda d: d.update(version='future-version'),
     lambda d: d['inference_state']['config'].pop('scorer_negatives_per_side'),
     lambda d: d['inference_state']['config'].update(future_setting=42),
     lambda d: d['inference_state']['config'].update(scorer_learning_rate=0.05),
@@ -59,6 +58,45 @@ def test_damaged_scorer_blob_is_corruption_not_staleness():
     document = copy.deepcopy(store.docs[MODEL_KEY].document)
     document['inference_state']['scorer_state']['sha256'] = '0' * 64
     store.docs[MODEL_KEY] = StoredModel(document, '1')
+    with patch('npll.bootstrap.get_config', return_value=config), pytest.raises(CorruptModelError):
+        KnowledgeBootstrapper(source, store).ensure_model_ready()
+    assert store.saves == 1
+
+
+@pytest.mark.parametrize('version', ['7.1', '8.0', '10.0', '70.0'])
+@pytest.mark.parametrize('force', [False, True])
+def test_newer_models_are_never_retrained_or_overwritten(version, force):
+    source, store, config, _ = trained_fixture()
+    original = copy.deepcopy(store.docs[MODEL_KEY].document)
+    original['version'] = version
+    store.docs[MODEL_KEY] = StoredModel(original, '1')
+    with patch('npll.bootstrap.get_config', return_value=config), \
+         patch('npll.bootstrap.create_snapshot_trained_model') as train, \
+         pytest.raises(NewerModelVersionError, match='newer than supported'):
+        KnowledgeBootstrapper(source, store).ensure_model_ready(force_retrain=force)
+    train.assert_not_called()
+    assert store.saves == 1
+    assert store.docs[MODEL_KEY].document == original
+
+
+@pytest.mark.parametrize('version', ['7', '7.00', '7.0.0'])
+def test_equal_numeric_versions_reuse_learned_model(version):
+    source, store, config, _ = trained_fixture()
+    original = copy.deepcopy(store.docs[MODEL_KEY].document)
+    original['version'] = version
+    store.docs[MODEL_KEY] = StoredModel(original, '1')
+    with patch('npll.bootstrap.get_config', return_value=config), \
+         patch('npll.bootstrap.create_snapshot_trained_model', side_effect=AssertionError('retrained')):
+        assert KnowledgeBootstrapper(source, store).ensure_model_ready().source == 'cached_weights'
+    assert store.saves == 1
+
+
+@pytest.mark.parametrize('version', ['future-version', '7..1', '', None])
+def test_invalid_version_is_corruption_and_does_not_trigger_retraining(version):
+    source, store, config, _ = trained_fixture()
+    original = copy.deepcopy(store.docs[MODEL_KEY].document)
+    original['version'] = version
+    store.docs[MODEL_KEY] = StoredModel(original, '1')
     with patch('npll.bootstrap.get_config', return_value=config), pytest.raises(CorruptModelError):
         KnowledgeBootstrapper(source, store).ensure_model_ready()
     assert store.saves == 1

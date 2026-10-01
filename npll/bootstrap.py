@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
 from odin.backends.base import (
     ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelConflictError, ModelStore, StoredModel,
-    TrainingSnapshot, TripleSource, validate_model_artifact,
+    TrainingSnapshot, TripleSource, validate_model_artifact, is_older_artifact_version,
 )
 
 from .core.knowledge_graph import KnowledgeGraph, load_knowledge_graph_from_triples
@@ -268,7 +268,7 @@ class KnowledgeBootstrapper:
     def _load_model_with_weights(
         self, snapshot: TrainingSnapshot, stored: Optional[StoredModel],
     ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
-        if stored is None or stored.document.get("version") != ARTIFACT_VERSION:
+        if stored is None or is_older_artifact_version(stored.document.get("version")):
             return None, None
         if stored.document.get("data_hash") != snapshot.data_hash:
             return None, None

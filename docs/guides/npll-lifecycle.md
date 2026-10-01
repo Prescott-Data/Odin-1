@@ -16,8 +16,11 @@ complete training reports. Later startups load those tensors without training.
 Startup still reads and fingerprints the graph and builds the vocabulary and rules;
 its cost depends on graph size and hardware. No fixed startup time is guaranteed.
 
-Artifacts with obsolete versions or configuration schemas retrain through a
-revision-checked replacement. Damaged current artifacts raise. Device and Torch
+Artifacts with older numeric versions or stale configuration schemas retrain
+through a revision-checked replacement. Newer artifact versions raise
+`NewerModelVersionError`, including during forced retraining, so older workers
+cannot replace them during a rolling deployment or downgrade. Upgrade Odin to
+read a newer artifact. Damaged current artifacts raise. Device and Torch
 version differences are recorded provenance and do not trigger retraining.
 
 ## Controlling training at startup

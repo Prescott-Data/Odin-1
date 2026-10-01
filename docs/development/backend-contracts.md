@@ -73,8 +73,11 @@ Artifact version `7.0` requires:
 The format is finite JSON with string object keys. Complete nested values and
 additional JSON evidence fields are preserved. No relation or history cap is
 applied. Unscoped `OdinModels/npll_current` documents remain untouched and are
-not reused. Obsolete versions and configuration schemas are returned with their revision and
-retrained by bootstrap. Damaged current documents fail validation. There is no
+not reused. Older numeric versions and stale configuration schemas are returned with their
+revision and retrained by bootstrap. Newer versions raise `NewerModelVersionError`
+and are never replaced by an older reader. Version components compare numerically:
+`7` and `7.0` are equal, while `10.0` is newer than `7.0`. Non-numeric versions
+raise `CorruptModelError`. Damaged current documents fail validation. There is no
 legacy serving path.
 
 Errors have distinct meanings:
@@ -82,7 +85,8 @@ Errors have distinct meanings:
 | Outcome | Meaning |
 | --- | --- |
 | `None` | Artifact or model collection is absent |
-| `CorruptModelError` | Damaged current artifact or invalid envelope |
+| `CorruptModelError` | Damaged current artifact, invalid version or invalid envelope |
+| `NewerModelVersionError` | Stored artifact requires a newer reader; upgrade Odin and preserve the document |
 | `BackendIOError` | Extraction, transport, permission, or persistence failure |
 | `ModelConflictError` | Another writer created, replaced, or deleted the artifact since the read |
 

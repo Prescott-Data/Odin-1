@@ -134,8 +134,10 @@ scorer recipe. Forced retraining conflicts still raise `ModelConflictError`.
 Artifact version `7.0` stores learned scorer tensors in a checked binary blob,
 with the complete rule report, scorer recipe, runtime provenance, example count
 and loss history. Reload loads parameters without training. Device and Torch
-version differences do not invalidate the artifact. Obsolete version/config schemas
-are retrained and replaced by CAS; damaged current artifacts raise. Scores are
+version differences do not invalidate the artifact. Older numeric versions and
+stale configuration schemas are retrained and replaced by CAS. Newer versions
+raise `NewerModelVersionError` without modifying the stored model; upgrade Odin
+to read them. Damaged current artifacts raise. Scores are
 identical on the same runtime, while numerical differences across hardware remain
 possible. Odin returns complete application records, including embedding fields.
 

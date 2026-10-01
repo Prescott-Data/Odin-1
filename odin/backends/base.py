@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from dataclasses import dataclass, field, fields
 from typing import Any, Dict, Optional, Protocol, Tuple
 
@@ -33,6 +34,31 @@ class BackendIOError(BackendError):
 
 class CorruptModelError(BackendError):
     """An artifact does not satisfy the current schema."""
+
+
+class NewerModelVersionError(BackendError):
+    """The stored artifact requires a newer Odin reader; never replace it."""
+
+
+def is_older_artifact_version(version: Any) -> bool:
+    """Compare dotted numeric versions and protect models written by newer code."""
+    def numeric(value):
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*", value):
+            raise CorruptModelError("Artifact version must be a dotted numeric string")
+        try:
+            components = tuple(int(part) for part in value.split("."))
+        except ValueError as exc:
+            raise CorruptModelError("Invalid artifact version") from exc
+        while len(components) > 1 and components[-1] == 0:
+            components = components[:-1]
+        return components
+
+    stored, current = numeric(version), numeric(ARTIFACT_VERSION)
+    if stored > current:
+        raise NewerModelVersionError(
+            f"Stored model artifact version {version} is newer than supported "
+            f"version {ARTIFACT_VERSION}; upgrade Odin to load it. The artifact was not replaced.")
+    return stored < current
 
 
 class ModelConflictError(BackendError):
@@ -79,8 +105,9 @@ class TripleSource(Protocol):
 class ModelStore(Protocol):
     """A backend training-scope store of complete JSON model artifacts.
 
-    None means absent only. Malformed current artifacts raise CorruptModelError; obsolete schemas are
-    returned with their revision for replacement. Backend
+    None means absent only. Malformed current artifacts raise CorruptModelError; older schemas are
+    returned with their revision for replacement. Newer versions raise
+    NewerModelVersionError and must not be overwritten. Backend
     failures raise BackendIOError. Save atomically replaces the whole artifact.
     expected_revision=None means create only; a revision means replace only if
     unchanged. Conflicts raise ModelConflictError, without retry or overwrite.
@@ -114,7 +141,7 @@ class SchemaInspectionBackend(Protocol):
 
 
 def validate_model_artifact(document: Dict[str, Any]) -> None:
-    """Validate current artifacts while allowing obsolete schemas to be replaced.
+    """Validate current artifacts, allow older schemas, and refuse newer versions.
 
     Version 7 requires learned scorer state and complete training reports.
     Runtime provenance does not invalidate otherwise compatible learned tensors.
@@ -143,9 +170,8 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
         return False
 
     require(type(document) is dict and json_value(document), "Artifact must be finite JSON")
-    require(isinstance(document.get("version"), str) and bool(document["version"]), "Missing artifact version")
-    if document["version"] != ARTIFACT_VERSION:
-        return  # Recognized envelope, obsolete/unknown schema: bootstrap replaces by CAS.
+    if is_older_artifact_version(document.get("version")):
+        return  # Older schema: bootstrap replaces by CAS. Newer schemas raise.
     require(document.get("model_type") == "npll" and
             document.get("storage_type") == "learned_scorer", "Invalid model artifact type")
     state = document.get("inference_state")

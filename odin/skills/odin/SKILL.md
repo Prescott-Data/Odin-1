@@ -157,8 +157,9 @@ Global training artifacts are shared across retrieval communities. Neural scorer
 learn from known facts and uniform corruptions of both endpoints; E-M holdout
 facts are excluded from supervision. Reload loads learned tensor state from an
 integrity-checked model blob without training. Evidence outputs preserve vectors.
-Obsolete artifact/config schemas retrain, damaged blobs raise, and runtime/device
-differences do not invalidate weights. Rule mining uses bounded sampled motifs
+Older numeric artifact versions and stale config schemas retrain. Newer versions
+raise `NewerModelVersionError` and must never be replaced by an older reader.
+Damaged blobs raise; runtime/device differences do not invalidate weights. Rule mining uses bounded sampled motifs
 and confidence thresholds; grounding reuses observed joins and sampled contrasts.
 
 ## Schema introspection
