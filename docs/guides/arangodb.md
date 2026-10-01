@@ -126,11 +126,19 @@ raises `BackendConfigurationError`; it never guesses a membership schema.
 Property mode instead requires `community_property_field`; Odin does not assume
 a node field named `community_id`.
 
-Bridge and affinity scoring require `bridge_collection`, `affinity_collection`,
-and the `community_algorithm` value together. Otherwise ordinary retrieval
-does not issue bridge or affinity queries. The optional global cross-community
-accessor additionally requires the complete membership mapping. It is then
-unavailable rather than probing default collections.
+Bridge mapping requires `bridge_collection`, `bridge_entity_field`,
+`bridge_strength_field`, and `bridge_community_field`. Store full document IDs
+in the mapped entity field. Affinity mapping requires `affinity_collection`,
+`affinity_from_field`, `affinity_to_field`, and `affinity_score_field`.
+Each signal can be configured independently. Unconfigured signals issue no queries.
+
+Algorithm filters are opt-in: set `membership_algorithm_field`,
+`bridge_algorithm_field`, or `affinity_algorithm_field` with `community_algorithm`.
+Membership lookups use the same filter in scoped and global access. Configured
+query failures raise `BackendIOError` and are not cached as absent data.
+Membership metadata remains available in `community_mode="none"`, allowing
+cross-community affinity scoring during global exploration. Scoped traversal
+continues to respect its boundary.
 
 ## Verifying it worked
 

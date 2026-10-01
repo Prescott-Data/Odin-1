@@ -50,6 +50,15 @@ class ArangoGraphConfig:
     bridge_collection: Optional[str] = None
     affinity_collection: Optional[str] = None
     community_algorithm: Optional[str] = None
+    membership_algorithm_field: Optional[str] = None
+    bridge_entity_field: Optional[str] = None
+    bridge_strength_field: Optional[str] = None
+    bridge_community_field: Optional[str] = None
+    bridge_algorithm_field: Optional[str] = None
+    affinity_from_field: Optional[str] = None
+    affinity_to_field: Optional[str] = None
+    affinity_score_field: Optional[str] = None
+    affinity_algorithm_field: Optional[str] = None
 
     def __post_init__(self):
         required = (self.node_collection, self.edge_collection, self.relation_field)
@@ -89,18 +98,25 @@ class ArangoGraphConfig:
             raise ValueError(
                 "community membership requires collection, entity field, and community field"
             )
-        bridge_access = (
-            self.bridge_collection,
-            self.affinity_collection,
-            self.community_algorithm,
-        )
-        if any(bridge_access) and not all(
-            isinstance(value, str) and value for value in bridge_access
+        for label, values in (
+            ("bridge", (self.bridge_collection, self.bridge_entity_field,
+                        self.bridge_strength_field, self.bridge_community_field)),
+            ("affinity", (self.affinity_collection, self.affinity_from_field,
+                          self.affinity_to_field, self.affinity_score_field)),
         ):
-            raise ValueError(
-                "bridge access requires bridge collection, affinity collection, "
-                "and community algorithm"
-            )
+            if any(v is not None for v in values) and not all(
+                isinstance(v, str) and v for v in values
+            ):
+                raise ValueError(f"{label} access requires a complete collection and field mapping")
+        algorithm_fields = (self.membership_algorithm_field, self.bridge_algorithm_field,
+                            self.affinity_algorithm_field)
+        if any(v is not None for v in algorithm_fields):
+            if not self.community_algorithm or any(
+                v is not None and (not isinstance(v, str) or not v) for v in algorithm_fields
+            ):
+                raise ValueError("algorithm field mappings require community_algorithm")
+        elif self.community_algorithm is not None:
+            raise ValueError("community_algorithm requires an explicit algorithm field mapping")
 
     def namespace(self) -> str:
         return json.dumps(
@@ -278,6 +294,15 @@ class ArangoBackend:
             bridge_collection=self.graph.bridge_collection,
             affinity_collection=self.graph.affinity_collection,
             algorithm=self.graph.community_algorithm,
+            membership_algorithm_field=self.graph.membership_algorithm_field,
+            bridge_entity_field=self.graph.bridge_entity_field,
+            bridge_strength_field=self.graph.bridge_strength_field,
+            bridge_community_field=self.graph.bridge_community_field,
+            bridge_algorithm_field=self.graph.bridge_algorithm_field,
+            affinity_from_field=self.graph.affinity_from_field,
+            affinity_to_field=self.graph.affinity_to_field,
+            affinity_score_field=self.graph.affinity_score_field,
+            affinity_algorithm_field=self.graph.affinity_algorithm_field,
         )
 
     def triple_source(self) -> ArangoTripleSource:
@@ -291,27 +316,10 @@ class ArangoBackend:
         return ArangoModelStore(self.db, namespace=namespace)
 
     def global_accessor(self):
-        global_collections = (
-            self.graph.membership_collection,
-            self.graph.bridge_collection,
-            self.graph.affinity_collection,
-            self.graph.community_algorithm,
-        )
-        if any(value is None for value in global_collections):
+        if self.graph.bridge_collection is None and self.graph.affinity_collection is None:
             return None
-        return GlobalGraphAccessor(
-            db=self.db,
-            nodes_collection=self.graph.node_collection,
-            edges_collection=self.graph.edge_collection,
-            relation_property=self.graph.relation_field,
-            weight_property=self.graph.edge_weight_field,
-            membership_collection=self.graph.membership_collection,
-            membership_entity_field=self.graph.membership_entity_field,
-            membership_community_field=self.graph.membership_community_field,
-            bridge_collection=self.graph.bridge_collection,
-            affinity_collection=self.graph.affinity_collection,
-            algorithm=self.graph.community_algorithm,
-        )
+        # Global exploration uses the same evidence mappings as scoped retrieval.
+        return self.accessor("global", "none")
 
     def schema_inspector(self):
         from retrieval.backends.arango_schema import ArangoSchemaInspector

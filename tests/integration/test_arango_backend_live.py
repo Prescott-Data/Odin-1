@@ -110,7 +110,7 @@ def test_configured_bridge_affinity_and_membership_queries(db):
     })
     bridges.insert({
         "_key": "a",
-        "entity_key": "A",
+        "entity_key": "ExtractedEntities/A",
         "algorithm": "leiden",
     })
     affinity.insert({
@@ -128,11 +128,19 @@ def test_configured_bridge_affinity_and_membership_queries(db):
         bridge_collection="BridgeRecords",
         affinity_collection="AffinityRecords",
         community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
     )
     backend = ArangoBackend(db, graph)
 
     accessor = backend.accessor("global", "none")
-    assert accessor.is_bridge("ExtractedEntities/A")["entity_key"] == "A"
+    assert accessor.is_bridge("ExtractedEntities/A")["record"]["entity_key"] == "ExtractedEntities/A"
     assert accessor.get_affinity("claims", "supply") == pytest.approx(0.75)
 
     global_accessor = backend.global_accessor()

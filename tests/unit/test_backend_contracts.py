@@ -208,6 +208,14 @@ def test_global_access_requires_explicit_bridge_collections():
         bridge_collection="BridgeRecords",
         affinity_collection="CommunityAffinity",
         community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
     )
     accessor = ArangoBackend(db, graph_with_global_access).global_accessor()
     assert accessor.nodes_col == ARANGO_GRAPH.node_collection
@@ -216,8 +224,8 @@ def test_global_access_requires_explicit_bridge_collections():
     assert accessor.membership_col == "Memberships"
     assert accessor.bridge_col == "BridgeRecords"
     assert accessor.affinity_col == "CommunityAffinity"
-    assert accessor.membership_entity_field == "entity_id"
-    assert accessor.membership_community_field == "community_id"
+    assert accessor.memb_ent_field == "entity_id"
+    assert accessor.memb_com_field == "community_id"
     assert accessor.algorithm == "leiden"
 
 
@@ -270,6 +278,14 @@ def test_main_accessor_uses_configured_bridge_and_affinity_collections():
         bridge_collection="BridgeRecords",
         affinity_collection="AffinityRecords",
         community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
     )
     accessor = ArangoBackend(db, graph).accessor("global", "none")
 
@@ -292,6 +308,14 @@ def test_global_accessor_uses_configured_membership_fields_for_scoring():
         bridge_collection="BridgeRecords",
         affinity_collection="AffinityRecords",
         community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
     )
     accessor = ArangoBackend(db, graph).global_accessor()
 
@@ -302,7 +326,7 @@ def test_global_accessor_uses_configured_membership_fields_for_scoring():
     assert "m[@membership_community_field]" in query
     assert bind_vars["membership_entity_field"] == "record_id"
     assert bind_vars["membership_community_field"] == "group_id"
-    assert bind_vars["algorithm"] == "leiden"
+    assert "algorithm" not in bind_vars
 
 
 def test_engine_scope_drives_arango_model_namespace():
@@ -472,3 +496,46 @@ def test_engine_does_not_hide_backend_failure(method):
                 engine._initialize_intelligence(True)
             else:
                 engine.retrain_model()
+
+
+def test_signal_fields_are_explicit_and_entity_ids_remain_complete():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH_WITH_MEMBERSHIP,
+                    bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="power", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="strength")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    accessor.is_bridge("First/same")
+    accessor.is_bridge("Second/same")
+    accessor.get_affinity("a_b", "c")
+    accessor.get_affinity("a", "b_c")
+    accessor.get_entity_community("First/same")
+    assert db.query_arguments[0]["bind_vars"]["entity_id"] == "First/same"
+    assert db.query_arguments[1]["bind_vars"]["entity_id"] == "Second/same"
+    assert db.query_arguments[0]["bind_vars"]["entity_field"] == "record"
+    assert db.query_arguments[2]["bind_vars"]["score_field"] == "strength"
+    assert len(db.queries) == 5
+    assert all("algorithm" not in args["bind_vars"] for args in db.query_arguments)
+
+
+def test_signal_errors_are_not_cached_as_absence():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH_WITH_MEMBERSHIP,
+                    bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="power", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="strength")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    def fail(*args, **kwargs):
+        raise RuntimeError("permissions")
+    db.aql.execute = fail
+    for operation in (lambda: accessor.is_bridge("Records/a"),
+                      lambda: accessor.get_affinity("a", "b"),
+                      lambda: accessor.get_entity_community("Records/a")):
+        with pytest.raises(BackendIOError):
+            operation()
+    db.aql.execute = db.execute
+    assert accessor.is_bridge("Records/a") is None
+    assert accessor.get_affinity("a", "b") == 0.0
+    assert len(db.queries) == 2
