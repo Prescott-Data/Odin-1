@@ -16,8 +16,8 @@ Usage:
         relation_field="predicate",
     )
     engine = OdinEngine(ArangoBackend(my_arango_db, graph))
-    results = engine.retrieve(seeds=["Patient_123"])
-    score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
+    results = engine.retrieve(seeds=["MyEntities/Patient_123"])
+    score = engine.score_edge("MyEntities/Patient_A", "treated_by", "MyEntities/Dr_Smith")
 """
 
 def __getattr__(name):

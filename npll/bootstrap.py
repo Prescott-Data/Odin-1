@@ -4,7 +4,7 @@ Handles the end-to-end lifecycle of the NPLL model:
 1. Reading a backend-neutral training snapshot
 2. Generating domain-appropriate logical rules
 3. Training the model
-4. Persisting rule weights, rules, schema, and the complete training report
+4. Persisting rule weights, rules, schema, and complete training/replay reports
 
 Architecture:
 - The injected ModelStore owns persistence
@@ -197,7 +197,7 @@ class KnowledgeBootstrapper:
 
     def ensure_model_ready(self, force_retrain: bool = False) -> BootstrapResult:
         """
-        Ensures a trained NPLL model is available.
+        Ensure a trained NPLL model is available.
         
         Flow:
         1. Extract a snapshot with its content fingerprint
@@ -210,8 +210,8 @@ class KnowledgeBootstrapper:
                 Corrupt artifacts and store failures still raise.
             
         Returns:
-            BootstrapResult with the model (or None on failure), the source
-            of the weights, and the TrainingReport audit record when available.
+            BootstrapResult with the model (or None for an empty snapshot),
+            its source, and the complete rule TrainingReport. Errors raise.
             Backend errors propagate without converting them into cache misses.
         """
         snapshot = self.triple_source.snapshot()

@@ -169,11 +169,11 @@ graph = ArangoGraphConfig(
     relation_field="predicate",
 )
 backend = ArangoBackend(db, graph)
-engine = OdinEngine(backend, community_id="my_community")
+engine = OdinEngine(backend)
 
 # 3. Explore from seed entities
 result = engine.retrieve(
-    seeds=["entity/claim_123", "entity/provider_456"],
+    seeds=["CaseRecords/claim_123", "CaseRecords/provider_456"],
     max_paths=50,
     hop_limit=3,
 )
@@ -301,9 +301,14 @@ The entity IDs and outputs below are illustrative, not measured results.
 **Scenario:** Find providers billing unusual procedure combinations
 
 ```python
-engine = OdinEngine(ArangoBackend(db, graph), community_id="medicare_claims")
+from dataclasses import replace
+
+scoped_graph = replace(graph, membership_collection="Memberships",
+                       membership_entity_field="entity_id", membership_community_field="community_id")
+engine = OdinEngine(ArangoBackend(db, scoped_graph), community_id="medicare_claims",
+                    community_mode="mapping")
 result = engine.retrieve(
-    seeds=["provider/high_volume_clinic"],
+    seeds=["CaseRecords/high_volume_clinic"],
     max_paths=100,
 )
 # Illustrative: Odin surfaces recurring procedure-combination motifs
@@ -367,7 +372,7 @@ engine = OdinEngine(
 | `retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64)` | Find and score paths from seed entities |
 | `score_edge(src, rel, dst)` | Score plausibility of a single edge (0.0-1.0) |
 | `find_anchors(seeds, topn=20)` | Top-N nodes by Personalized PageRank |
-| `retrain_model(force_retrain=True)` | Force NPLL retraining after major graph updates |
+| `retrain_model()` | Force NPLL retraining after major graph updates |
 | `inspect_schema(backend)` | Inspect the configured backend's schema at runtime |
 
 Full parameter and result documentation lives in the

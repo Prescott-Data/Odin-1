@@ -128,10 +128,9 @@ KINSHIP_CONFIG = NPLLConfig(
 )
 
 
-# Explicit compact production graph configuration. NPLL's scorer is initialized
-# deterministically from the graph snapshot, and the training loop optimizes rule
-# weights, so benchmark-scale scorer dimensions add memory cost without learned
-# retrieval capacity in the current lifecycle.
+# Explicit compact production profile. Scorer parameters learn from snapshot
+# evidence and are reconstructed by deterministic training replay. The E-M loop
+# independently optimizes logical rule weights.
 ODIN_TRIPLES_CONFIG = NPLLConfig(
     dataset_name="OdinTriples", entity_embedding_dim=32,
     relation_embedding_dim=32, rule_embedding_dim=64, scoring_hidden_dim=64,

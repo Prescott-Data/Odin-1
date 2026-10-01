@@ -93,7 +93,7 @@ class OdinEngine:
         # 4. Setup PPR Anchor Engine
         self.anchor_engine = APPRAnchors(self.accessor)
         
-        mode = "NPLL" if self.npll_model else "Fallback"
+        mode = "NPLL" if self.npll_model else "Constant"
         logger.info(f"✓ OdinEngine initialized (Intelligence: {mode})")
 
     def _initialize_intelligence(self, auto_train: bool):
@@ -189,7 +189,7 @@ class OdinEngine:
         paths in the knowledge graph starting from the given seeds.
         
         Args:
-            seeds: List of starting node IDs (e.g., ["Patient_123", "Claim_456"])
+            seeds: List of starting node IDs (e.g., ["entities/Patient_123", "entities/Claim_456"])
             max_paths: Maximum number of paths to return (default: 50)
             hop_limit: Maximum path length (default: 3)
             beam_width: Beam search width (default: 64)

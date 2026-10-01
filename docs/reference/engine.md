@@ -33,8 +33,8 @@ OdinEngine(
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
 For ArangoDB, construct `ArangoBackend(db, graph)` from a connected `python-arango`
-database. The engine passes its community scope to model persistence. On first construction against a
-training-capable graph, NPLL trains (2-5 min) unless `auto_train=False`. A
+database. Arango shares globally trained artifacts across retrieval scopes. On first
+construction against a training-capable graph, NPLL trains unless `auto_train=False`. A
 retrieval-only backend must set `auto_train=False`; otherwise construction
 raises `BackendCapabilityError`. `graph` is a required `ArangoGraphConfig`.
 See [Connecting ArangoDB](../guides/arangodb.md#map-your-graph-data) and

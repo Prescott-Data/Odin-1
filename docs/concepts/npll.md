@@ -28,7 +28,7 @@ The model is self-managing. The first time you construct an `OdinEngine` against
 engine.retrain_model()   # re-learn after major graph changes
 ```
 
-The full story (persistence, per-community models, and when to retrain) is in [Model Lifecycle](../guides/npll-lifecycle.md).
+The full story (persistence, global training with scoped retrieval, and when to retrain) is in [Model Lifecycle](../guides/npll-lifecycle.md).
 
 ## What happens when there is no model
 

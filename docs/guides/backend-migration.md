@@ -59,24 +59,28 @@ never assumes collection or field names.
 | `edge_timestamp_field` / `edge_valid_from_field` / `edge_valid_to_field` / `edge_status_field` | Optional edge metadata fields. Omit a field to disable that metadata signal; Odin never assumes timestamp or status names. |
 | `edge_provenance_fields` | Optional tuple of edge fields preserved as retrieval provenance. Odin never assumes a provenance-field name. |
 | `community_property_field` | Required only with `community_mode="property"`; no property field is assumed. |
-| `membership_*` fields | Optional, all-or-nothing mapping used only with `community_mode="mapping"`. |
+| `membership_*` fields | Complete membership mapping; used for scoped traversal and global affinity metadata. |
 | `provenance_edge_collection` | Optional edge collection used for retrieval provenance. |
-| `bridge_collection` / `affinity_collection` / `community_algorithm` | Optional, all three together enable bridge and affinity scoring. With membership, they also enable the global cross-community accessor. |
+| `bridge_collection` / `bridge_entity_field` / `bridge_strength_field` / `bridge_community_field` | Complete opt-in bridge mapping; entity values are full document IDs. |
+| `affinity_collection` / `affinity_from_field` / `affinity_to_field` / `affinity_score_field` | Complete opt-in affinity mapping; independent of bridge configuration. |
+| `membership_algorithm_field` / `bridge_algorithm_field` / `affinity_algorithm_field` | Optional filters; each requires the explicit `community_algorithm` value. |
+| `allowed_edge_statuses` / `provenance_target_collections` | Explicit status and provenance-target filters. |
 
 Arango `_id`, `_from`, and `_to` values are opaque canonical identities; Odin
 does not need a particular `_key`, collection prefix, label, or node schema.
 Missing endpoints are excluded from the training snapshot. An invalid relation
 or configured type value stops training clearly instead of being coerced or
 dropped. See [Connecting ArangoDB](arangodb.md) for a complete example.
-Without the complete bridge, affinity, and algorithm configuration, ordinary
-retrieval performs no bridge or affinity query. Without the complete membership,
-bridge, affinity, and algorithm configuration, `backend.global_accessor()`
-returns `None` rather than probing assumed collection names.
+Unconfigured bridge or affinity signals issue no queries. Configured query failures
+raise and are not cached as missing data. `backend.global_accessor()` is available
+when either signal is configured; it uses the same metadata mapping as ordinary
+retrieval. Affinity needs mapped membership or a mapped community property.
 
 ## Update imports and direct component calls
 
 | Previous API | Current API |
 | --- | --- |
+| Backend modules formerly under `retrieval.backends` | Import from `odin.backends`; no old import alias remains. |
 | `OdinEngine(db)` | `OdinEngine(ArangoBackend(db, graph))` |
 | `from odin import SchemaInspector, inspect_arango_schema` | `from odin import inspect_schema` |
 | `SchemaInspector(db).get_schema_map()` | `inspect_schema(backend)` |
@@ -171,3 +175,18 @@ node collection, edge collection, relation field, and optional entity type field
 Retrieval community IDs, scope modes, bridge mappings, and timestamp mappings do
 not create separate copies or trigger retraining. The exact triple snapshot hash
 invalidates a model when training evidence changes.
+
+### Standalone helper and writer results
+
+`get_document_content` returns `{source_id, source_type, document}` or `None`.
+`get_entity_sources` returns every matching `{source_id, source_type, edge, document}`.
+`search_content` returns complete `{source_id, source_type, document}` records.
+Documents and edges retain all non-vector fields, without content slicing.
+Excluded internal vector paths appear in `odin_excluded_vector_fields`.
+Traversal edges retain the raw document once under `provenance.assertion`, expose
+mapped metadata as canonical fields, and record `excluded_vector_fields`.
+
+Construct `ArangoWriter(db, graph, confidence_field="certainty", metadata_field="evidence")`
+with a connected database and explicit fields. Pass full document IDs for both
+endpoints. The writer uses the mapped edge collection and exact relation label;
+it does not connect without credentials or add a collection prefix.

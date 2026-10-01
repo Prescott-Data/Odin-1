@@ -20,11 +20,11 @@ graph = ArangoGraphConfig(
     relation_field="relation",
 )
 backend = ArangoBackend(db, graph)
-engine = OdinEngine(backend, community_id="healthcare")
+engine = OdinEngine(backend)
 
 # Use in your agent
-result = engine.retrieve(seeds=["Patient_123"], max_paths=100)
-score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
+result = engine.retrieve(seeds=["entities/Patient_123"], max_paths=100)
+score = engine.score_edge("entities/Patient_A", "treated_by", "entities/Dr_Smith")
 ```
 
 **That's it.** No manual NPLL training, no .pt files, no complex wiring.
@@ -60,8 +60,8 @@ graph = ArangoGraphConfig(
     relation_field="relation",
 )
 engine = OdinEngine(ArangoBackend(db, graph))
-result = engine.retrieve(seeds=["Patient_123"])
-score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
+result = engine.retrieve(seeds=["entities/Patient_123"])
+score = engine.score_edge("entities/Patient_A", "treated_by", "entities/Dr_Smith")
 ```
 
 ### Option B: RetrievalOrchestrator (Advanced)

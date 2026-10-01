@@ -150,7 +150,8 @@ print(engine.get_status())
 #  'intelligence_mode': 'NPLL', 'cache_size': 5000}
 ```
 
-An `intelligence_mode` of `Constant` means the NPLL model has not trained yet, which [Model Lifecycle](npll-lifecycle.md) explains how to resolve.
+An `intelligence_mode` of `Constant` means NPLL was explicitly disabled with
+`auto_train=False`. Requested training failures raise. See [Model Lifecycle](npll-lifecycle.md).
 
 ## Other backends
 
@@ -159,3 +160,11 @@ The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapter
 ## Next
 
 With a connection in place, run [Your First Retrieval](first-retrieval.md), or let an agent discover the graph's structure with [Schema Introspection](schema-introspection.md).
+
+### Optional status and provenance filters
+
+`edge_status_field` exposes metadata. Set `allowed_edge_statuses=("active",)` to
+filter edges by mapped status values. `provenance_target_collections=("Reports",)`
+restricts mapped provenance edges to those source collections. A configured
+provenance collection must exist; missing collections raise
+`BackendConfigurationError`.

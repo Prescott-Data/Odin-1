@@ -24,18 +24,23 @@ through without interpreting them.
 
 ## What edges can carry
 
-Odin works with a bare `_from`/`_to`/relation edge, but it makes use of richer metadata when it is present. A `weight` gives an edge structural importance; a `confidence` supplies a pre-existing plausibility (and falls back to `weight` when absent); `created_at` feeds the recency signal, and `provenance` links the edge back to a source document.
+Odin requires Arango endpoints and an explicitly mapped relation field. Optional
+metadata influences retrieval only through its mapping; a raw field named
+`created_at`, `weight`, or `confidence` is not automatically interpreted.
 
-| Field | Used for |
-|-------|----------|
-| `_from` / `_to` | Direction of the relationship |
-| configured relation field | The non-empty string relation label |
-| `weight` | Optional structural weight |
-| `confidence` | Optional pre-existing confidence (falls back to `weight`) |
-| `created_at` | Optional recency signal in aggregation |
-| `provenance` | Optional source/document reference |
+| Mapping | Used for |
+|---------|----------|
+| `_from` / `_to` | Canonical full document IDs and edge direction |
+| `relation_field` | Exact, non-empty relation label |
+| `edge_weight_field` | Structural weight; absent mapping means uniform weight |
+| `edge_timestamp_field` | Canonical `created_at` metadata for aggregation |
+| `edge_valid_from_field` / `edge_valid_to_field` | Explicit validity metadata |
+| `edge_status_field` | Status metadata; `allowed_edge_statuses` explicitly enables filtering |
+| `edge_provenance_fields` / `provenance_edge_collection` | Mapped source references |
 
-None of the optional fields are required (Odin defaults them sensibly), but the more of them your edges carry, the more the [aggregation](aggregation.md) and [triage](scoring.md) signals have to work with. Richer edges simply produce more trustworthy scores.
+Retrieved edge confidence comes from the configured confidence provider. The full
+raw assertion is retained under `provenance.assertion`, independent of mapped
+metadata. Internal numeric vector fields are excluded and their paths are recorded.
 
 ## Communities scope the graph
 
@@ -55,7 +60,7 @@ engine = OdinEngine(
 )
 ```
 
-For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Model artifacts are separately namespaced per community and mode.
+For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Retrieval communities share the same global training artifact.
 
 ## What Odin does *not* need from you
 

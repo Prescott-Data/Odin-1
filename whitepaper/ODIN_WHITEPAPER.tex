@@ -288,7 +288,7 @@ A key innovation is automatic model management. When \texttt{OdinEngine} initial
 \item \textbf{Train if Missing:} Extract rules via AMIE+~\cite{galarraga2015fast}, sample entity pairs, run EM for $T=10$ epochs
 \item \textbf{Weights-Only Storage:} Persist only $\mathbf{w} \in \mathbb{R}^{|\mathcal{L}|}$ (typically $<$1KB), not embeddings
 \item \textbf{Lazy Reconstruction:} Rebuild $\mathbf{E}, \mathbf{R}$ from graph on-demand
-\item \textbf{Graceful Fallback:} If training fails, set $S_{\text{plaus}} \equiv 1$
+\item \textbf{Explicit Failure:} Requested training failures raise; failed retraining preserves the active serving model. Structural-only retrieval must be configured explicitly.
 \end{enumerate}
 
 This eliminates operational complexity of ML deployment while ensuring model freshness.

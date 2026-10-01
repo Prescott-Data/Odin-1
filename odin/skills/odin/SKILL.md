@@ -44,7 +44,7 @@ engine = OdinEngine(
 
 ```python
 engine.retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64) -> dict
-engine.score_edge(src, rel, dst) -> float           # 0.0 impossible .. 1.0 plausible
+engine.score_edge(src, rel, dst) -> float           # learned edge plausibility; not proof or calibrated source truth
 engine.find_anchors(seeds, topn=20) -> list[tuple[str, float]]   # (node_id, ppr_score)
 engine.get_neighbors(node_id) -> dict                # {"node", "neighbors", "degree"}
 engine.retrain_model() -> bool
@@ -142,6 +142,20 @@ result = orch.retrieve(seeds=["v1"],
 NPLL bootstrap is backend-neutral. ArangoBackend currently supplies the training
 source and model store. Custom backends may implement both; retrieval-only
 backends require `auto_train=False`. Direct orchestrator users supply confidence.
+
+## Evidence mappings and training
+
+Arango optional fields are opt-in. Raw assertions live once under
+`provenance.assertion`; canonical `created_at` comes only from the configured
+timestamp field. Vector fields are removed with their excluded paths recorded.
+Bridge/affinity mappings require explicit entity, strength, community, endpoint,
+and score fields. Algorithm filters require explicit field mappings and values.
+Use full Arango document IDs in bridge and membership records.
+
+Global training artifacts are shared across retrieval communities. Neural scorers
+learn from snapshot evidence and deterministic unobserved corruptions. Reload
+replays training without persisting internal embeddings and validates complete
+training evidence. Rule generation uses observed motifs and relation priors.
 
 ## Schema introspection
 

@@ -458,7 +458,7 @@ INPUT: Triple (head, relation, tail)
        e.g., (Patient_4521, prescribed, Warfarin)
 
 STEP 1: Get Embeddings
-  head_emb = embedding_manager.get_entity_embedding("Patient_4521")
+  head_emb = embedding_manager.get_entity_embedding("entities/Patient_4521")
   rel_emb = embedding_manager.get_relation_embedding("prescribed")
   tail_emb = embedding_manager.get_entity_embedding("Warfarin")
 
@@ -727,7 +727,7 @@ graph = ArangoGraphConfig(
     membership_community_field="community_id",
 )
 backend = ArangoBackend(db, graph)
-engine = OdinEngine(backend, community_id="my_community")
+engine = OdinEngine(backend, community_id="my_community", community_mode="mapping")
 
 # 3. Retrieve
 result = engine.retrieve(seeds=["entity/my_entity"], max_paths=100)
@@ -737,7 +737,7 @@ print(f"Found {len(result['paths'])} paths")
 print(f"Triage score: {result['triage']['score']}/100")
 
 # 5. Score individual edges
-score = engine.score_edge("Patient_123", "treated_by", "Dr_Smith")
+score = engine.score_edge("entities/Patient_123", "treated_by", "entities/Dr_Smith")
 print(f"Edge plausibility: {score}")
 ```
 

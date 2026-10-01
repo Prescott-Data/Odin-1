@@ -16,12 +16,15 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 
 The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
 by `ArangoBackend(db, graph)`, with a required explicit Arango graph mapping,
-optional driver extras, and generic
+public `odin.backends` modules, optional driver extras, and generic
 `inspect_schema(backend)` inspection. Raw handles and former public adapter
 exports require migration.
 
 Training fingerprints cover the exact extracted triples. Model artifacts are
-namespaced, complete, and replaced only when their stored revision matches.
+shared by global training scope, complete, and replaced only when their stored revision matches.
+Scorers now learn arbitrary relation vocabularies and reload through validated
+deterministic training replay. Artifact version `6.0` stores recipes and complete
+loss histories while excluding internal embedding vectors.
 Training failures raise; constant confidence requires explicit
 `auto_train=False`. Failed retraining preserves the active serving state.
 

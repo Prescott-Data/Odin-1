@@ -8,12 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Public backend contracts now live under `odin.backends`; the former
+  `retrieval.backends` modules are removed without compatibility aliases.
+- Neural scorers train on snapshot evidence and deterministic unobserved corruptions,
+  with relation-conditioned scores. Artifact version `6.0` records the full training
+  recipe and loss history for validated reload replay without persisted embeddings.
+- Logical rules use vocabulary-independent priors and observed chain/symmetry support;
+  healthcare relation names and the tautological self-rule are removed.
+- Bridge, affinity, membership algorithms, and retrieval metadata use explicit field
+  mappings. Configured signal errors raise and are never cached as absent data.
+- Retrieval communities share the global Arango model. Startup conflicts load a
+  fully matching winner; forced retraining conflicts still raise.
+- Removed `ArangoCommunityAccessor`, `GlobalGraphAccessor`, `JanusGraphAccessor`,
+  `ArangoWriter`, and `JanusGraphWriter` from top-level `retrieval` exports.
+  Import accessors and writers from their concrete modules.
+- Standalone content helpers return complete `document` records and source helpers
+  return complete `edge`/`document` records. Vector exclusions are explicitly recorded.
+  Traversal assertions are stored once under `provenance.assertion`.
 - Extracted Arango training-snapshot reads and model persistence into
   `odin.backends`, with `GraphBackend`, `TripleSource`, and `ModelStore`
   protocols. Direct bootstrap callers now pass a source and store;
   `OdinEngine` now accepts an explicit `GraphBackend`, and raw database
   handles raise a migration error.
-- Model artifacts use a graph/community namespace and revision-checked atomic
+- Model artifacts use a database/global-training namespace and revision-checked atomic
   replacement. Missing, corrupt, unavailable, and concurrently changed models
   have distinct outcomes. Old unscoped artifacts are not reused.
 - Reworked the README to distinguish Odin's graph-navigation role from the
@@ -50,8 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Projected missing-node lookups return an empty mapping for both Arango
   accessors. Engine validation rejects inherited GraphAccessor placeholders.
-- `OdinTriples` resolves to its own explicit configuration, preserving the
-  previously effective settings. Unknown configuration names raise.
+- `OdinTriples` uses explicit compact dimensions: 32 for entity/relation embeddings
+  and 64 for rule/scoring layers. These differ from the former benchmark defaults.
+  Configurations are returned as independent copies; unknown names raise.
 - Trainer failures propagate with their original cause. Requested training
   that yields no model fails engine initialization; failed retraining preserves
   the active serving state instead of substituting constant confidence.

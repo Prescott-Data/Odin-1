@@ -419,7 +419,7 @@ When you initialize Odin with your knowledge graph:
 \item \textbf{Auto-Training:} If not, automatically extracts patterns, generates domain-aware rules, and trains the semantic model (10-30 seconds)
 \item \textbf{Efficient Storage:} Stores only learned rule weights (typically $<$1KB), not full embeddings
 \item \textbf{Lazy Reconstruction:} Rebuilds entity embeddings from graph data on-demand
-\item \textbf{Graceful Fallback:} If training fails, falls back to structural-only scoring
+\item \textbf{Explicit Failure:} Requested training failures raise; failed retraining preserves the active serving model. Structural-only retrieval requires explicit configuration.
 \end{enumerate}
 
 This eliminates the operational overhead of ML deployment while ensuring model freshness.
@@ -454,7 +454,7 @@ graph = ArangoGraphConfig(
     edge_collection="ClinicalLinks",
     relation_field="predicate",
 )
-odin = OdinEngine(ArangoBackend(db, graph), community_id="healthcare")
+odin = OdinEngine(ArangoBackend(db, graph))
 
 # Use during agent exploration
 result = odin.retrieve(

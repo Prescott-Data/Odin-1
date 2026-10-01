@@ -77,7 +77,7 @@ class TripleSource(Protocol):
 
 
 class ModelStore(Protocol):
-    """A graph/community-scoped store of complete JSON model artifacts.
+    """A backend training-scope store of complete JSON model artifacts.
 
     None means absent only. Invalid artifacts raise CorruptModelError; backend
     failures raise BackendIOError. Save atomically replaces the whole artifact.
@@ -113,9 +113,9 @@ class SchemaInspectionBackend(Protocol):
 
 
 def validate_model_artifact(document: Dict[str, Any]) -> None:
-    """Validate the weights-only artifact without dropping any extra evidence.
+    """Validate the rule weights and scorer training recipe without dropping any extra evidence.
 
-    Version 3 requires a complete report, rules, and unbounded relation names.
+    Version 6 requires complete rule/scorer reports and unbounded relation names.
     Transport metadata (keys, revisions, namespace) belongs to the store's
     envelope, not this document. Unknown JSON fields survive round trips.
     """
