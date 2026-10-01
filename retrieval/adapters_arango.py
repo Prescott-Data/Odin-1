@@ -1138,6 +1138,8 @@ class GlobalGraphAccessor(ArangoCommunityAccessor):
         super().__init__(db, community_id=community_id, community_mode=community_mode, **mapping)
 
     def get_bridges_from_community(self, community_id: str, min_strength: int = 1):
+        if self.bridge_col is None:
+            return []
         bind = {"@bridge_col": self.bridge_col, "community_field": self.bridge_community_field,
                 "strength_field": self.bridge_strength_field, "community_id": community_id,
                 "min_strength": min_strength}
@@ -1151,26 +1153,28 @@ class GlobalGraphAccessor(ArangoCommunityAccessor):
           RETURN b
         """, bind)
 
-    def get_top_bridges(self, limit: int = 20):
-        bind = {"@bridge_col": self.bridge_col, "strength_field": self.bridge_strength_field,
-                "limit": limit}
+    def get_top_bridges(self):
+        """Return every mapped bridge, ordered by strength."""
+        if self.bridge_col is None:
+            return []
+        bind = {"@bridge_col": self.bridge_col, "strength_field": self.bridge_strength_field}
         guard = self._algorithm_filter("b", self.bridge_algorithm_field, bind)
         return self._signal_query(f"""
         FOR b IN @@bridge_col
           {guard}
           SORT b[@strength_field] DESC
-          LIMIT @limit
           RETURN b
         """, bind)
 
-    def get_strongest_affinities(self, limit: int = 20):
-        bind = {"@affinity_col": self.affinity_col, "score_field": self.affinity_score_field,
-                "limit": limit}
+    def get_strongest_affinities(self):
+        """Return every mapped affinity, ordered by score."""
+        if self.affinity_col is None:
+            return []
+        bind = {"@affinity_col": self.affinity_col, "score_field": self.affinity_score_field}
         guard = self._algorithm_filter("a", self.affinity_algorithm_field, bind)
         return self._signal_query(f"""
         FOR a IN @@affinity_col
           {guard}
           SORT a[@score_field] DESC
-          LIMIT @limit
           RETURN a
         """, bind)

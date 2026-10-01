@@ -710,3 +710,16 @@ def test_membership_rejects_ambiguity_and_caches_only_successful_lookups():
     accessor.clear_cache()
     db.aql.execute = lambda *args, **kwargs: iter(['changed'])
     assert accessor.get_entity_community('Entities/a') == 'changed'
+
+
+def test_global_signal_helpers_return_tail_evidence_without_default_limits():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection='Bridges', bridge_entity_field='record',
+                    bridge_strength_field='strength', bridge_community_field='home',
+                    affinity_collection='Affinities', affinity_from_field='left',
+                    affinity_to_field='right', affinity_score_field='score')
+    accessor = ArangoBackend(db, graph).global_accessor()
+    rows = [{'_id': f'Signals/{i}', 'strength': i, 'score': i / 100} for i in range(151)]
+    db.aql.execute = lambda query, **kwargs: iter(rows)
+    assert accessor.get_top_bridges() == rows
+    assert accessor.get_strongest_affinities() == rows
