@@ -58,6 +58,7 @@ class ParallelAccessor:
             for index in range(151):
                 yield {"_id": f"edges/{index}", "u": node, "v": "nodes/end",
                        "rel": "requires", "weight": 1.0,
+                       "embedding": [1.0, 2.0],
                        "provenance": {"source_refs": [{"text": "evidence " * 2000 + str(index)}]}}
 
 
@@ -80,6 +81,8 @@ def test_parallel_assertions_and_long_tail_evidence_survive_scoring_and_normaliz
         edge = path["edges"][0]
         assert edge["provenance"] == original["provenance"]
         assert edge["relation"] == "requires"
+        assert "embedding" not in edge
+        assert edge["odin_excluded_vector_fields"] == ["embedding"]
         assert edge["confidence"] == 0.37
         assert path["decomp"]["edge_confidences"] == [0.37]
 

@@ -22,6 +22,7 @@ from .adapters import OverlayAccessor
 from .linker import CoherenceLinker, LinkerConfig, Mention
 from .utils.pii_redaction import redact_dict
 from .writers.base import PersistenceWriter
+from .evidence import clean_evidence
 
 # NEW: triage-ready aggregators (with guards & priors surprise)
 from .aggregators import build_opportunity_features, decompose_insight_score
@@ -422,6 +423,7 @@ class RetrievalOrchestrator:
         for p in paths:
             norm_edges: List[Dict[str, Any]] = []
             for e in p.get("edges", []):
+                e = clean_evidence(e)
                 u = e.get("u")
                 v = e.get("v")
                 rel = e.get("rel") or e.get("relation") or e.get("relationship")
