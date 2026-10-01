@@ -18,7 +18,7 @@ import torch
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
-from retrieval.backends.base import (
+from odin.backends.base import (
     ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelConflictError, ModelStore, StoredModel,
     TrainingSnapshot, TripleSource, validate_model_artifact,
 )

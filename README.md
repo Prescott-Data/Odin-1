@@ -156,7 +156,7 @@ for local ArangoDB setup and data-model requirements.
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
@@ -351,7 +351,7 @@ if score > 0.5:
 
 ```python
 from odin import OdinEngine
-from retrieval.backends.base import GraphBackend
+from odin.backends.base import GraphBackend
 
 engine = OdinEngine(
     backend: GraphBackend,             # Graph access and optional NPLL capabilities

@@ -13,7 +13,7 @@ Construct a backend, then ask Odin for its complete schema map:
 
 ```python
 from odin import inspect_schema
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 graph = ArangoGraphConfig(
     node_collection="CaseRecords",

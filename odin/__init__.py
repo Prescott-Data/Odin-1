@@ -8,7 +8,7 @@ A library for intelligent knowledge graph exploration using:
 
 Usage:
     from odin import OdinEngine
-    from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+    from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
     graph = ArangoGraphConfig(
         node_collection="MyEntities",
@@ -20,8 +20,16 @@ Usage:
     score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
 """
 
-from .engine import OdinEngine
-from .schema import inspect_schema
+def __getattr__(name):
+    # Keep backend contracts importable before engine/NPLL initialization.
+    if name == "OdinEngine":
+        from .engine import OdinEngine
+        return OdinEngine
+    if name == "inspect_schema":
+        from .schema import inspect_schema
+        return inspect_schema
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = ["OdinEngine", "inspect_schema"]
 __version__ = "0.3.0"

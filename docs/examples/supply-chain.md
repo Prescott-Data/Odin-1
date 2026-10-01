@@ -15,7 +15,7 @@ Because the interesting chains run deep, this is the case that calls for a **hig
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "supply", username="root", password=""

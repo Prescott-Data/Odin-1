@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 
 from .base import PersistenceWriter
-from retrieval.backends.arango import ArangoGraphConfig
-from retrieval.backends.base import BackendConfigurationError, BackendIOError
+from odin.backends.arango import ArangoGraphConfig
+from odin.backends.base import BackendConfigurationError, BackendIOError
 from retrieval.evidence import clean_evidence
 
 

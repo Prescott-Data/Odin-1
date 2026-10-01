@@ -14,7 +14,7 @@ from npll.bootstrap import KnowledgeBootstrapper, TrainingError, TrainingReport
 from npll.npll_model import NPLLModel
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.adapters import GraphAccessor
-from retrieval.backends.base import (
+from odin.backends.base import (
     BackendCapabilityError,
     BackendConfigurationError,
     GraphBackend,

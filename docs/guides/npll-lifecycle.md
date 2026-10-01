@@ -97,7 +97,7 @@ snapshot evidence determine model identity. Retrieval metadata mappings do not
 create additional copies:
 
 ```python
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 graph = ArangoGraphConfig(
     node_collection="entities",

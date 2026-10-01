@@ -4,9 +4,9 @@ Unit tests for ArangoDB schema inspection.
 import pytest
 from unittest.mock import Mock, MagicMock
 from odin.schema import inspect_schema
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
-from retrieval.backends.base import BackendCapabilityError
-from retrieval.backends.arango_schema import (
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.base import BackendCapabilityError
+from odin.backends.arango_schema import (
     ArangoSchemaInspector,
     CollectionSchema,
     EdgeSchema,

@@ -338,7 +338,7 @@ class ArangoBackend:
         return self.accessor("global", "none")
 
     def schema_inspector(self):
-        from retrieval.backends.arango_schema import ArangoSchemaInspector
+        from odin.backends.arango_schema import ArangoSchemaInspector
 
         if self._schema_inspector is None:
             self._schema_inspector = ArangoSchemaInspector(self.db)

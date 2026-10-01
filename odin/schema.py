@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional
 
-from retrieval.backends.base import BackendCapabilityError, GraphBackend
+from odin.backends.base import BackendCapabilityError, GraphBackend
 
 
 def inspect_schema(

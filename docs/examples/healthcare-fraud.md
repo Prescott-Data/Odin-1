@@ -15,7 +15,7 @@ Start from a provider you want to scrutinize and let Odin find the patterns arou
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "claims", username="root", password=""

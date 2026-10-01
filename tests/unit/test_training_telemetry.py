@@ -17,7 +17,7 @@ from npll.bootstrap import (
     TrainingReport,
 )
 from npll.training.npll_trainer import TrainingResult
-from retrieval.backends.base import ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, StoredModel
+from odin.backends.base import ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, StoredModel
 from tests.utils.backend_fakes import MemorySource, MemoryStore
 
 

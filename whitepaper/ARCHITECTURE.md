@@ -711,7 +711,7 @@ The simplest way to use Odin is through the `OdinEngine` class, which handles al
 from arango import ArangoClient
 from odin import OdinEngine
 from retrieval.adapters_arango import ArangoCommunityAccessor
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to ArangoDB
 client = ArangoClient(hosts="http://localhost:8529")
@@ -782,7 +782,7 @@ from retrieval.cache import CachedGraphAccessor
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import NPLLConfidence
 from npll.bootstrap import KnowledgeBootstrapper
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect
 client = ArangoClient(hosts="http://localhost:8529")
@@ -830,7 +830,7 @@ result = orchestrator.retrieve(
 
 ```python
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 class InvestigatorAgent:
     def __init__(self, db, llm: LLMClient):

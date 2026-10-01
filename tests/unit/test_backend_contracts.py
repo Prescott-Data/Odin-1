@@ -9,13 +9,13 @@ import pytest
 import torch
 
 from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
-from retrieval.backends.arango import (
+from odin.backends.arango import (
     ArangoBackend,
     ArangoGraphConfig,
     ArangoModelStore,
     ArangoTripleSource,
 )
-from retrieval.backends.base import (
+from odin.backends.base import (
     MODEL_KEY,
     BackendConfigurationError,
     BackendError,

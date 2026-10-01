@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 import pytest
-from retrieval.backends.arango import ArangoGraphConfig
-from retrieval.backends.base import BackendConfigurationError, BackendIOError
+from odin.backends.arango import ArangoGraphConfig
+from odin.backends.base import BackendConfigurationError, BackendIOError
 from retrieval.writers.arango_writer import ArangoWriter
 
 

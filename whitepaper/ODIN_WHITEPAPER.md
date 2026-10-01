@@ -394,7 +394,7 @@ Odin is designed as a **library** that agents import, not a standalone service:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to knowledge graph database
 client = ArangoClient(hosts="http://localhost:8529")
@@ -699,7 +699,7 @@ Odin is designed for organizations that:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")

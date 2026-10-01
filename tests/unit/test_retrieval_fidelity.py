@@ -5,7 +5,7 @@ from npll.bootstrap import (KnowledgeBootstrapper, create_snapshot_initialized_m
                             scoring_initialization_seed)
 from npll.core.knowledge_graph import load_knowledge_graph_from_triples
 from npll.utils.config import NPLLConfig
-from retrieval.backends.base import TrainingSnapshot
+from odin.backends.base import TrainingSnapshot
 from retrieval.beam import BeamParams, beam_search
 from retrieval.budget import SearchBudget
 from retrieval.confidence import ConstantConfidence, NPLLConfidence

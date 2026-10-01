@@ -14,8 +14,8 @@ from uuid import uuid4
 import pytest
 
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
-from retrieval.backends.base import MODEL_KEY, ModelConflictError, TrainingSnapshot
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.base import MODEL_KEY, ModelConflictError, TrainingSnapshot
 from tests.utils.backend_fakes import model_artifact
 
 pytestmark = pytest.mark.skipif(

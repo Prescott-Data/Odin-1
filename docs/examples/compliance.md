@@ -15,7 +15,7 @@ When you have a specific prohibited relationship in mind, score it directly, wit
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "compliance", username="root", password=""

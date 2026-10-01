@@ -3,7 +3,7 @@
 from copy import deepcopy
 from types import SimpleNamespace
 
-from retrieval.backends.base import (
+from odin.backends.base import (
     ARTIFACT_VERSION, ModelConflictError, StoredModel, TrainingSnapshot,
 )
 

@@ -465,7 +465,7 @@ class ArangoCommunityAccessor(GraphAccessor):
     # --------------------------
 
     def _signal_query(self, query, bind):
-        from .backends.base import BackendIOError
+        from odin.backends.base import BackendIOError
         try:
             return list(self.db.aql.execute(query, bind_vars=bind))
         except Exception as exc:

@@ -7,7 +7,7 @@ The simplest way to integrate Odin with your agents:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to database
 client = ArangoClient(hosts="http://localhost:8529")
@@ -52,7 +52,7 @@ The simplest approach using the high-level `OdinEngine` class:
 
 ```python
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 graph = ArangoGraphConfig(
     node_collection="entities",

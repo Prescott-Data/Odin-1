@@ -95,7 +95,7 @@ pip install -e ".[arango]"
 ```python title="explore.py"
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")

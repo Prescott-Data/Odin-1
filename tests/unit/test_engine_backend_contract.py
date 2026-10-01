@@ -9,7 +9,7 @@ import torch
 from odin.engine import OdinEngine
 from npll.bootstrap import TrainingError
 from retrieval.adapters import GraphAccessor
-from retrieval.backends.base import BackendCapabilityError, BackendConfigurationError
+from odin.backends.base import BackendCapabilityError, BackendConfigurationError
 from tests.utils.backend_fakes import MemorySource, MemoryStore
 from tests.unit.test_training_telemetry import make_training_result
 
@@ -212,7 +212,7 @@ def test_failed_retraining_preserves_complete_serving_state(failure_stage):
 
 
 def test_engine_scores_configured_cross_community_affinity_during_global_retrieval():
-    from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+    from odin.backends.arango import ArangoBackend, ArangoGraphConfig
     from tests.utils.backend_fakes import FakeArango
     db = FakeArango()
     graph = ArangoGraphConfig("Records", "Links", "predicate",

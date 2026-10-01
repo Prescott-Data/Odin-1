@@ -442,7 +442,7 @@ Odin is designed as a \textbf{Python library} that agents import, not a standalo
 \begin{lstlisting}[language=Python]
 from arango import ArangoClient
 from odin import OdinEngine
-from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://your-db:8529")
