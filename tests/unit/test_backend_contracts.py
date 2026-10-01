@@ -688,3 +688,25 @@ def test_malformed_mapped_signal_rows_raise_without_poisoning_cache():
         accessor.get_affinity("a", "b")
     assert accessor._bridge_cache == {}
     assert accessor._affinity_cache == {}
+
+
+def test_membership_rejects_ambiguity_and_caches_only_successful_lookups():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH_WITH_MEMBERSHIP).accessor('global', 'none')
+    calls = []
+    def execute(*args, **kwargs):
+        calls.append(kwargs)
+        return iter(['second', 'first'])
+    db.aql.execute = execute
+    with pytest.raises(BackendConfigurationError, match='Ambiguous'):
+        accessor.get_entity_community('Entities/a')
+    with pytest.raises(BackendConfigurationError, match='Ambiguous'):
+        accessor.get_entity_community('Entities/a')
+    assert len(calls) == 2
+    db.aql.execute = lambda *args, **kwargs: iter(['only', 'only'])
+    assert accessor.get_entity_community('Entities/a') == 'only'
+    db.aql.execute = lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError('cached query'))
+    assert accessor.get_entity_community('Entities/a') == 'only'
+    accessor.clear_cache()
+    db.aql.execute = lambda *args, **kwargs: iter(['changed'])
+    assert accessor.get_entity_community('Entities/a') == 'changed'

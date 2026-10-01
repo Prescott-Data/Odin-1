@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import OrderedDict
 from typing import Iterable, Tuple, Optional, List, Dict, Any, NamedTuple
 
 from .adapters import GraphAccessor, NodeId, RelId
@@ -148,6 +149,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         self.affinity_algorithm_field = affinity_algorithm_field
         self._bridge_cache: Dict[str, Optional[dict]] = {}
         self._affinity_cache: Dict[str, float] = {}
+        self._membership_cache = OrderedDict()
 
         self.nodes_col = nodes_collection
         self.edges_col = edges_collection
@@ -509,8 +511,18 @@ class ArangoCommunityAccessor(GraphAccessor):
         self._bridge_cache[entity_id] = bridge
         return bridge
 
+    def clear_cache(self):
+        """Invalidate configured signal lookups after external data updates."""
+        self._bridge_cache.clear()
+        self._affinity_cache.clear()
+        self._membership_cache.clear()
+
     def get_entity_community(self, entity_id: str) -> Optional[str]:
-        """Membership lookup is independent of traversal scope."""
+        """Return an unambiguous membership, independently of traversal scope."""
+        from odin.backends.base import BackendConfigurationError
+        if entity_id in self._membership_cache:
+            self._membership_cache.move_to_end(entity_id)
+            return self._membership_cache[entity_id]
         if self.membership_col:
             bind = {"@membership_col": self.membership_col, "entity_id": entity_id,
                     "membership_entity_field": self.memb_ent_field,
@@ -520,18 +532,26 @@ class ArangoCommunityAccessor(GraphAccessor):
             FOR m IN @@membership_col
               FILTER m[@membership_entity_field] == @entity_id
               {guard}
-              RETURN m[@membership_community_field]
+              RETURN DISTINCT m[@membership_community_field]
             """, bind)
-            if result and (not isinstance(result[0], str) or not result[0]):
-                from odin.backends.base import BackendConfigurationError
-                raise BackendConfigurationError("Mapped membership community must be a non-empty string")
-            return result[0] if result else None
-        if self.community_prop:
+        elif self.community_prop:
             result = self._signal_query(
-                "LET d = DOCUMENT(@id) RETURN d[@community_field]",
+                "LET d = DOCUMENT(@id) RETURN d == null ? null : d[@community_field]",
                 {"id": entity_id, "community_field": self.community_prop})
-            return result[0] if result else None
-        return None
+            if result == [None]:
+                result = []
+        else:
+            return None
+        if any(not isinstance(value, str) or not value for value in result):
+            raise BackendConfigurationError("Mapped membership community must be a non-empty string")
+        communities = set(result)
+        if len(communities) > 1:
+            raise BackendConfigurationError(f"Ambiguous community membership for {entity_id}")
+        community = next(iter(communities)) if communities else None
+        if len(self._membership_cache) >= 10000:
+            self._membership_cache.popitem(last=False)
+        self._membership_cache[entity_id] = community
+        return community
 
     def get_affinity(self, community_a: str, community_b: str) -> float:
         """Read an explicitly mapped affinity; missing rows have zero signal."""
