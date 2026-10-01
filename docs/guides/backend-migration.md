@@ -161,3 +161,11 @@ Neo4j engine support and cross-database parity validation are not included in
 this checkout. See [Adapters](../concepts/adapters.md) for custom retrieval
 integration and [Backend contracts](../development/backend-contracts.md) for
 implementing training and persistence.
+
+### Training artifact identity
+
+Arango training reads the global graph. Its model namespace includes the database,
+node collection, edge collection, relation field, and optional entity type field.
+Retrieval community IDs, scope modes, bridge mappings, and timestamp mappings do
+not create separate copies or trigger retraining. The exact triple snapshot hash
+invalidates a model when training evidence changes.

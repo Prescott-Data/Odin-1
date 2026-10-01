@@ -162,15 +162,15 @@ def test_concurrent_creation_and_replacement_reject_stale_writers():
     assert first.load(MODEL_KEY).document == replacement
 
 
-def test_backend_namespaces_separate_communities_modes_and_databases():
+def test_global_training_namespace_is_shared_across_retrieval_scopes():
     db = FakeArango()
     backend = ArangoBackend(db, ARANGO_GRAPH)
     a = backend.model_store("a", "mapping")
     b = backend.model_store("b", "mapping")
     unscoped = backend.model_store("a", "none")
     a.save(MODEL_KEY, model_artifact(), expected_revision=None)
-    assert b.load(MODEL_KEY) is None
-    assert unscoped.load(MODEL_KEY) is None
+    assert b.load(MODEL_KEY).document == model_artifact()
+    assert unscoped.load(MODEL_KEY).document == model_artifact()
     other = FakeArango()
     other.name = "other_graph"
     assert (ArangoBackend(other, ARANGO_GRAPH).model_store("a", "mapping").namespace !=
@@ -329,7 +329,7 @@ def test_global_accessor_uses_configured_membership_fields_for_scoring():
     assert "algorithm" not in bind_vars
 
 
-def test_engine_scope_drives_arango_model_namespace():
+def test_engine_retrieval_scope_does_not_duplicate_global_models():
     from odin.engine import OdinEngine
 
     backend = ArangoBackend(FakeArango(), ARANGO_GRAPH_WITH_MEMBERSHIP)
@@ -341,9 +341,9 @@ def test_engine_scope_drives_arango_model_namespace():
     )
     _, store = engine._training_capabilities()
 
-    assert store.namespace.endswith(
-        '"tenant-a","mapping"]'
-    )
+    assert store.namespace == backend.model_store("global", "none").namespace
+    changed_retrieval = replace(ARANGO_GRAPH_WITH_MEMBERSHIP, edge_timestamp_field="observed_at")
+    assert store.namespace == ArangoBackend(backend.db, changed_retrieval).model_store("b", "none").namespace
 
 
 def test_absence_corruption_and_backend_failure_are_distinct():

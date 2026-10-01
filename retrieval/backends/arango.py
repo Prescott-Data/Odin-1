@@ -310,8 +310,9 @@ class ArangoBackend:
 
     def model_store(self, community_id: str, community_mode: str) -> ArangoModelStore:
         namespace = json.dumps([
-            self.db.name, self.graph.namespace(),
-            community_id, community_mode,
+            self.db.name, "global-training",
+            self.graph.node_collection, self.graph.edge_collection,
+            self.graph.relation_field, self.graph.entity_type_field,
         ], ensure_ascii=False, separators=(",", ":"))
         return ArangoModelStore(self.db, namespace=namespace)
 
