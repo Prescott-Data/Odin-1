@@ -177,6 +177,8 @@ class ArangoCommunityAccessor(GraphAccessor):
         self.time_window = time_window
         self.as_of = as_of
         self.current_only = current_only
+        if current_only and (not as_of or not (edge_valid_from_property or edge_valid_to_property)):
+            raise ValueError("current_only requires as_of and a configured validity field")
         self.recency_half_life_days = recency_half_life_days
 
         self.type_priors = type_priors or {}
@@ -980,8 +982,6 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         # Validity fields are strictly opt-in; an active filter needs a mapping.
         if self.current_only:
-            if not self.as_of or not (self.edge_valid_from_prop or self.edge_valid_to_prop):
-                raise ValueError("current_only requires as_of and a configured validity field")
             bind["as_of"] = self.as_of
             if self.edge_valid_from_prop:
                 bind["valid_from_field"] = self.edge_valid_from_prop

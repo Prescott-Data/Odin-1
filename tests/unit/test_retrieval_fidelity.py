@@ -118,7 +118,7 @@ def test_arango_validity_filter_never_guesses_fields():
     args = dict(community_id="global", nodes_collection="Nodes", edges_collection="Edges",
                 relation_property="predicate", current_only=True, as_of="2026-10-01")
     with pytest.raises(ValueError, match="configured validity"):
-        list(ArangoCommunityAccessor(db, **args).iter_out("Nodes/a"))
+        ArangoCommunityAccessor(db, **args)
     accessor = ArangoCommunityAccessor(db, edge_valid_from_property="starts' at", **args)
     list(accessor.iter_out("Nodes/a"))
     assert "starts' at" not in db.queries[-1]
