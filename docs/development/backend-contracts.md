@@ -80,6 +80,13 @@ and are never replaced by an older reader. Version components compare numericall
 raise `CorruptModelError`. Damaged current documents fail validation. There is no
 legacy serving path.
 
+Version protection only covers changes that bump `ARTIFACT_VERSION`. Within one
+version, an older reader treats changed NPLL configuration fields or values,
+`SCORER_RECIPE`, or generated rules as stale and replaces the artifact. Any such
+change must bump `ARTIFACT_VERSION`; `tests/unit/test_artifact_version_guard.py`
+pins these semantics to the current version and fails until the bump is made.
+Runtime-only settings such as `device` are excluded.
+
 Errors have distinct meanings:
 
 | Outcome | Meaning |

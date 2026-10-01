@@ -53,6 +53,9 @@ def create_snapshot_initialized_model(snapshot: TrainingSnapshot, kg: KnowledgeG
 
 
 SCORER_RECIPE = "uniform-endpoint-corruptions-v2"
+# Device and loader/runtime settings do not change learned semantics.
+RUNTIME_CONFIG_FIELDS = frozenset({"device", "num_workers", "pin_memory", "eval_batch_size",
+                                   "log_interval", "save_interval", "checkpoint_dir"})
 
 
 def create_snapshot_trained_model(snapshot, kg, rules, config):
@@ -293,11 +296,8 @@ class KnowledgeBootstrapper:
             raise CorruptModelError("Model initialization seed does not match the graph snapshot")
         config_data = dict(inference_state["config"])
         current = asdict(get_config("OdinTriples"))
-        # Device and loader/runtime settings do not change learned semantics.
-        runtime_fields = {"device", "num_workers", "pin_memory", "eval_batch_size",
-                          "log_interval", "save_interval", "checkpoint_dir"}
-        if {k: v for k, v in config_data.items() if k not in runtime_fields} != {
-                k: v for k, v in current.items() if k not in runtime_fields}:
+        if {k: v for k, v in config_data.items() if k not in RUNTIME_CONFIG_FIELDS} != {
+                k: v for k, v in current.items() if k not in RUNTIME_CONFIG_FIELDS}:
             return None, None
         config = NPLLConfig(**{**config_data, "device": current["device"]})
         recipe = inference_state["scorer_training"]
