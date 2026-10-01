@@ -390,7 +390,7 @@ def test_rule_generation_change_is_staleness_not_corruption():
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -431,7 +431,7 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -456,7 +456,7 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -487,7 +487,7 @@ def test_bootstrap_propagates_store_errors(error, operation):
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -508,7 +508,7 @@ def test_force_retrain_uses_revision_read_before_training():
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -597,7 +597,7 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
             create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                "torch_version": str(torch.__version__), "loss_history": [0.5],
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -649,3 +649,16 @@ def test_global_accessor_retains_mapped_signal_utilities():
     assert accessor.get_top_bridges() == []
     assert db.query_arguments[0]["bind_vars"]["community_field"] == "home"
     assert db.query_arguments[1]["bind_vars"]["strength_field"] == "strength"
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda state: state["config"].pop("scorer_epochs"),
+    lambda state: state["config"].update(embedding_dim=100),
+    lambda state: state["scorer_training"]["loss_history"].pop(),
+    lambda state: state["config"].update(batch_size=0),
+])
+def test_incomplete_scorer_state_fails_before_storage_or_retraining(mutation):
+    artifact = model_artifact()
+    mutation(artifact["inference_state"])
+    with pytest.raises(CorruptModelError):
+        validate_model_artifact(artifact)

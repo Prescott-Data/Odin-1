@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Dict, Optional, Protocol, Tuple
 
 from retrieval.adapters import GraphAccessor
@@ -147,13 +147,25 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
     state = document.get("inference_state")
     require(isinstance(state, dict), "Missing complete inference state")
     require(isinstance(state.get("config"), dict) and state["config"], "Invalid inference configuration")
+    from npll.utils.config import NPLLConfig
+    require(set(state["config"]) == {f.name for f in fields(NPLLConfig)},
+            "Incomplete or unknown inference configuration fields")
+    try:
+        config = NPLLConfig(**state["config"])
+    except (AssertionError, TypeError, ValueError) as exc:
+        raise CorruptModelError("Invalid inference configuration") from exc
+    require(type(config.scorer_epochs) is int and config.scorer_epochs > 0 and
+            type(config.batch_size) is int and config.batch_size > 0 and
+            number(config.scorer_learning_rate) and config.scorer_learning_rate > 0,
+            "Invalid scorer training configuration")
     require(type(state.get("initialization_seed")) is int and state["initialization_seed"] >= 0,
             "Invalid deterministic initialization seed")
     recipe = state.get("scorer_training")
     require(isinstance(recipe, dict), "Missing scorer training evidence")
     require(isinstance(recipe.get("recipe"), str) and bool(recipe["recipe"]), "Invalid scorer recipe")
     require(isinstance(recipe.get("torch_version"), str), "Missing scorer runtime version")
-    require(isinstance(recipe.get("loss_history"), list) and bool(recipe["loss_history"]) and
+    require(isinstance(recipe.get("loss_history"), list) and
+            len(recipe["loss_history"]) == config.scorer_epochs and
             all(number(v) for v in recipe["loss_history"]), "Incomplete scorer loss history")
     require(count(recipe.get("example_count")) and recipe["example_count"] > 0,
             "Invalid scorer example count")

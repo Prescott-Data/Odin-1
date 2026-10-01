@@ -100,7 +100,7 @@ class TestBootstrapResultThreading:
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
                 model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -140,7 +140,7 @@ class TestBootstrapResultThreading:
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
                 model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
@@ -174,7 +174,7 @@ class TestBootstrapResultThreading:
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
                 model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
-                    "torch_version": str(torch.__version__), "loss_history": [0.5],
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
