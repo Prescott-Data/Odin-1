@@ -619,3 +619,21 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
              patch.object(store, "save", side_effect=ModelConflictError("raced")):
             with pytest.raises(ModelConflictError, match="training contract"):
                 bootstrap.ensure_model_ready()
+
+
+def test_status_and_provenance_filters_are_explicitly_mapped():
+    db = FakeArango()
+    db.create_collection("SourceLinks")
+    graph = replace(ARANGO_GRAPH, edge_status_field="state", allowed_edge_statuses=("active",),
+                    provenance_edge_collection="SourceLinks",
+                    provenance_target_collections=("Reports",))
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    list(accessor.iter_out_edges("Entities/a"))
+    bind = db.query_arguments[-1]["bind_vars"]
+    assert bind["status_field"] == "state"
+    assert bind["allowed_statuses"] == ("active",)
+    assert bind["provenance_targets"] == ["Reports"]
+    accessor.get_edge_provenance("Relationships/a")
+    assert db.query_arguments[-1]["bind_vars"]["provenance_targets"] == ["Reports"]
+    with pytest.raises(ValueError, match="status field"):
+        replace(ARANGO_GRAPH, allowed_edge_statuses=("active",))

@@ -41,9 +41,11 @@ class ArangoGraphConfig:
     edge_valid_from_field: Optional[str] = None
     edge_valid_to_field: Optional[str] = None
     edge_status_field: Optional[str] = None
+    allowed_edge_statuses: Optional[tuple[str, ...]] = None
     edge_provenance_fields: tuple[str, ...] = ()
     community_property_field: Optional[str] = None
     provenance_edge_collection: Optional[str] = None
+    provenance_target_collections: tuple[str, ...] = ()
     membership_collection: Optional[str] = None
     membership_entity_field: Optional[str] = None
     membership_community_field: Optional[str] = None
@@ -87,6 +89,16 @@ class ArangoGraphConfig:
                 any(not isinstance(value, str) or not value
                     for value in self.edge_provenance_fields)):
             raise ValueError("edge_provenance_fields must be a tuple of non-empty strings")
+        if (not isinstance(self.provenance_target_collections, tuple) or
+                any(not isinstance(value, str) or not value
+                    for value in self.provenance_target_collections)):
+            raise ValueError("provenance_target_collections must be a tuple of non-empty strings")
+        if self.allowed_edge_statuses is not None:
+            if (self.edge_status_field is None or
+                    not isinstance(self.allowed_edge_statuses, tuple) or
+                    any(not isinstance(value, str) or not value
+                        for value in self.allowed_edge_statuses)):
+                raise ValueError("allowed_edge_statuses requires a status field and tuple of strings")
         membership = (
             self.membership_collection,
             self.membership_entity_field,
@@ -285,12 +297,14 @@ class ArangoBackend:
             edge_valid_from_property=self.graph.edge_valid_from_field,
             edge_valid_to_property=self.graph.edge_valid_to_field,
             edge_status_property=self.graph.edge_status_field,
+            allowed_edge_statuses=self.graph.allowed_edge_statuses,
             community_mode=community_mode,
             community_property=self.graph.community_property_field or "",
             membership_collection=self.graph.membership_collection or "",
             membership_entity_field=self.graph.membership_entity_field or "",
             membership_community_field=self.graph.membership_community_field or "",
             provenance_edge_collection=provenance_collection,
+            provenance_target_collections=list(self.graph.provenance_target_collections),
             edge_provenance_fields=list(self.graph.edge_provenance_fields),
             bridge_collection=self.graph.bridge_collection,
             affinity_collection=self.graph.affinity_collection,
