@@ -4,6 +4,7 @@ Hyperparameters and settings based on the paper specifications
 """
 
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import List, Optional
 import torch
 
@@ -148,7 +149,7 @@ def get_config(dataset_name: str) -> NPLLConfig:
     
     if dataset_name not in configs:
         raise ValueError(f"Unknown NPLL dataset configuration: {dataset_name}")
-    return configs[dataset_name]
+    return deepcopy(configs[dataset_name])
 
 
 # Export default config

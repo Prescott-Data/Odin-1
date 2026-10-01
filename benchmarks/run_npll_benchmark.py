@@ -183,11 +183,13 @@ def run_benchmark(
     
     # Create NPLL config
     config = get_config("OdinTriples")
-    config.embedding_dim = 100
-    config.hidden_dim = 200
+    config.entity_embedding_dim = 100
+    config.relation_embedding_dim = 100
+    config.scoring_hidden_dim = 200
     results["config"] = {
-        "embedding_dim": config.embedding_dim,
-        "hidden_dim": config.hidden_dim,
+        "entity_embedding_dim": config.entity_embedding_dim,
+        "relation_embedding_dim": config.relation_embedding_dim,
+        "scoring_hidden_dim": config.scoring_hidden_dim,
     }
     
     # Create and train model

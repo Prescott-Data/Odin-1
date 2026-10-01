@@ -10,7 +10,8 @@ from npll.utils.config import FB15K_237_CONFIG, default_config, get_config
 def test_odin_config_has_a_compact_explicit_production_profile(capsys):
     config = get_config("OdinTriples")
     assert config.dataset_name == "OdinTriples"
-    assert default_config is config
+    assert asdict(default_config) == asdict(config)
+    assert default_config is not config
     assert config is not FB15K_237_CONFIG
     assert config.entity_embedding_dim == 32
     assert config.relation_embedding_dim == 32
@@ -18,6 +19,15 @@ def test_odin_config_has_a_compact_explicit_production_profile(capsys):
     assert config.scoring_hidden_dim == 64
     assert asdict(config) != asdict(FB15K_237_CONFIG)
     assert capsys.readouterr().out == ""
+
+
+def test_config_mutation_does_not_change_later_callers():
+    config = get_config("OdinTriples")
+    config.entity_embedding_dim = 100
+    config.eval_metrics.append("custom")
+    fresh = get_config("OdinTriples")
+    assert fresh.entity_embedding_dim == 32
+    assert "custom" not in fresh.eval_metrics
 
 
 @pytest.mark.parametrize("name", ["ArangoDB_Triples", "OdinTriple", "unknown"])
