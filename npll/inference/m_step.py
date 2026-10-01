@@ -298,15 +298,15 @@ class MStepOptimizer:
         Main M-step optimization procedure
 
         """
-        if mln.rule_weights is None:
-            logger.warning("No rule weights to optimize in M-step")
+        if mln.rule_weights is None or not e_step_result.fact_probabilities:
+            logger.info("No latent targets or rule weights to optimize in M-step")
             return MStepResult(
-                updated_rule_weights=torch.tensor([]),
-                weight_changes=torch.tensor([]),
+                updated_rule_weights=(mln.rule_weights.detach().clone() if mln.rule_weights is not None else torch.tensor([])),
+                weight_changes=(torch.zeros_like(mln.rule_weights) if mln.rule_weights is not None else torch.tensor([])),
                 gradient_norms=torch.tensor([]),
                 pseudo_likelihood=torch.tensor(0.0),
                 optimization_history=[],
-                convergence_info={'converged': True, 'reason': 'no_weights'},
+                convergence_info={'converged': True, 'reason': 'no_targets_or_weights'},
                 iteration_count=0
             )
         
