@@ -12,7 +12,7 @@ from retrieval.adapters import GraphAccessor
 
 Triple = Tuple[str, str, str]
 MODEL_KEY = "npll_current"
-ARTIFACT_VERSION = "6.0"
+ARTIFACT_VERSION = "7.0"
 
 
 class BackendError(RuntimeError):
@@ -79,7 +79,8 @@ class TripleSource(Protocol):
 class ModelStore(Protocol):
     """A backend training-scope store of complete JSON model artifacts.
 
-    None means absent only. Invalid artifacts raise CorruptModelError; backend
+    None means absent only. Malformed current artifacts raise CorruptModelError; obsolete schemas are
+    returned with their revision for replacement. Backend
     failures raise BackendIOError. Save atomically replaces the whole artifact.
     expected_revision=None means create only; a revision means replace only if
     unchanged. Conflicts raise ModelConflictError, without retry or overwrite.
@@ -113,9 +114,10 @@ class SchemaInspectionBackend(Protocol):
 
 
 def validate_model_artifact(document: Dict[str, Any]) -> None:
-    """Validate the rule weights and scorer training recipe without dropping any extra evidence.
+    """Validate current artifacts while allowing obsolete schemas to be replaced.
 
-    Version 6 requires complete rule/scorer reports and unbounded relation names.
+    Version 7 requires learned scorer state and complete training reports.
+    Runtime provenance does not invalidate otherwise compatible learned tensors.
     Transport metadata (keys, revisions, namespace) belongs to the store's
     envelope, not this document. Unknown JSON fields survive round trips.
     """
@@ -141,19 +143,28 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
         return False
 
     require(type(document) is dict and json_value(document), "Artifact must be finite JSON")
-    require(document.get("version") == ARTIFACT_VERSION, "Unsupported model artifact version")
+    require(isinstance(document.get("version"), str) and bool(document["version"]), "Missing artifact version")
+    if document["version"] != ARTIFACT_VERSION:
+        return  # Recognized envelope, obsolete/unknown schema: bootstrap replaces by CAS.
     require(document.get("model_type") == "npll" and
-            document.get("storage_type") == "deterministic_training", "Invalid model artifact type")
+            document.get("storage_type") == "learned_scorer", "Invalid model artifact type")
     state = document.get("inference_state")
     require(isinstance(state, dict), "Missing complete inference state")
     require(isinstance(state.get("config"), dict) and state["config"], "Invalid inference configuration")
     from npll.utils.config import NPLLConfig
-    require(set(state["config"]) == {f.name for f in fields(NPLLConfig)},
-            "Incomplete or unknown inference configuration fields")
+    if set(state["config"]) != {f.name for f in fields(NPLLConfig)}:
+        return  # Configuration schema evolution is staleness, not corruption.
     try:
         config = NPLLConfig(**state["config"])
     except (AssertionError, TypeError, ValueError) as exc:
         raise CorruptModelError("Invalid inference configuration") from exc
+    blob = state.get("scorer_state")
+    require(isinstance(blob, dict) and blob.get("format") == "torch-state-dict-v1" and
+            isinstance(blob.get("data"), str) and bool(blob["data"]) and
+            isinstance(blob.get("sha256"), str) and len(blob["sha256"]) == 64,
+            "Missing persisted scorer state")
+    require(type(config.scorer_negatives_per_side) is int and config.scorer_negatives_per_side > 0,
+            "Invalid corruption count")
     require(type(config.scorer_epochs) is int and config.scorer_epochs > 0 and
             type(config.batch_size) is int and config.batch_size > 0 and
             number(config.scorer_learning_rate) and config.scorer_learning_rate > 0,

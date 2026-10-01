@@ -49,7 +49,7 @@ def test_bootstrap_persists_small_deterministic_state_and_reloads_exact_scores()
     assert NPLLConfidence(trained.model).confidence_batch(source.triples) == \
         NPLLConfidence(reloaded.model).confidence_batch(source.triples)
     state = store.load("npll_current").document["inference_state"]
-    assert set(state) == {"config", "initialization_seed", "scorer_training"}
+    assert set(state) == {"config", "initialization_seed", "scorer_training", "scorer_state"}
 
 
 class ParallelAccessor:
@@ -148,7 +148,7 @@ def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors(
     replayed = create_snapshot_trained_model(snapshot, kg, rules, config)
     assert replayed.scorer_training == model.scorer_training
     assert NPLLConfidence(replayed).confidence_batch(triples) == scorer.confidence_batch(triples)
-    assert model.scorer_training["excluded_vector_fields"]
+    assert model.scorer_training["excluded_vector_fields"] == []
 
 
 def test_vector_exemption_preserves_embedding_source_text_and_rejects_metadata_collisions():

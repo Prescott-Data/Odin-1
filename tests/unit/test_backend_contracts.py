@@ -371,7 +371,6 @@ def test_absence_corruption_and_backend_failure_are_distinct():
     lambda d: d["schema_snapshot"]["relation_names"].pop(),
     lambda d: d["training_report"]["elbo_history"].pop(),
     lambda d: d.update(evidence={"unsupported_tuple": (1, 2)}),
-    lambda d: d.update(version="2.1"),
     lambda d: d.update(rules=[]),
 ])
 def test_corrupt_artifacts_are_rejected_before_writing(mutation):
@@ -389,7 +388,9 @@ def test_rule_generation_change_is_staleness_not_corruption():
     with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -430,7 +431,9 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
          patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -444,7 +447,7 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
         kg = create.call_args.args[1]
     assert source.calls == 1
     assert result.data_hash == expected.data_hash
-    assert {(t.head.name, t.relation.name, t.tail.name) for t in kg.known_facts} == set(expected.triples)
+    assert {(t.head.name, t.relation.name, t.tail.name) for t in kg.known_facts | kg.unknown_facts} == set(expected.triples)
     assert store.load(MODEL_KEY).document["data_hash"] == expected.data_hash
 
 
@@ -455,7 +458,9 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
     with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -486,7 +491,9 @@ def test_bootstrap_propagates_store_errors(error, operation):
          patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -507,7 +514,9 @@ def test_force_retrain_uses_revision_read_before_training():
     with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -596,7 +605,9 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
     with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config
@@ -652,8 +663,6 @@ def test_global_accessor_retains_mapped_signal_utilities():
 
 
 @pytest.mark.parametrize("mutation", [
-    lambda state: state["config"].pop("scorer_epochs"),
-    lambda state: state["config"].update(embedding_dim=100),
     lambda state: state["scorer_training"]["loss_history"].pop(),
     lambda state: state["config"].update(batch_size=0),
 ])

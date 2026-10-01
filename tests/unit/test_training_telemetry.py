@@ -99,7 +99,9 @@ class TestBootstrapResultThreading:
              patch("npll.bootstrap.create_trainer") as trainer:
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
-                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
@@ -117,16 +119,15 @@ class TestBootstrapResultThreading:
         assert result.model is not None
         assert result.report == trained.report
         assert result.report.converged is False
-        assert torch.all(model.mln.rule_weights == 0.5)
+        assert torch.all(result.model.mln.rule_weights == 0.5)
         assert source.calls == 2
         assert store.saves == 1
 
-    def test_legacy_doc_is_rejected_at_contract_boundary(self):
+    def test_legacy_doc_is_stale_at_contract_boundary(self):
         store = MemoryStore()
         store.docs[MODEL_KEY] = StoredModel({"rule_weights": [0.5], "version": "2.1"}, "1")
         bootstrapper = KnowledgeBootstrapper(MemorySource(), store)
-        with pytest.raises(CorruptModelError, match="version"):
-            bootstrapper.ensure_model_ready()
+        assert bootstrapper.ensure_model_ready().source == "failed"
 
     def test_persisted_doc_contains_full_training_report(self):
         store = MemoryStore()
@@ -139,7 +140,9 @@ class TestBootstrapResultThreading:
              patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
-                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config
@@ -173,7 +176,9 @@ class TestBootstrapResultThreading:
              caplog.at_level(logging.WARNING, logger="npll.bootstrap"):
             model = create_model.return_value
             def initialize(snapshot, kg, rules, config):
-                model.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                     "example_count": 2, "excluded_vector_fields": []}
                 model.config = config

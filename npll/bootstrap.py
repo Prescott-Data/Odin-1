@@ -4,14 +4,17 @@ Handles the end-to-end lifecycle of the NPLL model:
 1. Reading a backend-neutral training snapshot
 2. Generating domain-appropriate logical rules
 3. Training the model
-4. Persisting rule weights, rules, schema, and complete training/replay reports
+4. Persisting learned scorer state, rule weights, schema, and complete reports
 
 Architecture:
 - The injected ModelStore owns persistence
-- Model rebuilt from the same training snapshot on each load
+- Model architecture rebuilt from its vocabulary, then learned tensors loaded
 - No external files needed
 """
 
+import base64
+import hashlib
+import io
 import logging
 import random
 import torch
@@ -53,10 +56,10 @@ SCORER_RECIPE = "uniform-endpoint-corruptions-v2"
 
 
 def create_snapshot_trained_model(snapshot, kg, rules, config):
-    """Learn a scorer reproducibly; replay replaces persistence of internal vectors.
+    """Learn a scorer from supervised known facts and uniform endpoint corruptions.
 
     Negative examples are unobserved corruptions, not assertions of source falsity.
-    Every observed triple participates, in fixed order and complete batches.
+    Latent E-M holdout facts are excluded from supervision and negative examples.
     """
     if config.scorer_epochs <= 0 or config.scorer_learning_rate <= 0:
         raise TrainingError("Scorer training requires positive epochs and learning rate")
@@ -124,9 +127,7 @@ def create_snapshot_trained_model(snapshot, kg, rules, config):
         scorer.requires_grad_(False)
         model.scorer_training = {"recipe": SCORER_RECIPE, "torch_version": str(torch.__version__),
                                  "loss_history": losses, "example_count": len(examples),
-                                 "excluded_vector_fields": [
-                                     "scoring_module.embedding_manager.entity_embeddings.embedding.weight",
-                                     "scoring_module.embedding_manager.relation_embeddings.embedding.weight"]}
+                                 "excluded_vector_fields": []}
         return model
 
 
@@ -200,8 +201,8 @@ class KnowledgeBootstrapper:
     Manages the lifecycle of the NPLL model.
     
     Storage Strategy:
-    - Rule weights and audit metadata are saved through ModelStore
-    - Model is rebuilt from KG data on each load
+    - Learned scorer tensors, rule weights and audit metadata are saved through ModelStore
+    - Model parameters are loaded without training on worker startup
     - No external .pt files needed
     """
     
@@ -216,7 +217,7 @@ class KnowledgeBootstrapper:
         Flow:
         1. Extract a snapshot with its content fingerprint
         2. Read the model artifact and its revision from ModelStore
-        3. If found: rebuild model from KG, apply saved weights
+        3. If compatible: initialize architecture, load learned tensors and rule weights
         4. If not found: train new model, save weights to DB
         
         Args:
@@ -268,7 +269,9 @@ class KnowledgeBootstrapper:
     def _load_model_with_weights(
         self, snapshot: TrainingSnapshot, stored: Optional[StoredModel],
     ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
-        if stored is None or stored.document["data_hash"] != snapshot.data_hash:
+        if stored is None or stored.document.get("version") != ARTIFACT_VERSION:
+            return None, None
+        if stored.document.get("data_hash") != snapshot.data_hash:
             return None, None
         doc = stored.document
         if not snapshot.triples:
@@ -289,18 +292,36 @@ class KnowledgeBootstrapper:
         inference_state = doc["inference_state"]
         if inference_state["initialization_seed"] != scoring_initialization_seed(snapshot):
             raise CorruptModelError("Model initialization seed does not match the graph snapshot")
-        config_data = {**inference_state["config"]}
-        config_data["temperature"] = float(config_data["temperature"])
-        config = NPLLConfig(**config_data)
-        if config_data != {**asdict(get_config("OdinTriples")),
-                           "temperature": float(get_config("OdinTriples").temperature)}:
+        config_data = dict(inference_state["config"])
+        current = asdict(get_config("OdinTriples"))
+        # Device and loader/runtime settings do not change learned semantics.
+        runtime_fields = {"device", "num_workers", "pin_memory", "eval_batch_size",
+                          "log_interval", "save_interval", "checkpoint_dir"}
+        if {k: v for k, v in config_data.items() if k not in runtime_fields} != {
+                k: v for k, v in current.items() if k not in runtime_fields}:
             return None, None
+        config = NPLLConfig(**{**config_data, "device": current["device"]})
         recipe = inference_state["scorer_training"]
-        if recipe["recipe"] != SCORER_RECIPE or recipe["torch_version"] != str(torch.__version__):
+        if recipe["recipe"] != SCORER_RECIPE:
             return None, None
-        model = create_snapshot_trained_model(snapshot, kg, rules, config)
-        if model.scorer_training != recipe:
-            raise CorruptModelError("Replayed scorer does not match its recorded training evidence")
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        blob = inference_state["scorer_state"]
+        try:
+            payload = base64.b64decode(blob["data"], validate=True)
+            if hashlib.sha256(payload).hexdigest() != blob["sha256"]:
+                raise ValueError("Scorer state checksum differs")
+            tensors = torch.load(io.BytesIO(payload), map_location=config.device, weights_only=True)
+            expected = model.scoring_module.state_dict()
+            if set(tensors) != set(expected) or any(
+                    not isinstance(tensors[k], torch.Tensor) or tensors[k].shape != expected[k].shape or
+                    not torch.isfinite(tensors[k]).all() for k in expected):
+                raise ValueError("Invalid scorer tensors")
+            model.scoring_module.load_state_dict(tensors, strict=True)
+        except Exception as exc:
+            raise CorruptModelError("Invalid persisted scorer state") from exc
+        model.scorer_training = recipe
+        model.scoring_module.eval()
+        model.scoring_module.requires_grad_(False)
         with torch.no_grad():
             model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
         logger.info("Model rebuilt with saved weights (trained: %s)", doc["trained_at"])
@@ -310,7 +331,7 @@ class KnowledgeBootstrapper:
         self, snapshot: TrainingSnapshot, expected_revision: Optional[str],
     ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
         """
-        Train a new NPLL model and save ONLY the weights to database.
+        Train a new NPLL model and save its complete learned state to the store.
         """
         # 1. Extract Triples
         triples = snapshot.triples
@@ -371,7 +392,7 @@ class KnowledgeBootstrapper:
                 f"final_elbo={report.final_elbo:.6f}). Edge confidences may be poorly calibrated."
             )
         
-        # 6. Save learned rule weights and deterministic scorer initialization metadata.
+        # 6. Save complete learned state and training evidence.
         self._save_weights(model, kg, rules, snapshot, report, expected_revision)
         
         return model, report
@@ -379,13 +400,19 @@ class KnowledgeBootstrapper:
     def _save_weights(self, model: NPLLModel, kg: KnowledgeGraph,
                       rules: List[LogicalRule], snapshot: TrainingSnapshot,
                       report: TrainingReport, expected_revision: Optional[str]):
+        buffer = io.BytesIO()
+        torch.save({k: v.detach().cpu() for k, v in model.scoring_module.state_dict().items()}, buffer)
+        payload = buffer.getvalue()
         doc = {
             "model_type": "npll",
-            "storage_type": "deterministic_training",
+            "storage_type": "learned_scorer",
             "inference_state": {
                 "config": {**asdict(model.config), "temperature": float(model.config.temperature)},
                 "initialization_seed": scoring_initialization_seed(snapshot),
                 "scorer_training": model.scorer_training,
+                "scorer_state": {"format": "torch-state-dict-v1",
+                                 "data": base64.b64encode(payload).decode("ascii"),
+                                 "sha256": hashlib.sha256(payload).hexdigest()},
             },
             "trained_at": report.trained_at,
             "data_hash": snapshot.data_hash,

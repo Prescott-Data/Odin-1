@@ -177,7 +177,9 @@ def test_failed_retraining_preserves_complete_serving_state(failure_stage):
     with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
         def initialize(snapshot, kg, rules, config):
-            create.return_value.scorer_training = {"recipe": "observed-vs-corrupted-v1",
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
                 "example_count": 2, "excluded_vector_fields": []}
             create.return_value.config = config

@@ -105,10 +105,11 @@ def model_artifact(relation_count=1, history_length=2):
     return {
         "version": ARTIFACT_VERSION,
         "model_type": "npll",
-        "storage_type": "deterministic_training",
+        "storage_type": "learned_scorer",
         "inference_state": {
             "config": asdict(get_config("OdinTriples")), "initialization_seed": 0,
-            "scorer_training": {"recipe": "observed-vs-corrupted-v1", "torch_version": "test",
+            "scorer_state": {"format": "torch-state-dict-v1", "data": "fixture", "sha256": "a" * 64},
+            "scorer_training": {"recipe": "uniform-endpoint-corruptions-v2", "torch_version": "test",
                                 "loss_history": [0.5] * get_config("OdinTriples").scorer_epochs, "example_count": 2,
                                 "excluded_vector_fields": []},
         },
