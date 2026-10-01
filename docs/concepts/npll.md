@@ -22,7 +22,7 @@ NPLL ships with no hand-written knowledge about medicine, finance, or supply cha
 
 ## You never train it by hand
 
-The model is self-managing. The first time you construct an `OdinEngine` against a graph, it bootstraps itself, extracting edge patterns and training the model (2-5 minutes), then persisting the learned weights into an ArangoDB collection. Every run after that just loads those weights and rebuilds in about 30 seconds. There is no separate ML pipeline, no `.pt` files to ship, and no DevOps overhead; when the graph's structure changes materially you simply ask for a retrain:
+The model is self-managing. The first time you construct an `OdinEngine` against a graph, it bootstraps itself, extracting edge patterns and training the model (cost depends on graph size and hardware), then persisting the learned weights into an ArangoDB collection. Every run after that just loads those weights and rebuilds the architecture without training. There is no separate ML pipeline, no `.pt` files to ship, and no DevOps overhead; when the graph's structure changes materially you simply ask for a retrain:
 
 ```python
 engine.retrain_model()   # re-learn after major graph changes

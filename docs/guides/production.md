@@ -22,7 +22,7 @@ Memory is the resource to plan around: expect roughly 500 MB to 2 GB depending o
 
 ## Managing the model
 
-The first retrieval after startup trains or loads the [NPLL model](npll-lifecycle.md): loading persisted weights takes about thirty seconds, training from scratch two to five minutes. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in [Model Lifecycle](npll-lifecycle.md).
+Engine construction trains or loads the [NPLL model](npll-lifecycle.md): compatible artifacts load learned tensors without training. Startup still reads and fingerprints the graph; measure its cost on your data and hardware. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in [Model Lifecycle](npll-lifecycle.md).
 
 ## Concurrency
 

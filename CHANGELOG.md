@@ -10,15 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Public backend contracts now live under `odin.backends`; the former
   `retrieval.backends` modules are removed without compatibility aliases.
-- Neural scorers train on snapshot evidence and deterministic unobserved corruptions,
-  with relation-conditioned scores. Artifact version `6.0` records the full training
-  recipe and loss history for validated reload replay without persisted embeddings.
+- Neural scorers train on known facts and several seeded uniform head/tail
+  corruptions per positive. The E-M holdout is excluded from supervision.
+  Relation conditioning extends the published Equation 7, including in benchmarks.
+  Artifact version `7.0` stores learned scorer tensors in a checked binary blob
+  alongside complete training evidence; reload performs no scorer training.
+  Device and Torch version differences do not invalidate learned state.
+  Obsolete artifact/config schemas retrain; damaged current artifacts raise.
+- Rule grounding uses observed bodies and sampled contrasts across the vocabulary.
+  Chain mining samples at most 1,000 paths per middle node, requires support >= 2
+  and confidence >= 0.2, and reuses bounded sampled joins during grounding.
 - Logical rules use vocabulary-independent priors and observed chain/symmetry support;
   healthcare relation names and the tautological self-rule are removed.
 - Bridge, affinity, membership algorithms, and retrieval metadata use explicit field
   mappings. Configured signal errors raise and are never cached as absent data.
 - Retrieval communities share the global Arango model. Startup conflicts load a
   fully matching winner; forced retraining conflicts still raise.
+- `GlobalGraphAccessor` now shares explicit community signal mappings. Its old
+  keyword constructor, cross-community traversal weight bonus,
+  `min_affinity_threshold`, and `score_community_crossing` are removed.
+  `clear_cache()` invalidates bridge, affinity and membership lookup caches.
+  `get_top_bridges()` and `get_strongest_affinities()` return all ordered records;
+  their `limit` argument is removed. The unused `engine.global_accessor` is removed;
+  direct callers use `backend.global_accessor()`.
+- Ambiguous community membership raises; successful lookups use a bounded cache.
+  Invalid `current_only` mappings fail at construction. Evidence exclusions use
+  `odin_excluded_vector_fields` consistently. Writers preserve user metadata.
 - Removed `ArangoCommunityAccessor`, `GlobalGraphAccessor`, `JanusGraphAccessor`,
   `ArangoWriter`, and `JanusGraphWriter` from top-level `retrieval` exports.
   Import accessors and writers from their concrete modules.

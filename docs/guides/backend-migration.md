@@ -131,12 +131,21 @@ Saves use revision-checked atomic replacement. On a startup race, the losing wor
 loads the winner only after validating its snapshot, rules, configuration, and
 scorer recipe. Forced retraining conflicts still raise `ModelConflictError`.
 
-Artifact version `6.0` records the complete rule report and neural scorer training
-recipe, runtime version, example count, and loss history. Scorer parameters and
-internal embedding vectors are reconstructed by deterministic training replay;
-they are not persisted. Reload verifies replay evidence and preserves identical
-scores under the recorded runtime and configuration. Older artifacts fail the
-version boundary clearly and must be replaced through a deliberate migration.
+Artifact version `7.0` stores learned scorer tensors in a checked binary blob,
+with the complete rule report, scorer recipe, runtime provenance, example count
+and loss history. Reload loads parameters without training. Device and Torch
+version differences do not invalidate the artifact. Obsolete version/config schemas
+are retrained and replaced by CAS; damaged current artifacts raise. Scores are
+identical on the same runtime, while numerical differences across hardware remain
+possible. Evidence records still exclude internal vectors.
+
+`GlobalGraphAccessor` shares explicit mappings with the community accessor. Its old
+keyword constructor, traversal weight bonus, `min_affinity_threshold` and
+`score_community_crossing` are removed. `clear_cache()` clears signal lookups.
+`get_top_bridges()` and `get_strongest_affinities()` return every ordered record
+and no longer accept a limit. `engine.global_accessor` is removed; use
+`backend.global_accessor()` for direct utilities. Retrieval scores signals through
+the ordinary accessor. Ambiguous membership rows raise rather than choosing a row.
 
 ## Choose training behavior explicitly
 

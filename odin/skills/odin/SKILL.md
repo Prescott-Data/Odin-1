@@ -153,9 +153,12 @@ and score fields. Algorithm filters require explicit field mappings and values.
 Use full Arango document IDs in bridge and membership records.
 
 Global training artifacts are shared across retrieval communities. Neural scorers
-learn from snapshot evidence and deterministic unobserved corruptions. Reload
-replays training without persisting internal embeddings and validates complete
-training evidence. Rule generation uses observed motifs and relation priors.
+learn from known facts and uniform corruptions of both endpoints; E-M holdout
+facts are excluded from supervision. Reload loads learned tensor state from an
+integrity-checked model blob without training. Evidence outputs exclude vectors.
+Obsolete artifact/config schemas retrain, damaged blobs raise, and runtime/device
+differences do not invalidate weights. Rule mining uses bounded sampled motifs
+and confidence thresholds; grounding reuses observed joins and sampled contrasts.
 
 ## Schema introspection
 

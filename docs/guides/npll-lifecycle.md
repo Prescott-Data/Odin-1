@@ -8,11 +8,17 @@ The [NPLL](../concepts/npll.md) model is self-managing: it trains itself from yo
 
 ## The three phases
 
-The first startup trains the neural scorer against deterministic unobserved
-corruptions, then trains rule weights through E-M. It persists the complete training
-reports and scorer recipe. Later startups replay scorer training on the same
-snapshot and load the saved rule weights. Embedding vectors are not stored.
-Startup cost depends on graph size; replay is computation, not just a weight read.
+The first startup trains the neural scorer on known facts against several seeded
+uniform corruptions of each endpoint, then trains rule weights through E-M.
+Held-out latent facts are excluded from scorer supervision and negative examples.
+It persists learned scorer tensors in a checked binary blob, rule weights and
+complete training reports. Later startups load those tensors without training.
+Startup still reads and fingerprints the graph and builds the vocabulary and rules;
+its cost depends on graph size and hardware. No fixed startup time is guaranteed.
+
+Artifacts with obsolete versions or configuration schemas retrain through a
+revision-checked replacement. Damaged current artifacts raise. Device and Torch
+version differences are recorded provenance and do not trigger retraining.
 
 ## Controlling training at startup
 

@@ -88,7 +88,7 @@ backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="global")
 ```
 
-On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
+On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (cost depends on graph size and hardware). It then stores the learned weights in an ArangoDB collection, so subsequent runs load learned state without training. See [Model Lifecycle](guides/npll-lifecycle.md).
 
 !!! tip "Explicit retrieval-only operation"
     Use `OdinEngine(backend, auto_train=False)` to retrieve with constant

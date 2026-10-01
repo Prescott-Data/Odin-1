@@ -74,11 +74,14 @@ class BilinearScoringFunction(nn.Module):
                 relation_embeddings: torch.Tensor,
                 tail_embeddings: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass implementing Equation 7
+        Forward pass for Odin's relation-conditioned extension of Equation 7.
+
+        The published equation is evaluated on eh + er and et + er. This is
+        an implementation variant, including in Odin's benchmark runner.
         
         Args:
             head_embeddings: [batch_size, entity_dim] - eh vectors
-            relation_embeddings: [batch_size, relation_dim] - relation vectors (unused in Eq 7 but kept for completeness)
+            relation_embeddings: [batch_size, relation_dim] - relation vectors added to both endpoint embeddings
             tail_embeddings: [batch_size, entity_dim] - et vectors
             
         Returns:
@@ -338,7 +341,7 @@ def create_scoring_module(config: NPLLConfig, kg=None) -> NPLLScoringModule:
 
 def verify_equation7_implementation():
     """
-    Verification function to ensure Equation 7 is implemented correctly
+    Smoke check for the relation-conditioned Equation 7 variant
     Tests the mathematical operations step by step
     """
     from ..utils.config import default_config
@@ -353,7 +356,7 @@ def verify_equation7_implementation():
     
     head_emb = torch.randn(batch_size, d)
     tail_emb = torch.randn(batch_size, d)
-    rel_emb = torch.randn(batch_size, d)  # Not used in Eq 7 but kept for interface
+    rel_emb = torch.randn(batch_size, d)  # Conditions both endpoints
     
     # Forward pass
     scores = scoring_func(head_emb, rel_emb, tail_emb)
@@ -368,6 +371,6 @@ def verify_equation7_implementation():
     single_score = scoring_func.forward_single(head_emb[0], rel_emb[0], tail_emb[0])
     assert abs(single_score.item() - scores[0].item()) < 1e-5, "Single vs batch mismatch"
     
-    logger.info("Equation 7 implementation verified successfully")
+    logger.info("Relation-conditioned scoring implementation verified successfully")
     
     return True

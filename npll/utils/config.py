@@ -130,7 +130,7 @@ KINSHIP_CONFIG = NPLLConfig(
 
 
 # Explicit compact production profile. Scorer parameters learn from snapshot
-# evidence and are reconstructed by deterministic training replay. The E-M loop
+# evidence and are persisted as learned scorer state. The E-M loop
 # independently optimizes logical rule weights.
 ODIN_TRIPLES_CONFIG = NPLLConfig(
     dataset_name="OdinTriples", entity_embedding_dim=32,

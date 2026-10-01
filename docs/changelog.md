@@ -22,9 +22,14 @@ exports require migration.
 
 Training fingerprints cover the exact extracted triples. Model artifacts are
 shared by global training scope, complete, and replaced only when their stored revision matches.
-Scorers now learn arbitrary relation vocabularies and reload through validated
-deterministic training replay. Artifact version `6.0` stores recipes and complete
-loss histories while excluding internal embedding vectors.
+Scorers train on known facts and uniform corruptions of both endpoints, excluding
+the E-M holdout. Artifact version `7.0` loads learned tensor state without training
+and keeps complete loss histories. Obsolete schemas retrain; damaged blobs raise.
+Device and Torch version differences do not invalidate learned state.
+Rule mining and grounding use bounded observed joins and confidence thresholds.
+Global accessor traversal bonuses and the unused engine global accessor are removed.
+Signal helpers return every record; their limit argument is removed. Membership
+ambiguity raises and lookup results are cached. Writers preserve user metadata.
 Training failures raise; constant confidence requires explicit
 `auto_train=False`. Failed retraining preserves the active serving state.
 

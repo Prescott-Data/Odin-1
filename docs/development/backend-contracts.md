@@ -61,11 +61,11 @@ alongside Arango `_key` / `_rev` metadata. Create uses non-overwriting insert.
 Update uses document replacement with `_rev` and `check_rev=True`, so removed
 nested fields are actually removed and competing writers cannot silently win.
 
-Artifact version `6.0` requires:
+Artifact version `7.0` requires:
 
 - `model_type`, `storage_type`, `trained_at`, `data_hash`, and `version`;
 - `inference_state` with the complete config, seed, scorer recipe, runtime version,
-  example count, full loss history, and explicitly excluded embedding paths;
+  example count, full loss history, and a checksum-protected scorer-state blob;
 - all `rule_weights` and ordered `rules` (ID, text, confidence);
 - `schema_snapshot` with entity, relation, and fact counts and every relation name;
 - a complete `training_report`, including both iteration histories and convergence criteria.
@@ -73,15 +73,16 @@ Artifact version `6.0` requires:
 The format is finite JSON with string object keys. Complete nested values and
 additional JSON evidence fields are preserved. No relation or history cap is
 applied. Unscoped `OdinModels/npll_current` documents remain untouched and are
-not reused. Incompatible or incomplete documents encountered in the new
-namespace fail validation rather than triggering a compatibility path.
+not reused. Obsolete versions and configuration schemas are returned with their revision and
+retrained by bootstrap. Damaged current documents fail validation. There is no
+legacy serving path.
 
 Errors have distinct meanings:
 
 | Outcome | Meaning |
 | --- | --- |
 | `None` | Artifact or model collection is absent |
-| `CorruptModelError` | Unsupported/incomplete artifact or invalid envelope |
+| `CorruptModelError` | Damaged current artifact or invalid envelope |
 | `BackendIOError` | Extraction, transport, permission, or persistence failure |
 | `ModelConflictError` | Another writer created, replaced, or deleted the artifact since the read |
 
@@ -112,10 +113,12 @@ examples, not proof that a relationship is false. Learned edge confidence is not
 source truth or a calibrated probability. The E-M loop separately learns MLN rule
 weights. Its convergence report describes that loop, not scorer calibration.
 
-Internal embeddings are excluded from persistence. Reload replays the complete
-scorer training recipe on the same snapshot, verifies its loss history, and applies
-the saved rule weights. Replay incurs computation at startup. Changes to the
-runtime, profile, or recipe invalidate reuse; malformed artifacts fail clearly.
+Learned scorer tensors are persisted as a base64 binary state dictionary with a
+SHA-256 checksum, loaded with Torch weights-only deserialization and strict tensor
+name, shape and finiteness checks. This model state is separate from evidence
+records, which exclude internal vectors. Reload initializes the architecture and
+loads tensors without replay or floating-point loss comparisons. Device and Torch
+version changes do not invalidate reuse. Semantic profile or recipe changes retrain.
 Cross-backend retrieval parity and Neo4j live tests are not established yet.
 
 Run the live tests with an account allowed to create databases:
