@@ -5,7 +5,8 @@ Logical Rules and Ground Rules for NPLL
 from typing import List, Set, Dict, Tuple, Optional, Iterator, Any
 from dataclasses import dataclass, field
 from enum import Enum
-import itertools
+import random
+import hashlib
 import logging
 from collections import defaultdict
 
@@ -162,49 +163,79 @@ class LogicalRule:
                 ))
             return ground_rules
         
-        # Generate all possible variable substitutions
-        # Limit combinations to prevent explosion
-        max_entities_per_var = min(len(entities), max_groundings // len(variables) + 1)
-        
-        substitution_count = 0
-        for substitution_values in itertools.product(entities[:max_entities_per_var], 
-                                                   repeat=len(variables)):
-            if substitution_count >= max_groundings:
-                break
-            
-            substitution = dict(zip(variables, substitution_values))
-            
-            # Generate ground atoms
-            try:
-                ground_body_atoms = [atom.ground_with_substitution(substitution) 
-                                   for atom in self.body]
-                ground_head_atom = self.head.ground_with_substitution(substitution)
-                
-                # Convert to triples
-                ground_body_triples = [atom.to_triple() for atom in ground_body_atoms 
-                                     if atom.is_ground()]
-                ground_head_triple = ground_head_atom.to_triple()
-                
-                # Check if all conversions successful
-                if (ground_head_triple and 
-                    len(ground_body_triples) == len(ground_body_atoms) and
-                    all(t is not None for t in ground_body_triples)):
-                    
-                    ground_rule = GroundRule(
-                        rule_id=f"{self.rule_id}_ground_{substitution_count}",
-                        body_facts=ground_body_triples,
-                        head_fact=ground_head_triple,
-                        parent_rule=self,
-                        substitution=substitution.copy()
-                    )
-                    
-                    ground_rules.append(ground_rule)
-                    substitution_count += 1
-                    
-            except Exception as e:
-                logger.debug(f"Failed to ground rule {self.rule_id}: {e}")
+        # Join observed facts with the rule body, then sample negatives across
+        # the entire entity vocabulary. Never take an alphabetical Cartesian prefix.
+        rng = random.Random(int(hashlib.sha256(self.rule_id.encode()).hexdigest()[:16], 16))
+        facts = sorted(kg.known_facts | kg.unknown_facts,
+                       key=lambda f: (f.head.name, f.relation.name, f.tail.name))
+        by_relation = defaultdict(list)
+        for fact in facts:
+            by_relation[fact.relation].append(fact)
+
+        def matches(atom, fact, substitution):
+            updated = dict(substitution)
+            for arg, value in zip(atom.arguments, (fact.head, fact.tail)):
+                if isinstance(arg, Entity):
+                    if arg != value:
+                        return None
+                elif arg in updated and updated[arg] != value:
+                    return None
+                else:
+                    updated[arg] = value
+            return updated
+
+        def joins(index, substitution):
+            if index == len(self.body):
+                if self.body:
+                    yield substitution
+                else:
+                    for fact in by_relation[self.head.predicate]:
+                        bound = matches(self.head, fact, substitution)
+                        if bound is not None:
+                            yield bound
+                return
+            atom = self.body[index]
+            for fact in by_relation[atom.predicate]:
+                bound = matches(atom, fact, substitution)
+                if bound is not None:
+                    yield from joins(index + 1, bound)
+
+        supported_budget = max(1, max_groundings // 2)
+        chosen = []
+        seen = 0
+        for bound in joins(0, {}):
+            seen += 1
+            if len(chosen) < supported_budget:
+                chosen.append(bound)
+            else:
+                slot = rng.randrange(seen)
+                if slot < supported_budget:
+                    chosen[slot] = bound
+        identities = {tuple(bound.get(v) for v in variables) for bound in chosen}
+        attempts = 0
+        observed = set(facts)
+        while len(chosen) < max_groundings and attempts < max_groundings * 20:
+            attempts += 1
+            bound = {v: rng.choice(entities) for v in variables}
+            identity = tuple(bound[v] for v in variables)
+            if identity in identities:
                 continue
-        
+            body = [atom.ground_with_substitution(bound).to_triple() for atom in self.body]
+            head = self.head.ground_with_substitution(bound).to_triple()
+            # Priors contrast observed heads with absent heads. Other rules
+            # contrast observed-body joins with false-body substitutions.
+            if (not self.body and head in observed) or (self.body and all(f in observed for f in body)):
+                continue
+            identities.add(identity)
+            chosen.append(bound)
+        for index, substitution in enumerate(chosen):
+            body = [atom.ground_with_substitution(substitution).to_triple() for atom in self.body]
+            head = self.head.ground_with_substitution(substitution).to_triple()
+            if head is not None and all(f is not None for f in body):
+                ground_rules.append(GroundRule(
+                    rule_id=f"{self.rule_id}_ground_{index}", body_facts=body,
+                    head_fact=head, parent_rule=self, substitution=substitution))
+
         logger.info(f"Generated {len(ground_rules)} ground rules for {self.rule_id}")
         return ground_rules
     

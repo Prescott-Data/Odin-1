@@ -41,3 +41,24 @@ def test_same_relation_transitivity_and_tail_support_are_mined_deterministically
     assert first[0].confidence == 1.0
     assert [(r.rule_id, str(r), r.support) for r in first] == \
         [(r.rule_id, str(r), r.support) for r in second]
+
+
+def test_groundings_include_observed_bodies_and_unbiased_prior_heads():
+    triples = []
+    for i in range(120):
+        triples.extend([(f'Z/{i}', 'r1', f'M/{i}'),
+                        (f'M/{i}', 'r2', f'T/{i}'),
+                        (f'Z/{i}', 'r3', f'T/{i}')])
+    kg = load_knowledge_graph_from_triples(triples)
+    generator = RuleGenerator(kg)
+    chain = generator.generate_simple_rules()[0]
+    groundings = chain.generate_ground_rules(kg, max_groundings=300)
+    true_bodies = [g for g in groundings if all(f in kg.known_facts for f in g.body_facts)]
+    assert len(true_bodies) == 120
+    assert any(g.head_fact.head.name == 'Z/119' for g in true_bodies)
+    assert len(groundings) == 300
+    prior = next(r for r in generator.generate_relation_priors() if r.head.predicate.name == 'r1')
+    grounded = prior.generate_ground_rules(kg, max_groundings=300)
+    assert sum(g.head_fact in kg.known_facts for g in grounded) == 120
+    assert len({g.head_fact.head.name for g in grounded}) > 120
+    assert [str(g) for g in groundings] == [str(g) for g in chain.generate_ground_rules(kg, 300)]
