@@ -78,3 +78,15 @@ def test_low_confidence_coincidences_are_not_mined_as_rules():
     triples += [('hub', 'r2', f'b/{i}') for i in range(30)]
     generator = RuleGenerator(load_knowledge_graph_from_triples(triples))
     assert generator.generate_simple_rules(min_support=1, min_confidence=0.2) == []
+
+
+def test_mined_grounding_reuses_bounded_join_population():
+    triples = [(f'A/{i}', 'in', 'hub') for i in range(100)]
+    triples += [('hub', 'out', f'B/{i}') for i in range(100)]
+    triples += [(f'A/{i}', 'result', f'B/{j}') for i in range(100) for j in range(100)]
+    kg = load_knowledge_graph_from_triples(triples)
+    rules = RuleGenerator(kg).generate_simple_rules(max_paths_per_node=40)
+    chain = next(r for r in rules if [a.predicate.name for a in r.body] == ['in', 'out'])
+    assert len(chain.grounding_instances) == 40
+    grounded = chain.generate_ground_rules(kg, max_groundings=100)
+    assert sum(all(f in kg.known_facts for f in g.body_facts) for g in grounded) == 40

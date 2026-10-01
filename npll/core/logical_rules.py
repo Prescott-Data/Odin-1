@@ -101,6 +101,7 @@ class LogicalRule:
     rule_type: RuleType = RuleType.GENERAL
     confidence: float = 0.5  # Initial confidence score
     support: int = 0  # Number of supporting instances
+    grounding_instances: Optional[List[Dict[str, str]]] = field(default=None, repr=False)
     
     def __post_init__(self):
         """Validate rule structure"""
@@ -203,7 +204,11 @@ class LogicalRule:
         supported_budget = max(1, max_groundings // 2)
         chosen = []
         seen = 0
-        for bound in joins(0, {}):
+        entity_by_name = {e.name: e for e in entities}
+        bindings = joins(0, {}) if self.grounding_instances is None else (
+            {Variable(name): entity_by_name[value] for name, value in instance.items()}
+            for instance in self.grounding_instances)
+        for bound in bindings:
             seen += 1
             if len(chosen) < supported_budget:
                 chosen.append(bound)
@@ -425,6 +430,8 @@ class RuleGenerator:
             outgoing[u].append((r, v))
             conclusions[(u, v)].add(r)
         bodies, supports = defaultdict(int), defaultdict(int)
+        reservoirs = defaultdict(list)
+        reservoir_rng = random.Random(8173)
         self.mining_report = {"possible_paths": 0, "sampled_paths": 0,
                               "max_paths_per_node": max_paths_per_node,
                               "min_support": min_support, "min_confidence": min_confidence}
@@ -438,7 +445,15 @@ class RuleGenerator:
             for index in indices:
                 u, r1 = left[index // len(right)]
                 r2, w = right[index % len(right)]
-                bodies[(r1, r2)] += 1
+                pair = (r1, r2)
+                bodies[pair] += 1
+                bound = {"x": u, "y": middle, "z": w}
+                if len(reservoirs[pair]) < max_paths_per_node:
+                    reservoirs[pair].append(bound)
+                else:
+                    slot = reservoir_rng.randrange(bodies[pair])
+                    if slot < max_paths_per_node:
+                        reservoirs[pair][slot] = bound
                 for r3 in conclusions.get((u, w), ()):
                     supports[(r1, r2, r3)] += 1
         x, y, z = Variable("x"), Variable("y"), Variable("z")
@@ -451,7 +466,8 @@ class RuleGenerator:
             rules.append(LogicalRule(
                 self._id("chain", names), [Atom(r1, (x, y)), Atom(r2, (y, z))],
                 Atom(r3, (x, z)), rule_type=RuleType.TRANSITIVITY,
-                confidence=confidence, support=support))
+                confidence=confidence, support=support,
+                grounding_instances=list(reservoirs[names[:2]])))
         return rules
 
     def generate_symmetry_rules(self, min_support=2, min_confidence=0.2):
