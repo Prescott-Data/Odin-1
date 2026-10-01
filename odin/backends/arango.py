@@ -270,6 +270,9 @@ class ArangoBackend:
         self._schema_inspector = None
 
     def accessor(self, community_id: str, community_mode: str):
+        return self._accessor(community_id, community_mode, ArangoCommunityAccessor)
+
+    def _accessor(self, community_id, community_mode, accessor_type):
         if community_mode == "mapping" and self.graph.membership_collection is None:
             raise BackendConfigurationError(
                 "community_mode='mapping' requires membership fields in "
@@ -285,7 +288,7 @@ class ArangoBackend:
             raise BackendConfigurationError(
                 f"Configured provenance collection does not exist: {provenance_collection}"
             )
-        return ArangoCommunityAccessor(
+        return accessor_type(
             self.db,
             community_id=community_id,
             nodes_collection=self.graph.node_collection,
@@ -335,7 +338,7 @@ class ArangoBackend:
         if self.graph.bridge_collection is None and self.graph.affinity_collection is None:
             return None
         # Global exploration uses the same evidence mappings as scoped retrieval.
-        return self.accessor("global", "none")
+        return self._accessor("global", "none", GlobalGraphAccessor)
 
     def schema_inspector(self):
         from odin.backends.arango_schema import ArangoSchemaInspector

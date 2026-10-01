@@ -637,3 +637,15 @@ def test_status_and_provenance_filters_are_explicitly_mapped():
     assert db.query_arguments[-1]["bind_vars"]["provenance_targets"] == ["Reports"]
     with pytest.raises(ValueError, match="status field"):
         replace(ARANGO_GRAPH, allowed_edge_statuses=("active",))
+
+
+def test_global_accessor_retains_mapped_signal_utilities():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection="BridgeRecords",
+                    bridge_entity_field="record", bridge_strength_field="strength",
+                    bridge_community_field="home")
+    accessor = ArangoBackend(db, graph).global_accessor()
+    assert accessor.get_bridges_from_community("tenant") == []
+    assert accessor.get_top_bridges() == []
+    assert db.query_arguments[0]["bind_vars"]["community_field"] == "home"
+    assert db.query_arguments[1]["bind_vars"]["strength_field"] == "strength"

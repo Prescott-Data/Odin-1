@@ -1100,8 +1100,10 @@ class ArangoCommunityAccessor(GraphAccessor):
 class GlobalGraphAccessor(ArangoCommunityAccessor):
     """Unscoped graph access with the same explicit mapping and evidence contract."""
 
-    def __init__(self, db, **mapping):
-        super().__init__(db, community_id="global", community_mode="none", **mapping)
+    def __init__(self, db, community_id="global", community_mode="none", **mapping):
+        if community_mode != "none":
+            raise ValueError("GlobalGraphAccessor requires community_mode='none'")
+        super().__init__(db, community_id=community_id, community_mode=community_mode, **mapping)
 
     def get_bridges_from_community(self, community_id: str, min_strength: int = 1):
         bind = {"@bridge_col": self.bridge_col, "community_field": self.bridge_community_field,
