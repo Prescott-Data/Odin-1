@@ -64,6 +64,13 @@ edge field affect structural traversal, set `edge_weight_field` explicitly.
 Without it, Odin assigns every edge a structural weight of `1.0` and does not
 assume a field named `weight`.
 
+Set `edge_timestamp_field`, `edge_valid_from_field`, `edge_valid_to_field`,
+`edge_status_field`, or `edge_provenance_fields` only when your graph supplies
+those signals. Omitted fields disable the corresponding signal rather than
+falling back to a named Arango property. The standalone Arango analytics and
+content helpers likewise require their collection and field mappings and return
+complete source documents; normal engine use needs only the graph mapping above.
+
 ## Production connections
 
 Outside local development, never disable authentication. Use a dedicated, least-privilege user and pull secrets from the environment rather than the source:

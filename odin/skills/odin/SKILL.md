@@ -52,7 +52,8 @@ engine.has_npll                                      # property: True if NPLL mo
 engine.get_status() -> dict
 ```
 
-`seeds` are entity IDs (strings). In ArangoDB they use the `collection/key` form, e.g. `"ExtractedEntities/claim_123"`.
+`seeds` are entity IDs (strings). In ArangoDB they use the configured
+`collection/key` form, e.g. `"CaseRecords/claim_123"`.
 
 ## The `retrieve()` result shape (READ THIS BEFORE USING RESULTS)
 

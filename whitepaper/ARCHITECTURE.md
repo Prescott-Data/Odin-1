@@ -378,8 +378,14 @@ class GraphAccessor(Protocol):
 
 ```python
 # 1. INITIALIZATION
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 orchestrator = RetrievalOrchestrator(
-    accessor=ArangoCommunityAccessor(db, community_id="insurance"),
+    accessor=backend.accessor("insurance", "none"),
     edge_confidence=NPLLConfidence(npll_model),
 )
 
@@ -673,22 +679,25 @@ class ArangoCommunityAccessor:
     
     # Discovery methods (NEW)
     @staticmethod
-    def get_community_summaries(db, ...) -> List[dict]: ...
+    def get_community_summaries(db, collection, field_mappings, ...) -> List[dict]: ...
     @staticmethod
-    def get_top_entities_in_community(db, community_id, limit) -> List[dict]: ...
+    def get_top_entities_in_community(db, community_id, mappings, ...) -> List[dict]: ...
     @staticmethod
-    def get_recent_entities(db, since, community_id) -> List[dict]: ...
+    def get_recent_entities(db, since, mappings, ...) -> List[dict]: ...
     @staticmethod
-    def search_entities(db, query, community_id) -> List[dict]: ...
+    def search_entities(db, query, mappings, ...) -> List[dict]: ...
     
     # Content hydration methods (NEW)
     @staticmethod
-    def get_document_content(db, doc_id) -> Optional[dict]: ...
+    def get_document_content(db, doc_id, collections) -> Optional[dict]: ...
     @staticmethod
-    def get_entity_sources(db, entity_id) -> List[dict]: ...
+    def get_entity_sources(db, entity_id, provenance_collection) -> List[dict]: ...
     @staticmethod
-    def search_content(db, query, ...) -> List[dict]: ...
+    def search_content(db, query, collections, search_fields) -> List[dict]: ...
 ```
+
+All direct helper mappings are explicit and their results preserve complete
+Arango documents. Use `ArangoBackend.accessor()` for ordinary Odin retrieval.
 
 ---
 
@@ -701,6 +710,7 @@ The simplest way to use Odin is through the `OdinEngine` class, which handles al
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.adapters_arango import ArangoCommunityAccessor
 from retrieval.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to ArangoDB
@@ -712,6 +722,9 @@ graph = ArangoGraphConfig(
     node_collection="entities",
     edge_collection="relationships",
     relation_field="relation",
+    membership_collection="entity_memberships",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
 )
 backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="my_community")
@@ -792,7 +805,7 @@ if bootstrap_result.report and not bootstrap_result.report.converged:
 confidence = NPLLConfidence(npll_model, cache_size=10000)
 
 # 3. Setup accessor with caching
-base_accessor = ArangoCommunityAccessor(db, community_id="my_community")
+base_accessor = backend.accessor("my_community", "mapping")
 cached_accessor = CachedGraphAccessor(base_accessor, cache_size=5000)
 
 # 4. Create orchestrator
@@ -838,7 +851,12 @@ class InvestigatorAgent:
         evidence = []
         for anchor in result["aggregates"]["snippet_anchors"]:
             content = ArangoCommunityAccessor.get_document_content(
-                self.db, anchor["document_id"]
+                self.db,
+                anchor["document_id"],
+                text_collection="EvidenceText",
+                table_collection="EvidenceTables",
+                image_collection="EvidenceImages",
+                document_collection="EvidenceDocuments",
             )
             evidence.append(content)
         

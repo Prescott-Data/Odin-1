@@ -22,7 +22,7 @@ class CachedGraphAccessor:
     the database/network.
     
     Usage:
-        base_accessor = ArangoCommunityAccessor(db, community_id="insurance")
+        base_accessor = backend.accessor("insurance", "none")
         cached_accessor = CachedGraphAccessor(base_accessor, cache_size=5000)
         
         # Now PPR won't hammer the network

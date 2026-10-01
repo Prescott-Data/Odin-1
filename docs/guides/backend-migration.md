@@ -56,6 +56,8 @@ never assumes collection or field names.
 | `relation_field` | Every trainable edge has a non-empty string predicate in this field. |
 | `entity_type_field` | Optional node field; each non-null value must be a non-empty string. Odin trains it as `has_type`. |
 | `edge_weight_field` | Optional numeric edge field. Without it, every traversed edge has structural weight `1.0`; Odin never assumes `weight`. |
+| `edge_timestamp_field` / `edge_valid_from_field` / `edge_valid_to_field` / `edge_status_field` | Optional edge metadata fields. Omit a field to disable that metadata signal; Odin never assumes timestamp or status names. |
+| `edge_provenance_fields` | Optional tuple of edge fields preserved as retrieval provenance. Odin never assumes a provenance-field name. |
 | `community_property_field` | Required only with `community_mode="property"`; no property field is assumed. |
 | `membership_*` fields | Optional, all-or-nothing mapping used only with `community_mode="mapping"`. |
 | `provenance_edge_collection` | Optional edge collection used for retrieval provenance. |
@@ -102,6 +104,13 @@ bootstrap = KnowledgeBootstrapper(
 )
 ready = bootstrap.ensure_model_ready()
 ```
+
+Direct `ArangoCommunityAccessor` construction is also explicit: pass the node
+collection, edge collection, and relation property. Its standalone analytics
+and content helpers require every collection and queried field as arguments.
+They return complete Arango documents (and provenance edges where applicable),
+not a Prescott-shaped subset. Prefer `backend.accessor(...)` for normal engine
+retrieval.
 
 ## Expect a new model artifact on first startup
 
