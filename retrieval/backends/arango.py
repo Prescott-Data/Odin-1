@@ -255,6 +255,7 @@ class ArangoBackend:
     def __init__(self, db, graph: ArangoGraphConfig):
         self.db = db
         self.graph = graph
+        self._schema_inspector = None
 
     def accessor(self, community_id: str, community_mode: str):
         if community_mode == "mapping" and self.graph.membership_collection is None:
@@ -325,4 +326,6 @@ class ArangoBackend:
     def schema_inspector(self):
         from retrieval.backends.arango_schema import ArangoSchemaInspector
 
-        return ArangoSchemaInspector(self.db)
+        if self._schema_inspector is None:
+            self._schema_inspector = ArangoSchemaInspector(self.db)
+        return self._schema_inspector

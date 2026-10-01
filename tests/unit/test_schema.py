@@ -290,3 +290,16 @@ class TestBackendNeutralSchemaInspection:
     def test_inspect_schema_rejects_backends_without_schema_support(self):
         with pytest.raises(BackendCapabilityError, match="schema inspection"):
             inspect_schema(object())
+
+
+def test_public_schema_refresh_uses_a_backend_owned_cache(mock_db):
+    mock_db.collections.return_value = []
+    backend = ArangoBackend(mock_db, ArangoGraphConfig("Records", "Links", "predicate"))
+    assert inspect_schema(backend)["collections"] == []
+    assert mock_db.collections.call_count == 1
+    mock_db.collections.return_value = [{"name": "new-collection", "type": 2}]
+    mock_db.collection.return_value.count.return_value = 0
+    assert inspect_schema(backend)["collections"] == []
+    assert mock_db.collections.call_count == 1
+    assert inspect_schema(backend, refresh=True)["collections"][0]["name"] == "new-collection"
+    assert mock_db.collections.call_count == 2
