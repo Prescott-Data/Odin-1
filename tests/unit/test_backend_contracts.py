@@ -1,3 +1,4 @@
+from npll.utils.config import NPLLConfig
 """Regression tests for snapshot identity and complete, atomic persistence."""
 
 from dataclasses import FrozenInstanceError, replace
@@ -387,6 +388,7 @@ def test_rule_generation_change_is_staleness_not_corruption():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         assert bootstrap.ensure_model_ready().source == "trained"
@@ -419,6 +421,7 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
     with patch.object(store, "load", side_effect=change_graph), \
          patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         result = bootstrap.ensure_model_ready()
@@ -435,6 +438,7 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         first = bootstrap.ensure_model_ready()
@@ -457,6 +461,7 @@ def test_bootstrap_propagates_store_errors(error, operation):
     with patch.object(store, operation, side_effect=error("failure")), \
          patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         with pytest.raises(error):
@@ -469,6 +474,7 @@ def test_force_retrain_uses_revision_read_before_training():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         bootstrap.ensure_model_ready()
@@ -549,6 +555,7 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
     bootstrap = KnowledgeBootstrapper(source, store)
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         winner = bootstrap.ensure_model_ready()

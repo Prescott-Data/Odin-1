@@ -1,3 +1,4 @@
+from npll.utils.config import NPLLConfig
 """
 Unit tests for NPLL training telemetry: TrainingReport construction and
 round-trip, BootstrapResult threading through KnowledgeBootstrapper, and
@@ -97,6 +98,7 @@ class TestBootstrapResultThreading:
         with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as trainer:
             model = create_model.return_value
+            model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             trainer.return_value.train.return_value = make_training_result(converged=False)
             trained = bootstrapper.ensure_model_ready()
@@ -128,6 +130,7 @@ class TestBootstrapResultThreading:
         with patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
+            model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
 
@@ -153,6 +156,7 @@ class TestBootstrapResultThreading:
              patch("npll.bootstrap.create_trainer") as create_trainer_mock, \
              caplog.at_level(logging.WARNING, logger="npll.bootstrap"):
             model = create_model.return_value
+            model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
 

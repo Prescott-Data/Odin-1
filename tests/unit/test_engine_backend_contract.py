@@ -1,3 +1,4 @@
+from npll.utils.config import NPLLConfig
 """Tests for the backend-neutral OdinEngine constructor and capabilities."""
 
 from unittest.mock import patch
@@ -175,6 +176,7 @@ def test_failed_retraining_preserves_complete_serving_state(failure_stage):
     backend = TrainingBackend()
     with patch("npll.bootstrap.create_initialized_npll_model") as create, \
          patch("npll.bootstrap.create_trainer") as trainer:
+        create.return_value.config = NPLLConfig(device="cpu")
         create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
         trainer.return_value.train.return_value = make_training_result()
         engine = OdinEngine(backend)
