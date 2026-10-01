@@ -103,7 +103,7 @@ class TestBootstrapResultThreading:
                 model.scoring_module = create_scoring_module(config, kg)
                 model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                    "example_count": 2, "excluded_vector_fields": []}
+                    "example_count": 2}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model
@@ -144,7 +144,7 @@ class TestBootstrapResultThreading:
                 model.scoring_module = create_scoring_module(config, kg)
                 model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                    "example_count": 2, "excluded_vector_fields": []}
+                    "example_count": 2}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model
@@ -180,7 +180,7 @@ class TestBootstrapResultThreading:
                 model.scoring_module = create_scoring_module(config, kg)
                 model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                     "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                    "example_count": 2, "excluded_vector_fields": []}
+                    "example_count": 2}
                 model.config = config
                 model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
                 return model

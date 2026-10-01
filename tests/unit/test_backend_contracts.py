@@ -392,7 +392,7 @@ def test_rule_generation_change_is_staleness_not_corruption():
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -435,7 +435,7 @@ def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -462,7 +462,7 @@ def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -495,7 +495,7 @@ def test_bootstrap_propagates_store_errors(error, operation):
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -518,7 +518,7 @@ def test_force_retrain_uses_revision_read_before_training():
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value
@@ -609,7 +609,7 @@ def test_first_boot_conflict_reloads_only_a_matching_winner():
             create.return_value.scoring_module = create_scoring_module(config, kg)
             create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
                 "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
-                "example_count": 2, "excluded_vector_fields": []}
+                "example_count": 2}
             create.return_value.config = config
             create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
             return create.return_value

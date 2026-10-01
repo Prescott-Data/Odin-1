@@ -81,13 +81,13 @@ def test_parallel_assertions_and_long_tail_evidence_survive_scoring_and_normaliz
         edge = path["edges"][0]
         assert edge["provenance"] == original["provenance"]
         assert edge["relation"] == "requires"
-        assert "embedding" not in edge
-        assert edge["odin_excluded_vector_fields"] == ["embedding"]
+        assert edge["embedding"] == original["embedding"]
+        assert "odin_excluded_vector_fields" not in edge
         assert edge["confidence"] == 0.37
         assert path["decomp"]["edge_confidences"] == [0.37]
 
 
-def test_arango_metadata_uses_only_mapped_fields_and_excludes_nested_vectors():
+def test_arango_metadata_uses_only_mapped_fields_and_preserves_raw_documents():
     from retrieval.adapters_arango import EdgeView, edge_record
     assertion = {"_id": "edges/a", "created_at": "unmapped", "timestamp": "unmapped",
                  "source_doc": "unmapped", "embedding": [1, 2],
@@ -99,9 +99,8 @@ def test_arango_metadata_uses_only_mapped_fields_and_excludes_nested_vectors():
     assert record["created_at"] is None
     assert "assertion" not in record
     assert record["provenance"]["assertion"]["created_at"] == "unmapped"
-    assert record["provenance"]["assertion"]["nested"] == [{"text": "tail evidence"}]
-    assert record["odin_excluded_vector_fields"] == ["provenance.assertion.embedding",
-                                                "provenance.assertion.nested[0].npll_embedding"]
+    assert record["provenance"]["assertion"] == assertion
+    assert "odin_excluded_vector_fields" not in record
     mapped = edge_record("nodes/a", edge._replace(timestamp="2026-10-01"))
     mapped["confidence"] = 0.4
     normalized = RetrievalOrchestrator(object())._normalize_paths_for_aggregators(
@@ -125,7 +124,7 @@ def test_arango_validity_filter_never_guesses_fields():
     assert db.query_arguments[-1]["bind_vars"]["valid_from_field"] == "starts' at"
 
 
-def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors():
+def test_snapshot_scorer_learns_arbitrary_relations_reproducibly():
     from npll.bootstrap import create_snapshot_trained_model
     triples = [("Records/a", "submitted_by", "Records/b"),
                ("Records/b", "approved_by", "Records/a")]
@@ -148,30 +147,22 @@ def test_snapshot_scorer_learns_arbitrary_relations_and_replays_without_vectors(
     replayed = create_snapshot_trained_model(snapshot, kg, rules, config)
     assert replayed.scorer_training == model.scorer_training
     assert NPLLConfidence(replayed).confidence_batch(triples) == scorer.confidence_batch(triples)
-    assert model.scorer_training["excluded_vector_fields"] == []
 
 
-def test_vector_exemption_preserves_embedding_source_text_and_rejects_metadata_collisions():
-    import pytest
-    from retrieval.evidence import clean_evidence
-    assert clean_evidence({"embedding": "source description", "nested": {"embedding": [1, 2]}}) == {
-        "embedding": "source description", "nested": {},
-        "odin_excluded_vector_fields": ["nested.embedding"]}
-    with pytest.raises(ValueError, match="reserved"):
-        clean_evidence({"embedding": [1], "odin_excluded_vector_fields": "source evidence"})
-
-
-def test_edge_record_excludes_source_vectors_before_normalization_without_metadata_collision():
+def test_edge_record_preserves_source_and_assertion_vectors_during_normalization():
     from retrieval.adapters_arango import EdgeView, edge_record
     edge = EdgeView('N/b', 'Exact Relation', 1.0, 'E/1', None, None,
                     None, None, None, None,
                     [{'_id': 'Sources/1', 'embedding': [1, 2], 'text': 'complete source'}],
                     {'_id': 'E/1', 'embedding': [3], 'text': 'complete assertion'})
     record = edge_record('N/a', edge)
-    assert record['odin_excluded_vector_fields'] == [
-        'provenance.assertion.embedding', 'provenance.sources[0].embedding']
+    assert record['provenance']['assertion'] == edge.assertion
+    assert record['provenance']['sources'] == edge.sources
+    assert 'odin_excluded_vector_fields' not in record
     record['confidence'] = 0.7
     normalized = RetrievalOrchestrator(object())._normalize_paths_for_aggregators(
         [{'edges': [record]}])[0]['edges'][0]
-    assert normalized['provenance']['sources'][0]['text'] == 'complete source'
+    assert normalized['provenance']['sources'] == edge.sources
+    assert normalized['provenance']['assertion'] == edge.assertion
+    assert 'odin_excluded_vector_fields' not in normalized
     assert normalized['relation'] == 'Exact Relation'

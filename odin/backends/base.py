@@ -180,9 +180,6 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
             all(number(v) for v in recipe["loss_history"]), "Incomplete scorer loss history")
     require(count(recipe.get("example_count")) and recipe["example_count"] > 0,
             "Invalid scorer example count")
-    require(isinstance(recipe.get("excluded_vector_fields"), list) and
-            all(isinstance(v, str) for v in recipe["excluded_vector_fields"]),
-            "Missing excluded vector paths")
     digest = document.get("data_hash")
     require(isinstance(digest, str) and len(digest) == 64 and
             all(c in "0123456789abcdef" for c in digest), "Invalid snapshot fingerprint")

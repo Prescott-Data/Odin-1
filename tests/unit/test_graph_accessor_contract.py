@@ -177,7 +177,7 @@ def test_arango_accessors_return_an_empty_dict_for_absent_nodes():
     assert all("FILTER d != null" in query for query in queries[1::2])
 
 
-def test_arango_field_and_collection_names_are_bound_and_vectors_are_excluded():
+def test_arango_field_and_collection_names_are_bound_and_vectors_are_preserved():
     db = FakeArango()
     accessor = ArangoCommunityAccessor(db, community_id="group", community_mode="property",
                                       community_property="tenant' field",
@@ -197,5 +197,5 @@ def test_arango_field_and_collection_names_are_bound_and_vectors_are_excluded():
     result = ArangoCommunityAccessor.get_document_content(
         db, "Sources/a", text_collection="Sources", table_collection="Tables",
         image_collection="Images", document_collection="Documents")
-    assert result["document"] == {"text": "complete tail"}
-    assert result["odin_excluded_vector_fields"] == ["document.embedding"]
+    assert result["document"] == {"embedding": [1], "text": "complete tail"}
+    assert "odin_excluded_vector_fields" not in result

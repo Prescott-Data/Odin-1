@@ -126,8 +126,7 @@ def create_snapshot_trained_model(snapshot, kg, rules, config):
         scorer.eval()
         scorer.requires_grad_(False)
         model.scorer_training = {"recipe": SCORER_RECIPE, "torch_version": str(torch.__version__),
-                                 "loss_history": losses, "example_count": len(examples),
-                                 "excluded_vector_fields": []}
+                                 "loss_history": losses, "example_count": len(examples)}
         return model
 
 

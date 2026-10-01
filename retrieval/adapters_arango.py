@@ -3,7 +3,6 @@ from collections import OrderedDict
 from typing import Iterable, Tuple, Optional, List, Dict, Any, NamedTuple
 
 from .adapters import GraphAccessor, NodeId, RelId
-from .evidence import clean_evidence
 
 
 class EdgeView(NamedTuple):
@@ -23,13 +22,13 @@ class EdgeView(NamedTuple):
 
 
 def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
-    return clean_evidence({"_id": edge.edge_id, "u": node, "rel": edge.relation,
+    return {"_id": edge.edge_id, "u": node, "rel": edge.relation,
             "v": edge.neighbor_id, "weight": edge.weight,
             "created_at": edge.timestamp, "valid_from": edge.valid_from,
             "valid_to": edge.valid_to, "status": edge.status,
             "source_confidence": edge.raw_confidence,
             "npll_posterior": edge.npll_posterior, "calibration": edge.calibration,
-            "provenance": {"assertion": edge.assertion, "sources": edge.sources}})
+            "provenance": {"assertion": edge.assertion, "sources": edge.sources}}
 
 
 
@@ -335,7 +334,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         else:
             aql = "RETURN DOCUMENT(@id)"
         rows = list(self.db.aql.execute(aql, bind_vars=bind))
-        return clean_evidence((rows[0] or {}) if rows else {})
+        return (rows[0] or {}) if rows else {}
 
     @staticmethod
     def get_top_n_entities_by_degree(
@@ -363,7 +362,7 @@ class ArangoCommunityAccessor(GraphAccessor):
           {limit_clause}
           RETURN {{ "entity": entity, "degree": degree }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_entity_type_counts(
@@ -377,7 +376,7 @@ class ArangoCommunityAccessor(GraphAccessor):
           SORT c DESC
           RETURN {{ "type": t, "count": c }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars={"@nodes": nodes_collection, "type_field": type_property})))
+        return list(db.aql.execute(aql, bind_vars={"@nodes": nodes_collection, "type_field": type_property}))
 
     @staticmethod
     def get_relationship_type_counts(
@@ -401,7 +400,7 @@ class ArangoCommunityAccessor(GraphAccessor):
           SORT c DESC
           RETURN {{ "type": t, "count": c }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_community_summaries(
@@ -445,7 +444,7 @@ class ArangoCommunityAccessor(GraphAccessor):
               document: c
           }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_unique_table_headers(
@@ -459,7 +458,7 @@ class ArangoCommunityAccessor(GraphAccessor):
           COLLECT h = t[@hp]
           RETURN h
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars={"hp": headers_property, "@tables": tables_collection})))
+        return list(db.aql.execute(aql, bind_vars={"hp": headers_property, "@tables": tables_collection}))
 
     # --------------------------
     # Bridge / GNN Integration Methods (Mirrored from GlobalGraphAccessor)
@@ -468,7 +467,7 @@ class ArangoCommunityAccessor(GraphAccessor):
     def _signal_query(self, query, bind):
         from odin.backends.base import BackendIOError
         try:
-            return clean_evidence(list(self.db.aql.execute(query, bind_vars=bind)))
+            return list(self.db.aql.execute(query, bind_vars=bind))
         except Exception as exc:
             raise BackendIOError("Could not read configured Arango community signal") from exc
 
@@ -623,7 +622,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             {limit_clause}
             RETURN {{ entity: entity, degree: degree }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_recent_entities(
@@ -693,7 +692,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: e
             }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def search_entities(
@@ -765,7 +764,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: e
             }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars=bind)))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     # ════════════════════════════════════════════════════════════════
     # CONTENT HYDRATION (for agent reasoning)
@@ -818,7 +817,7 @@ class ArangoCommunityAccessor(GraphAccessor):
             "doc_id": doc_id,
             "source_type": collection,
         }))
-        return clean_evidence(result[0]) if result else None
+        return result[0] if result else None
 
     @staticmethod
     def get_entity_sources(
@@ -849,9 +848,9 @@ class ArangoCommunityAccessor(GraphAccessor):
                 document: source
             }}
         """
-        return clean_evidence(list(db.aql.execute(aql, bind_vars={
+        return list(db.aql.execute(aql, bind_vars={
             "entity_id": entity_id, "@provenance_edges": extracted_from_collection,
-        })))
+        }))
 
     @staticmethod
     def search_content(
@@ -910,7 +909,7 @@ class ArangoCommunityAccessor(GraphAccessor):
                 "query": f"%{query.lower()}%",
             })))
 
-        return clean_evidence(results)
+        return results
 
     # --------------------------
     # Internal neighbor routine
