@@ -31,7 +31,7 @@ from .core.logical_rules import LogicalRule, RuleGenerator
 from .npll_model import create_initialized_npll_model, NPLLModel
 from .training.npll_trainer import TrainingConfig, TrainingResult, create_trainer
 from .utils.config import get_config
-from .utils.config import NPLLConfig
+from .utils.config import NPLLConfig, config_from_json
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +299,7 @@ class KnowledgeBootstrapper:
         if {k: v for k, v in config_data.items() if k not in RUNTIME_CONFIG_FIELDS} != {
                 k: v for k, v in current.items() if k not in RUNTIME_CONFIG_FIELDS}:
             return None, None
-        config = NPLLConfig(**{**config_data, "device": current["device"]})
+        config = config_from_json({**config_data, "device": current["device"]})
         recipe = inference_state["scorer_training"]
         if recipe["recipe"] != SCORER_RECIPE:
             return None, None

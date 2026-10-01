@@ -36,6 +36,25 @@ def test_reload_loads_scorer_weights_without_training_or_runtime_invalidation():
         NPLLConfidence(trained.model).confidence_batch(source.triples)
 
 
+def test_reload_accepts_whole_number_floats_returned_as_json_integers():
+    source, store, config, trained = trained_fixture()
+    document = copy.deepcopy(store.docs[MODEL_KEY].document)
+    stored_config = document['inference_state']['config']
+    # ArangoDB returns 1.0 as 1; the fixture must reproduce that round trip.
+    for key, value in stored_config.items():
+        if type(value) is float and value.is_integer():
+            stored_config[key] = int(value)
+    assert type(stored_config['temperature']) is int
+    store.docs[MODEL_KEY] = StoredModel(document, '1')
+    with patch('npll.bootstrap.get_config', return_value=config), \
+         patch('npll.bootstrap.create_snapshot_trained_model', side_effect=AssertionError('startup trained')):
+        loaded = KnowledgeBootstrapper(source, store).ensure_model_ready()
+    assert loaded.source == 'cached_weights'
+    assert type(loaded.model.config.temperature) is float
+    assert NPLLConfidence(loaded.model).confidence_batch(source.triples) == \
+        NPLLConfidence(trained.model).confidence_batch(source.triples)
+
+
 @pytest.mark.parametrize('change', [
     lambda d: d.update(version='6.0'),
     lambda d: d['inference_state']['config'].pop('scorer_negatives_per_side'),

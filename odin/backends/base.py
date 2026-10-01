@@ -177,11 +177,11 @@ def validate_model_artifact(document: Dict[str, Any]) -> None:
     state = document.get("inference_state")
     require(isinstance(state, dict), "Missing complete inference state")
     require(isinstance(state.get("config"), dict) and state["config"], "Invalid inference configuration")
-    from npll.utils.config import NPLLConfig
+    from npll.utils.config import NPLLConfig, config_from_json
     if set(state["config"]) != {f.name for f in fields(NPLLConfig)}:
         return  # Configuration schema evolution is staleness, not corruption.
     try:
-        config = NPLLConfig(**state["config"])
+        config = config_from_json(state["config"])
     except (AssertionError, TypeError, ValueError) as exc:
         raise CorruptModelError("Invalid inference configuration") from exc
     blob = state.get("scorer_state")

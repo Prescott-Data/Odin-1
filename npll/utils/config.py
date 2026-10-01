@@ -5,7 +5,7 @@ Hyperparameters and settings based on the paper specifications
 
 from dataclasses import dataclass
 from copy import deepcopy
-from typing import List, Optional
+from typing import List, Optional, get_type_hints
 import torch
 
 
@@ -152,6 +152,15 @@ def get_config(dataset_name: str) -> NPLLConfig:
     if dataset_name not in configs:
         raise ValueError(f"Unknown NPLL dataset configuration: {dataset_name}")
     return deepcopy(configs[dataset_name])
+
+
+def config_from_json(data: dict) -> NPLLConfig:
+    """Rebuild a stored config; JSON stores return whole-number floats as ints."""
+    hints = get_type_hints(NPLLConfig)
+    return NPLLConfig(**{
+        key: float(value) if hints.get(key) is float and type(value) is int else value
+        for key, value in data.items()
+    })
 
 
 # Export default config
