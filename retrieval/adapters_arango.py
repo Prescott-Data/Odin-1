@@ -467,9 +467,17 @@ class ArangoCommunityAccessor(GraphAccessor):
     def _signal_query(self, query, bind):
         from odin.backends.base import BackendIOError
         try:
-            return list(self.db.aql.execute(query, bind_vars=bind))
+            return clean_evidence(list(self.db.aql.execute(query, bind_vars=bind)))
         except Exception as exc:
             raise BackendIOError("Could not read configured Arango community signal") from exc
+
+    @staticmethod
+    def _numeric_signal(value, label):
+        import math
+        from odin.backends.base import BackendConfigurationError
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise BackendConfigurationError(f"Mapped {label} must be a finite nonnegative number")
+        return float(value)
 
     def _algorithm_filter(self, alias, field, bind):
         if field is None:
@@ -496,7 +504,8 @@ class ArangoCommunityAccessor(GraphAccessor):
         bridge = result[0] if result else None
         if bridge is not None:
             # Keep the complete record and expose the configured numeric signal.
-            bridge = {"record": bridge, "bridge_strength": bridge[self.bridge_strength_field]}
+            strength = self._numeric_signal(bridge.get(self.bridge_strength_field), "bridge strength")
+            bridge = {"record": bridge, "bridge_strength": strength}
         self._bridge_cache[entity_id] = bridge
         return bridge
 
@@ -513,6 +522,9 @@ class ArangoCommunityAccessor(GraphAccessor):
               {guard}
               RETURN m[@membership_community_field]
             """, bind)
+            if result and (not isinstance(result[0], str) or not result[0]):
+                from odin.backends.base import BackendConfigurationError
+                raise BackendConfigurationError("Mapped membership community must be a non-empty string")
             return result[0] if result else None
         if self.community_prop:
             result = self._signal_query(
@@ -539,7 +551,7 @@ class ArangoCommunityAccessor(GraphAccessor):
               OR (a[@from_field] == @comm_b AND a[@to_field] == @comm_a)
           RETURN a[@score_field]
         """, bind)
-        affinity = float(result[0]) if result else 0.0
+        affinity = self._numeric_signal(result[0], "affinity score") if result else 0.0
         self._affinity_cache[cache_key] = affinity
         return affinity
 

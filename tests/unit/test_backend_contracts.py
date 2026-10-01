@@ -662,3 +662,20 @@ def test_incomplete_scorer_state_fails_before_storage_or_retraining(mutation):
     mutation(artifact["inference_state"])
     with pytest.raises(CorruptModelError):
         validate_model_artifact(artifact)
+
+
+def test_malformed_mapped_signal_rows_raise_without_poisoning_cache():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="strength", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="score")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    db.aql.execute = lambda *args, **kwargs: iter([{"record": "Entities/a"}])
+    with pytest.raises(BackendConfigurationError, match="bridge strength"):
+        accessor.is_bridge("Entities/a")
+    db.aql.execute = lambda *args, **kwargs: iter([None])
+    with pytest.raises(BackendConfigurationError, match="affinity score"):
+        accessor.get_affinity("a", "b")
+    assert accessor._bridge_cache == {}
+    assert accessor._affinity_cache == {}
