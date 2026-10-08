@@ -76,16 +76,19 @@ class MarkovLogicNetwork(nn.Module):
         self.fact_to_groundrules: Dict[Triple, List[GroundRule]] = defaultdict(list)
         
         # Caching for efficiency
-        self._partition_function_cache: Dict[str, torch.Tensor] = {}
+        self._counts_known_facts = None
         self._ground_rule_counts_cache: Optional[torch.Tensor] = None
     
     def add_knowledge_graph(self, kg: KnowledgeGraph):
         """Add knowledge graph to MLN"""
         self.knowledge_graph = kg
+        self._ground_rule_counts_cache = None
+        self._counts_known_facts = None
         logger.info(f"Added knowledge graph with {len(kg.known_facts)} known facts")
     
     def add_logical_rules(self, rules: List[LogicalRule]):
         self.logical_rules.extend(rules)
+        self._ground_rule_counts_cache = None
         
         # Initialize or expand rule weights
         if self.rule_weights is None:
@@ -174,38 +177,29 @@ class MarkovLogicNetwork(nn.Module):
         if self.rule_weights is None or len(self.logical_rules) == 0:
             return torch.tensor(0.0)
         
-        # Use caching if available
-        cache_key = str(self.rule_weights.data.tolist())
-        if cache_key in self._partition_function_cache:
-            return self._partition_function_cache[cache_key]
-        
-        if use_approximation or sample_states is not None:
-            # Sampling-based approximation
-            if sample_states is None:
-                sample_states = self._generate_sample_states(num_samples=1000)
-            
-            # Compute counts for each sample state
-            all_counts = []
-            for state_assignment in sample_states:
-                counts = self.compute_ground_rule_counts(state_assignment)
-                all_counts.append(counts)
-            
-            if all_counts:
-                counts_tensor = torch.stack(all_counts)  # [num_samples, num_rules]
-                log_partition = partition_function_approximation(
-                    self.rule_weights, counts_tensor, use_log_domain=True
+        if not use_approximation and sample_states is None:
+            return self._compute_exact_partition_function()
+
+        if sample_states is None:
+            known = frozenset(self.knowledge_graph.known_facts) if self.knowledge_graph else frozenset()
+            if self._ground_rule_counts_cache is None or self._counts_known_facts != known:
+                worlds = self._generate_sample_states(num_samples=1000)
+                self._ground_rule_counts_cache = (
+                    torch.stack([self.compute_ground_rule_counts(world) for world in worlds])
+                    if worlds else torch.empty((0, len(self.logical_rules)))
                 )
-            else:
-                log_partition = torch.tensor(0.0)
+                self._counts_known_facts = known
+            counts = self._ground_rule_counts_cache
         else:
-            # Exact computation (intractable for large graphs)
-            logger.warning("Exact partition function computation is intractable for large graphs")
-            log_partition = self._compute_exact_partition_function()
-        
-        # Cache result
-        self._partition_function_cache[cache_key] = log_partition
-        
-        return log_partition
+            counts = (torch.stack([self.compute_ground_rule_counts(world) for world in sample_states])
+                      if sample_states else torch.empty((0, len(self.logical_rules))))
+        if not len(counts):
+            return self.rule_weights.new_zeros(())
+        # Cache only weight-independent evidence. Each call has a fresh autograd
+        # graph and explicit caller-supplied worlds never reuse default counts.
+        return partition_function_approximation(
+            self.rule_weights, counts.to(self.rule_weights.device), use_log_domain=True,
+        )
     
     def compute_joint_probability(self, fact_assignments: Dict[Triple, bool],
                                 log_partition: Optional[torch.Tensor] = None,

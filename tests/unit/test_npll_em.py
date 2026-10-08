@@ -81,6 +81,39 @@ def tiny_mln(tiny_kg, config):
 
 
 class TestELBOComputer:
+    def test_partition_reuses_counts_with_fresh_weight_gradients(self, tiny_mln, monkeypatch):
+        original = tiny_mln._generate_sample_states
+        calls = []
+        def sample(num_samples):
+            calls.append(num_samples)
+            return original(num_samples)
+        monkeypatch.setattr(tiny_mln, "_generate_sample_states", sample)
+        for weight in (0.5, 1.5):
+            with torch.no_grad():
+                tiny_mln.rule_weights.fill_(weight)
+            tiny_mln.rule_weights.grad = None
+            value = tiny_mln.compute_partition_function()
+            value.backward()
+            assert torch.isfinite(tiny_mln.rule_weights.grad).all()
+        assert calls == [1000]
+        tiny_mln.knowledge_graph.hold_out_fact(next(iter(tiny_mln.knowledge_graph.known_facts)))
+        tiny_mln.compute_partition_function()
+        assert calls == [1000, 1000]
+
+    def test_explicit_partition_worlds_do_not_reuse_default_cache(self, tiny_mln):
+        with torch.no_grad():
+            tiny_mln.rule_weights.fill_(1.0)
+        tiny_mln.compute_partition_function()
+        all_true = {fact: True for fact in tiny_mln.ground_rule_facts}
+        violated = dict(all_true)
+        for gr in tiny_mln.ground_rules:
+            violated[gr.head_fact] = False
+        first = tiny_mln.compute_partition_function([all_true])
+        second = tiny_mln.compute_partition_function([violated])
+        assert first.item() != second.item()
+        assert first.item() == tiny_mln.compute_ground_rule_counts(all_true).sum().item()
+        assert second.item() == tiny_mln.compute_ground_rule_counts(violated).sum().item()
+
     def test_world_samples_are_stable_without_changing_global_rng(self, tiny_kg, config):
         computer = ELBOComputer(config)
         known = list(tiny_kg.known_facts)
