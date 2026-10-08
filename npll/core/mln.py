@@ -242,12 +242,15 @@ class MarkovLogicNetwork(nn.Module):
             return sample_states
         
         # Get all facts that appear in ground rules
-        all_facts = list(self.ground_rule_facts)
+        all_facts = sorted(self.ground_rule_facts, key=lambda f: (
+            f.head.name, f.relation.name, f.tail.name,
+        ))
         
         if not all_facts:
             return sample_states
         
         # Generate random assignments
+        generator = torch.Generator().manual_seed(42)
         for _ in range(num_samples):
             # Start with known facts as true
             assignment = {}
@@ -260,7 +263,7 @@ class MarkovLogicNetwork(nn.Module):
             unknown_facts_in_rules = [f for f in all_facts if f not in assignment]
             for fact in unknown_facts_in_rules:
                 # Assign random truth value (could be made smarter)
-                assignment[fact] = torch.rand(1).item() > 0.5
+                assignment[fact] = torch.rand(1, generator=generator).item() > 0.5
             
             sample_states.append(assignment)
         

@@ -170,7 +170,9 @@ class ELBOComputer(nn.Module):
         num_samples = num_samples or min(100, 2 ** min(M, 10))
         device = q_probs.device
         probs = q_probs.unsqueeze(0).expand(num_samples, -1)
-        samples = torch.bernoulli(probs).bool()
+        # Common random numbers make changes reflect the model, not new draws.
+        generator = torch.Generator(device=device).manual_seed(42)
+        samples = torch.bernoulli(probs, generator=generator).bool()
         worlds: List[Dict[Triple, bool]] = []
         for s in samples:
             w = {f: True for f in known_facts}

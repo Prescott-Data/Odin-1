@@ -80,6 +80,25 @@ def tiny_mln(tiny_kg, config):
 
 
 class TestELBOComputer:
+    def test_world_samples_are_stable_without_changing_global_rng(self, tiny_kg, config):
+        computer = ELBOComputer(config)
+        known = list(tiny_kg.known_facts)
+        unknown = list(tiny_kg.unknown_facts)
+        probabilities = torch.tensor([0.4])
+        rng_state = torch.random.get_rng_state().clone()
+        first = computer._sample_possible_worlds(known, unknown, probabilities, num_samples=100)
+        assert torch.equal(torch.random.get_rng_state(), rng_state)
+        torch.rand(17)
+        second = computer._sample_possible_worlds(known, unknown, probabilities, num_samples=100)
+        assert first == second
+
+    def test_partition_samples_are_stable_without_changing_global_rng(self, tiny_mln):
+        rng_state = torch.random.get_rng_state().clone()
+        first = tiny_mln._generate_sample_states(num_samples=100)
+        assert torch.equal(torch.random.get_rng_state(), rng_state)
+        torch.rand(17)
+        assert tiny_mln._generate_sample_states(num_samples=100) == first
+
     def test_entropy_of_uniform_bernoulli_is_ln2(self, config):
         computer = ELBOComputer(config)
         entropy = computer._compute_entropy_term(torch.tensor([0.5]))
