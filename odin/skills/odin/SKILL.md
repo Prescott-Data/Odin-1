@@ -160,7 +160,9 @@ scoring. Multi-membership scoring is deferred.
 Global training artifacts are shared across retrieval communities. Neural scorers
 learn from known facts and uniform corruptions of both endpoints; E-M holdout
 facts are excluded from supervision. Reload loads learned tensor state from an
-integrity-checked model blob without training. Evidence outputs preserve vectors.
+integrity-checked model blob without training. New E-M training stops on convergence
+within the configured safety budget; exhaustion raises `TrainingConvergenceError`
+with a full `report` and preserves the prior artifact and active model. Evidence outputs preserve vectors.
 Older numeric artifact versions and stale config schemas retrain. Newer versions
 raise `NewerModelVersionError` and must never be replaced by an older reader.
 Damaged blobs raise; runtime/device differences do not invalidate weights. Rule mining uses bounded sampled motifs

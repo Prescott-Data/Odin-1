@@ -76,6 +76,14 @@ The report carries the complete evidence for the convergence decision:
 
 Convergence is declared when the relative ELBO change **and** the rule-weight change stay under their tolerances for `convergence_patience` consecutive iterations.
 
+The M-step maximizes pseudo-log-likelihood with the configured L2 penalty
+(`weight_decay / 2` times the squared rule-weight norm). It retains Adam's
+optimization state across E-M iterations and checks objective change, weight
+change, and gradient norm before stopping an M-step. ELBO world samples and
+partition estimates use fixed local random streams so changing random draws
+cannot conceal or manufacture convergence. This is convergence of the sampled
+approximation, not proof that the exact objective has reached a global optimum.
+
 New training runs stop as soon as the E-M convergence criteria hold. The
 `OdinTriples` configuration supplies `max_epochs` (200) and `em_iterations` (10);
 these are safety limits, not successful completion targets. There is no separate
