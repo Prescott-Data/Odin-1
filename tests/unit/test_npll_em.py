@@ -301,6 +301,12 @@ class TestMStep:
     def test_indexed_targets_do_not_scan_unrelated_rules(self, tiny_mln, tiny_kg, config, monkeypatch):
         computer = PseudoLikelihoodComputer(config)
         fact = next(iter(tiny_kg.unknown_facts))
+        x, y = Variable("?x"), Variable("?y")
+        prior = LogicalRule("indexed_prior", [], Atom(fact.relation, (x, y)), RuleType.PRIOR)
+        grounding = GroundRule("indexed_grounding", [], fact, prior)
+        tiny_mln.logical_rules = [prior]
+        tiny_mln.ground_rules = [grounding]
+        tiny_mln.fact_to_groundrules = {fact: [grounding]}
         targets = {fact: 0.8}
         expected = computer.compute_pseudo_likelihood(tiny_mln, targets)
         expected_gradient, = torch.autograd.grad(expected, tiny_mln.rule_weights)
