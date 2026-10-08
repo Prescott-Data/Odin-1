@@ -81,6 +81,19 @@ def tiny_mln(tiny_kg, config):
 
 
 class TestELBOComputer:
+    def test_batched_joint_term_preserves_values_and_weight_gradients(self, tiny_mln, config):
+        computer = ELBOComputer(config)
+        worlds = tiny_mln._generate_sample_states(num_samples=137)
+        expected = torch.stack([
+            tiny_mln.compute_joint_probability(world) for world in worlds
+        ]).mean()
+        expected_gradient, = torch.autograd.grad(expected, tiny_mln.rule_weights)
+        actual = computer._compute_joint_term(tiny_mln, worlds, propagate_grads=True)
+        actual_gradient, = torch.autograd.grad(actual, tiny_mln.rule_weights)
+        assert torch.allclose(actual, expected, atol=1e-6)
+        assert torch.allclose(actual_gradient, expected_gradient, atol=1e-6)
+        assert not computer._compute_joint_term(tiny_mln, worlds).requires_grad
+
     def test_batched_counts_preserve_sample_stream_and_implication_semantics(self, tiny_mln):
         x, y = Variable("?x"), Variable("?y")
         tiny_mln.add_logical_rules([

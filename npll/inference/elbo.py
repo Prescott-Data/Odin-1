@@ -130,16 +130,15 @@ class ELBOComputer(nn.Module):
         Monte-Carlo estimate of E_Q[log P(F,U|ω)] as a simple average over worlds.
         If propagate_grads=True, allow gradients to flow to MLN weights.
         """
-        if not sampled_worlds:
-            ref = next(mln.parameters()).detach() if any(mln.parameters()) else None
-            return self._scalar_like(0.0, ref)
+        if not sampled_worlds or mln.rule_weights is None:
+            return self._scalar_like(0.0, mln.rule_weights)
 
-        log_joint = []
-        for world_assignment in sampled_worlds:
-            logp = mln.compute_joint_probability(world_assignment, detach_weights=not propagate_grads)
-            log_joint.append(logp)
-        log_joint_tensor = torch.stack(log_joint)
-        return log_joint_tensor.mean()
+        counts = mln.compute_ground_rule_counts_batch(sampled_worlds)
+        weights = mln.rule_weights if propagate_grads else mln.rule_weights.detach()
+        partition = mln.compute_partition_function()
+        if not propagate_grads:
+            partition = partition.detach()
+        return ((weights.unsqueeze(0) * counts).sum(dim=1) - partition).mean()
     
     def _compute_entropy_term(self, q_probs: torch.Tensor) -> torch.Tensor:
         """
