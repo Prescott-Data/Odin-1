@@ -59,7 +59,6 @@ def db():
 def configure_fast_training(monkeypatch):
     """Keep the live lifecycle tests practical while using real training."""
     import npll.bootstrap as bootstrap_module
-    from npll.training.npll_trainer import TrainingConfig
     from npll.utils.config import NPLLConfig
 
     config = NPLLConfig(
@@ -69,18 +68,10 @@ def configure_fast_training(monkeypatch):
         scoring_hidden_dim=8,
         max_ground_rules=16,
         batch_size=4,
+        learning_rate=0.01,
         device="cpu",
     )
     monkeypatch.setattr(bootstrap_module, "get_config", lambda name: config)
-    monkeypatch.setattr(
-        bootstrap_module,
-        "TrainingConfig",
-        lambda **kwargs: TrainingConfig(
-            num_epochs=1,
-            max_em_iterations_per_epoch=1,
-            save_checkpoints=False,
-        ),
-    )
 
 
 def test_snapshot_tracks_same_count_mutations_and_types(db):
@@ -219,6 +210,7 @@ def test_real_train_save_reload_and_serve(db, monkeypatch):
     store = backend.model_store()
     first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert first.source == "trained"
+    assert first.report.converged
     second = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
     assert second.source == "cached_weights"
     assert first.report == second.report
@@ -238,6 +230,7 @@ def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
     first = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
     assert first.has_npll
     assert first.npll_source == "trained"
+    assert first.training_report.converged
 
     reloaded = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
     assert reloaded.has_npll
