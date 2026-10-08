@@ -95,7 +95,7 @@ class PseudoLikelihoodComputer:
         markov_blanket = set()
         
         # Find all ground rules containing the target fact
-        for ground_rule in mln.ground_rules:
+        for ground_rule in mln.fact_to_groundrules.get(target_fact, []):
             rule_facts = ground_rule.get_all_facts()
             if target_fact in rule_facts:
                 # Add all other facts in this ground rule to Markov blanket
@@ -119,9 +119,7 @@ class PseudoLikelihoodComputer:
 
         delta = torch.zeros((), device=device, requires_grad=True)
         rule_id_to_idx = {rule.rule_id: i for i, rule in enumerate(mln.logical_rules)}
-        relevant_ground_rules = getattr(mln, 'fact_to_groundrules', {}).get(target_fact, [])
-        if not relevant_ground_rules:
-            relevant_ground_rules = [gr for gr in mln.ground_rules if target_fact in gr.get_all_facts()]
+        relevant_ground_rules = mln.fact_to_groundrules.get(target_fact, [])
 
         def q_true(f: Triple) -> torch.Tensor:
             if f in fact_probabilities:

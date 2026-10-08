@@ -15,7 +15,7 @@ from npll.core.logical_rules import Atom, GroundRule, LogicalRule, RuleType, Var
 from npll.core.mln import create_mln_from_kg_and_rules
 from npll.inference.e_step import create_e_step_runner
 from npll.inference.elbo import ELBOComputer, VariationalInference
-from npll.inference.m_step import MStepRunner
+from npll.inference.m_step import MStepRunner, PseudoLikelihoodComputer
 from npll.npll_model import create_initialized_npll_model
 from npll.scoring import create_scoring_module
 from npll.training.npll_trainer import TrainingConfig, create_trainer
@@ -298,6 +298,26 @@ class TestEStep:
 
 
 class TestMStep:
+    def test_indexed_targets_do_not_scan_unrelated_rules(self, tiny_mln, tiny_kg, config, monkeypatch):
+        computer = PseudoLikelihoodComputer(config)
+        fact = next(iter(tiny_kg.unknown_facts))
+        targets = {fact: 0.8}
+        expected = computer.compute_pseudo_likelihood(tiny_mln, targets)
+        expected_gradient, = torch.autograd.grad(expected, tiny_mln.rule_weights)
+
+        class UnscannableRules(list):
+            def __iter__(self):
+                raise AssertionError("An indexed target must not scan all ground rules")
+
+        monkeypatch.setattr(tiny_mln, "ground_rules", UnscannableRules(tiny_mln.ground_rules))
+        actual = computer.compute_pseudo_likelihood(tiny_mln, targets)
+        actual_gradient, = torch.autograd.grad(actual, tiny_mln.rule_weights)
+        assert torch.equal(actual, expected)
+        assert torch.equal(actual_gradient, expected_gradient)
+        tiny_kg.add_unknown_fact("X", "unrelated", "Y")
+        absent = next(f for f in tiny_kg.unknown_facts if f.relation.name == "unrelated")
+        assert computer.compute_pseudo_likelihood(tiny_mln, {absent: 0.3}).item() == pytest.approx(-LN2)
+
     def test_positive_only_prior_reaches_finite_regularized_stationary_point(self, tiny_kg):
         fact = next(iter(tiny_kg.unknown_facts))
         x, y = Variable("?x"), Variable("?y")
