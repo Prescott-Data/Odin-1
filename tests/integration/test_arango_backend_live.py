@@ -108,6 +108,12 @@ def test_configured_bridge_affinity_and_membership_queries(db):
         "group_id": "claims",
         "algorithm": "leiden",
     })
+    membership.insert({
+        "_key": "b",
+        "record_id": "ExtractedEntities/B",
+        "group_id": "supply",
+        "algorithm": "leiden",
+    })
     bridges.insert({
         "_key": "a",
         "entity_key": "ExtractedEntities/A",
