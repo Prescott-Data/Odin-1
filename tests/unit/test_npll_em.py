@@ -5,12 +5,13 @@ graphs; no database required.
 """
 
 import math
+from types import SimpleNamespace
 
 import pytest
 import torch
 
 from npll.core import Relation, load_knowledge_graph_from_triples
-from npll.core.logical_rules import Atom, LogicalRule, RuleType, Variable
+from npll.core.logical_rules import Atom, GroundRule, LogicalRule, RuleType, Variable
 from npll.core.mln import create_mln_from_kg_and_rules
 from npll.inference.e_step import create_e_step_runner
 from npll.inference.elbo import ELBOComputer, VariationalInference
@@ -238,6 +239,25 @@ class TestEStep:
 
 
 class TestMStep:
+    def test_positive_only_prior_reaches_finite_regularized_stationary_point(self, tiny_kg):
+        fact = next(iter(tiny_kg.unknown_facts))
+        x, y = Variable("?x"), Variable("?y")
+        prior = LogicalRule("prior", [], Atom(fact.relation, (x, y)), RuleType.PRIOR)
+        grounding = GroundRule("prior_ground", [], fact, prior)
+        weights = torch.nn.Parameter(torch.tensor([10.0]))
+        mln = SimpleNamespace(rule_weights=weights, logical_rules=[prior],
+                              ground_rules=[grounding], fact_to_groundrules={fact: [grounding]},
+                              knowledge_graph=tiny_kg)
+        runner = MStepRunner(small_config(learning_rate=0.05, weight_decay=0.1))
+        targets = SimpleNamespace(fact_probabilities={fact: 1.0})
+        for _ in range(20):
+            result = runner.run_m_step(mln, targets)
+        # d[-log sigmoid(w) + 0.05*w²]/dw = sigmoid(w) - 1 + 0.1*w
+        gradient = torch.sigmoid(weights.detach()) - 1.0 + 0.1 * weights.detach()
+        assert gradient.abs().max().item() < 1e-4
+        assert result.weight_changes.abs().max().item() < 1e-4
+        assert 0.0 < weights.item() < 3.0
+
     @pytest.fixture
     def e_step_result(self, tiny_kg, tiny_mln, config):
         scoring = create_scoring_module(config, tiny_kg)

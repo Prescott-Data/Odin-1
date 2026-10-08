@@ -290,6 +290,7 @@ class MStepOptimizer:
         self.max_iterations = 100  # M-step specific iterations
         self.convergence_threshold = config.convergence_threshold
         self.grad_clip_norm = config.grad_clip_norm
+        self._optimizer = None
     
     def optimize_rule_weights(self,
                             mln: MarkovLogicNetwork,
@@ -316,7 +317,11 @@ class MStepOptimizer:
         initial_weights = mln.rule_weights.data.clone()
         
         # Setup optimizer
-        optimizer = optim.Adam([mln.rule_weights], lr=self.learning_rate)
+        # Preserve Adam moments across E-M calls instead of restarting fixed-size
+        # updates each time the objective is already close to its optimum.
+        if self._optimizer is None or self._optimizer.param_groups[0]["params"][0] is not mln.rule_weights:
+            self._optimizer = optim.Adam([mln.rule_weights], lr=self.learning_rate)
+        optimizer = self._optimizer
         
         # Optimization history
         objective_history = []
@@ -338,13 +343,13 @@ class MStepOptimizer:
             )
             
             # We want to maximize pseudo-likelihood, so minimize negative
-            loss = -pseudo_likelihood
+            loss = -pseudo_likelihood + 0.5 * self.config.weight_decay * mln.rule_weights.square().sum()
             
             # Backward pass
             loss.backward()
             
             # Store objective value (detached to prevent gradient issues)
-            objective_history.append(pseudo_likelihood.detach().item())
+            objective_history.append(-loss.detach().item())
             
             # Clip gradients
             if mln.rule_weights.grad is not None:
@@ -354,12 +359,16 @@ class MStepOptimizer:
                 gradient_history.append(0.0)
             
             # Optimization step
+            previous_weights = mln.rule_weights.detach().clone()
             optimizer.step()
             
             # Check convergence
             if iteration > 0:
                 objective_change = abs(objective_history[-1] - objective_history[-2])
-                if objective_change < self.convergence_threshold:
+                weight_change = (mln.rule_weights.detach() - previous_weights).abs().max().item()
+                if (objective_change < self.convergence_threshold and
+                        weight_change < self.config.weight_abs_tol and
+                        gradient_history[-1] < self.convergence_threshold):
                     converged = True
                     logger.debug(f"M-step converged at iteration {iteration}")
                     break
