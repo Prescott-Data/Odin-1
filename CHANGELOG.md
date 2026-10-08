@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- E-M bootstrap trains until convergence within configured safety limits instead
+  of stopping after 10 epochs. Exhaustion raises `TrainingConvergenceError` with
+  a complete report and preserves the prior serving model and stored artifact.
+  M-step uses configured L2 regularization and persistent Adam state; convergence
+  estimates use fixed local random streams.
+- Backend-neutral NPLL batches sampled rule evaluation, reuses weight-independent
+  partition counts, and uses fact indices for M-step lookups. Samples and
+  convergence thresholds are unchanged; no database-specific optimization is used.
 - `TrainingBackend.model_store()` and `ArangoBackend.model_store()` take no
   community arguments. Model storage belongs to the global training scope;
   callers must migrate directly to the new signature.

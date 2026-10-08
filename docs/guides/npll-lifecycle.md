@@ -84,6 +84,16 @@ partition estimates use fixed local random streams so changing random draws
 cannot conceal or manufacture convergence. This is convergence of the sampled
 approximation, not proof that the exact objective has reached a global optimum.
 
+Training optimizations belong to NPLL's in-memory graph representation, so they
+apply to every backend supplying the training contracts. Compiled fact indices
+batch rule satisfaction across worlds; fixed sampled rule counts are reused when
+weights change. Changing known facts, adding rules, or replacing the graph
+invalidates the affected caches. Explicit caller-supplied worlds use their own
+counts. Each weighted computation builds a fresh autograd graph. Batches bound
+temporary workspace and process every world, without reducing the sample count
+or changing convergence tolerances. Floating-point reductions may differ slightly
+from scalar evaluation; count and gradient equivalence are regression-tested.
+
 New training runs stop as soon as the E-M convergence criteria hold. The
 `OdinTriples` configuration supplies `max_epochs` (200) and `em_iterations` (10);
 these are safety limits, not successful completion targets. There is no separate
