@@ -81,13 +81,26 @@ def tiny_mln(tiny_kg, config):
 
 
 class TestELBOComputer:
+    def test_batched_counts_preserve_sample_stream_and_implication_semantics(self, tiny_mln):
+        x, y = Variable("?x"), Variable("?y")
+        tiny_mln.add_logical_rules([
+            LogicalRule("prior", [], Atom(Relation("r1"), (x, y)), RuleType.PRIOR),
+        ])
+        worlds = tiny_mln._generate_sample_states(num_samples=137)
+        expected = torch.stack([tiny_mln.compute_ground_rule_counts(world) for world in worlds])
+        assert torch.equal(tiny_mln.compute_ground_rule_counts_batch(worlds), expected)
+        assert torch.equal(tiny_mln._sample_ground_rule_counts(num_samples=137), expected)
+        worlds = [{}, {fact: True for fact in tiny_mln.ground_rule_facts}]
+        expected = torch.stack([tiny_mln.compute_ground_rule_counts(world) for world in worlds])
+        assert torch.equal(tiny_mln.compute_ground_rule_counts_batch(worlds), expected)
+
     def test_partition_reuses_counts_with_fresh_weight_gradients(self, tiny_mln, monkeypatch):
-        original = tiny_mln._generate_sample_states
+        original = tiny_mln._sample_ground_rule_counts
         calls = []
         def sample(num_samples):
             calls.append(num_samples)
             return original(num_samples)
-        monkeypatch.setattr(tiny_mln, "_generate_sample_states", sample)
+        monkeypatch.setattr(tiny_mln, "_sample_ground_rule_counts", sample)
         for weight in (0.5, 1.5):
             with torch.no_grad():
                 tiny_mln.rule_weights.fill_(weight)
