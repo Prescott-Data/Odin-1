@@ -76,7 +76,16 @@ The report carries the complete evidence for the convergence decision:
 
 Convergence is declared when the relative ELBO change **and** the rule-weight change stay under their tolerances for `convergence_patience` consecutive iterations.
 
-If the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
+New training runs stop as soon as the E-M convergence criteria hold. The
+`OdinTriples` configuration supplies `max_epochs` (200) and `em_iterations` (10);
+these are safety limits, not successful completion targets. There is no separate
+10-epoch bootstrap cutoff. Exhausting the budget raises
+`npll.TrainingConvergenceError`, whose `report` preserves both full iteration
+histories. The unconverged replacement is not saved, and failed retraining
+preserves the active serving model and stored artifact. Convergence of the rule
+weights does not establish calibration of the separately trained neural scorer.
+
+For artifacts saved by earlier code, if the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
 
 `engine.training_report` is `None` when auto-train is disabled.
 Current artifacts require a complete report. Older unscoped artifacts are not

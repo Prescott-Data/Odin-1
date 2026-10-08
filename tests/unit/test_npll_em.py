@@ -256,6 +256,27 @@ class TestTrainerLoop:
     def model(self, tiny_kg, config):
         return create_initialized_npll_model(tiny_kg, [chain_rule()], config)
 
+    def test_trainer_continues_past_ten_epochs_until_convergence(self, model, monkeypatch):
+        trainer = create_trainer(model, TrainingConfig(num_epochs=200, save_checkpoints=False))
+        epochs = []
+
+        def train_epoch(epoch):
+            epochs.append(epoch)
+            return {
+                "iteration_results": [{"elbo": -1.0, "rule_weight_delta": 0.0}],
+                "em_iterations": 1,
+                "final_elbo": -1.0,
+                "converged": epoch == 12,
+            }
+
+        monkeypatch.setattr(trainer, "_train_epoch", train_epoch)
+        result = trainer.train()
+        assert epochs == list(range(13))
+        assert result.converged
+        assert result.total_epochs == 13
+        assert result.convergence_epoch == 12
+        assert len(result.elbo_history) == 13
+
     def test_train_epoch_respects_em_budget(self, model):
         epoch_result = model.train_epoch(max_em_iterations=2)
 

@@ -137,6 +137,18 @@ class TrainingError(RuntimeError):
     """Requested NPLL training failed; callers must not serve substitute scores."""
 
 
+class TrainingConvergenceError(TrainingError):
+    """Training exhausted its safety budget; the previous artifact is preserved."""
+
+    def __init__(self, report: "TrainingReport"):
+        self.report = report
+        super().__init__(
+            f"NPLL did not converge within the safety budget "
+            f"({report.total_epochs} epochs, {report.total_em_iterations} E-M iterations). "
+            "No replacement model was saved. Inspect error.report for the complete training history."
+        )
+
+
 @dataclass
 class TrainingReport:
     """
@@ -367,9 +379,8 @@ class KnowledgeBootstrapper:
         
         # 5. Train
         train_config = TrainingConfig(
-            num_epochs=10,
-            max_em_iterations_per_epoch=5,
-            early_stopping_patience=3,
+            num_epochs=config.max_epochs,
+            max_em_iterations_per_epoch=config.em_iterations,
             save_checkpoints=False
         )
         trainer = create_trainer(model, train_config)
@@ -385,11 +396,7 @@ class KnowledgeBootstrapper:
         trained_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         report = TrainingReport.from_training_result(training_result, trained_at)
         if not report.converged:
-            logger.warning(
-                "NPLL training finished WITHOUT convergence "
-                f"(epochs={report.total_epochs}, em_iterations={report.total_em_iterations}, "
-                f"final_elbo={report.final_elbo:.6f}). Edge confidences may be poorly calibrated."
-            )
+            raise TrainingConvergenceError(report)
         
         # 6. Save complete learned state and training evidence.
         self._save_weights(model, kg, rules, snapshot, report, expected_revision)
