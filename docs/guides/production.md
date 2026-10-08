@@ -26,7 +26,7 @@ Engine construction trains or loads the [NPLL model](npll-lifecycle.md): compati
 
 ## Concurrency
 
-An `OdinEngine` holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per community and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. For multi-tenant serving, keep a small pool of engines keyed by `community_id`.
+An `OdinEngine` holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per configured graph and retrieval scope and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. Community scope is optional and requires an explicit membership mapping. If you use it, each scope can have its own engine while sharing the globally trained artifact. For multi-tenant serving, key engine pools by database, graph mapping, and retrieval scope; a community ID alone does not isolate tenants.
 
 ## Security
 
@@ -69,7 +69,7 @@ Provide the ArangoDB connection through environment variables at runtime.
 
 - [ ] Dedicated, least-privilege ArangoDB user
 - [ ] Credentials injected via environment or secrets manager
-- [ ] Engine constructed once per community and reused
+- [ ] Engine constructed once per graph and retrieval scope and reused
 - [ ] Engine warmed (model loaded) before serving
 - [ ] `cache_size` tuned to the working set
 - [ ] `timings_ms` and `triage.score` exported as metrics

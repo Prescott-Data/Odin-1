@@ -109,6 +109,27 @@ For artifacts saved by earlier code, if the active model did not converge, the e
 Current artifacts require a complete report. Older unscoped artifacts are not
 reused by the new backend store; the first run creates a new namespaced model.
 
+## Local lifecycle validation
+
+On October 8, 2026, a fresh default training run against a local ArangoDB
+3.12.9 graph with 171 nodes, 173 edges, and 344 extracted triples completed
+initialization in 97.91 seconds. The E-M report recorded convergence after
+12 epochs and 113 iterations. Reload took 0.159 seconds, reproduced all
+344 triple scores exactly, and did not change the stored revision.
+
+Retrieval checks across 32 seeds returned 292 paths. Every returned edge
+confidence matched `score_edge()`, and raw Arango assertions were preserved.
+Across 173 observed edges, mean confidence was 0.945; across 1,730 seeded
+unobserved endpoint corruptions it was 0.080. The pairwise ranking statistic
+was 0.9669. These checks include training facts and unobserved contrasts,
+not verified negatives; they do not establish held-out accuracy or calibration.
+Some observed edges scored low and need source-level inspection.
+
+These timings describe this small local graph, not a performance guarantee
+or a scaling projection. No community mappings were needed for training,
+storage, or these retrieval checks. The backend-neutral implementation was
+also validated with 258 unit tests and six live Arango contract tests.
+
 ## Retraining
 
 When the graph changes materially (new relation types, a large data load, a structural shift), retrain so the model reflects current patterns:
