@@ -94,4 +94,4 @@ Derive nodes from `edges`. A path dict may also carry internal keys such as `nod
 - `OdinEngine` takes a backend, never a raw database handle, URL or connection string.
 - Do not pass `auto_train=False` to hide a training error. It means structural retrieval with constant confidence, chosen on purpose. Training failures raise.
 - Check `engine.has_npll` before relying on fine-grained plausibility.
-- Seeds must be full IDs including the collection. A bare key finds nothing.
+- IDs are full document IDs including the collection, exactly as they exist in the graph. A bare key finds nothing in ArangoDB, but never invent a collection prefix: use the IDs the user or the data gives you.
