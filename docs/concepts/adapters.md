@@ -4,20 +4,28 @@ icon: material/power-plug
 
 # Adapters
 
-Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter and the one `OdinEngine` wires up for you, but the interface is small and deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
+Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter, supplied to `OdinEngine` through `ArangoBackend`, but the interface is deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
 
 ## The accessor interface
 
 An adapter implements the `GraphAccessor` protocol from `retrieval.adapters`. It is only a handful of methods:
 
 ```python
-from typing import Iterable, Tuple, List
+from typing import Dict, Iterable, Optional, Tuple, List
 from retrieval.adapters import GraphAccessor, NodeId, RelId
 
 class MyAccessor(GraphAccessor):
 
     def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         """Yield (neighbor, relation, weight) for each outgoing edge."""
+        ...
+
+    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
+        """Yield (neighbor, relation, weight) for each incoming edge."""
+        ...
+
+    def iter_out_edges(self, node: NodeId) -> Iterable[Dict[str, object]]:
+        """Yield one edge record per outgoing edge (see below)."""
         ...
 
     def nodes(self, community_id: str) -> Iterable[NodeId]:
@@ -29,18 +37,36 @@ class MyAccessor(GraphAccessor):
         ...
 
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
-        """Optional: map external seed IDs to internal ones. Default: passthrough."""
+        """Implement explicitly; return seeds unchanged if IDs need no mapping."""
         return seeds
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
+        """Return node properties, or an empty dict when the node is absent."""
+        ...
 ```
 
-If your backend can traverse outgoing edges and enumerate nodes, it can drive Odin. Everything the engine needs, PPR, beam search, and aggregation, is expressed in terms of these methods.
+If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. The engine validates all seven methods at construction and raises `BackendConfigurationError` if one is missing.
+
+### Edge records
+
+`iter_out_edges(node)` yields one dictionary per outgoing edge, with the exact stored assertion. These keys are required:
+
+| Key | Meaning |
+|-----|---------|
+| `_id` | Stable, unique identity of the edge |
+| `u` | Source node ID (the `node` argument) |
+| `rel` | Exact relation label |
+| `v` | Target node ID |
+| `weight` | Numeric structural weight (`1.0` if your backend has none) |
+
+These keys are optional metadata, and may be `None` or omitted when your backend does not have them: `created_at`, `valid_from`, `valid_to`, `status`, and `provenance`. `ArangoCommunityAccessor` also returns `source_confidence`, `npll_posterior`, and `calibration`, and puts the raw stored document under `provenance["assertion"]`. `iter_out` and `iter_out_edges` must describe the same edges. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.
 
 ## Adapters that ship with Odin
 
 | Adapter | Backend | Notes |
 |---------|---------|-------|
 | `ArangoCommunityAccessor` | ArangoDB | The reference adapter. Rich edges (weights, timestamps, provenance), community mapping, and the backend `OdinEngine` uses. |
-| `JanusGraphAccessor` | JanusGraph | Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
+| `JanusGraphAccessor` | JanusGraph | Retrieval only: no engine backend, training, or schema inspection. Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
 | `KGCommunityAccessor` | In-memory `KnowledgeGraph` | For a pre-sliced community held in memory. |
 | `OverlayAccessor` | Any accessor | Wraps a base accessor and adds soft overlay edges on top. |
 
@@ -48,7 +74,34 @@ Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point
 
 ## Using a non-Arango adapter
 
-`OdinEngine` is a convenience wrapper that constructs the ArangoDB adapter from a `db` handle. To drive Odin with a different backend, compose the retrieval orchestrator directly with your accessor:
+An accessor handles graph reads; a backend supplies that accessor to the engine.
+Here is a complete retrieval-only example requiring no database driver:
+
+```python
+from odin import OdinEngine
+from npll.core.knowledge_graph import KnowledgeGraph
+from retrieval.adapters import KGCommunityAccessor
+
+graph = KnowledgeGraph()
+graph.add_known_fact("A", "linked_to", "B")
+
+class InMemoryBackend:
+    def accessor(self, community_id, community_mode):
+        if community_mode != "none":
+            raise ValueError("This example supports global retrieval only")
+        return KGCommunityAccessor(graph, community_id)
+
+engine = OdinEngine(InMemoryBackend(), auto_train=False)
+print(engine.get_neighbors("A"))
+```
+
+`OdinEngine` accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with `auto_train=False` or compose the retrieval orchestrator directly with your accessor:
+
+Install the Gremlin driver before importing its backend module:
+
+```bash
+pip install -e ".[gremlin]"
+```
 
 ```python
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
@@ -57,7 +110,7 @@ from gremlin_python.process.anonymous_traversal import traversal
 
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import ConstantConfidence
-from retrieval.adapters import JanusGraphAccessor
+from retrieval.adapters_janus import JanusGraphAccessor
 
 # GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,
 # which JanusGraph 1.x (TinkerPop 3.7) servers reject.
@@ -88,7 +141,11 @@ result = orchestrator.retrieve(
 The result has the same shape documented in the [Result Schema](../reference/result-schema.md).
 
 !!! note "NPLL and non-Arango backends"
-    Odin's learned [NPLL](npll.md) model is bootstrapped from an ArangoDB graph, so it is tied to the ArangoDB adapter today. On other backends, pass an edge-confidence function explicitly, `ConstantConfidence(...)` to treat all edges as equally plausible, or your own implementation of the confidence interface. You still get the full PPR and beam-search machinery; you supply the semantic signal.
+    The training lifecycle is backend-neutral. ArangoBackend is currently the
+    supplied implementation of both `TripleSource` and `ModelStore`. A custom
+    backend can supply those capabilities to enable engine-managed training.
+    Without them, use `auto_train=False`, or compose the orchestrator with your
+    own confidence provider. See the [backend contracts](../development/backend-contracts.md).
 
 ## Caching your adapter
 
@@ -102,7 +159,7 @@ accessor = CachedGraphAccessor(JanusGraphAccessor(g), cache_size=5000)
 
 ## Writing your own
 
-To add a backend, implement the four `GraphAccessor` methods for it. `iter_out` is the workhorse: given a node, return its outgoing `(neighbor, relation, weight)` tuples. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
+To add a backend, implement all seven `GraphAccessor` methods. `iter_out` and `iter_out_edges` are the workhorses: given a node, return its outgoing edges as `(neighbor, relation, weight)` tuples and as full edge records. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
 
 ## Next
 

@@ -11,14 +11,21 @@ This guide runs the full Odin pipeline once and then walks through every field o
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db, community_id="global")
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global")
 
 result = engine.retrieve(
-    seeds=["entity/claim_123"],
+    seeds=["CaseRecords/claim_123"],
     max_paths=50,
     hop_limit=3,
     beam_width=64,
@@ -47,7 +54,7 @@ result.keys()
 #            'triage', 'ics', 'used_budget', 'trace'])
 ```
 
-**The paths** are the primary output, returned best-first. Each carries a combined `score` and a list of `edges`; there is no separate `nodes` field, so the node sequence is derived from the edges:
+**The paths** are the primary output, returned best-first. Each carries a combined `score` and a list of `edges`. The documented way to get the node sequence is to derive it from the edges (a path may also carry internal keys such as `nodes`, which are not part of the documented schema):
 
 ```python
 for p in result["paths"][:5]:

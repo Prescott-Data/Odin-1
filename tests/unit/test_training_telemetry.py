@@ -1,7 +1,8 @@
+from npll.utils.config import NPLLConfig
 """
 Unit tests for NPLL training telemetry: TrainingReport construction and
 round-trip, BootstrapResult threading through KnowledgeBootstrapper, and
-non-convergence warnings. Uses fake DB objects; no database required.
+non-convergence warnings. Uses protocol fakes; no database required.
 """
 
 import logging
@@ -11,13 +12,14 @@ import pytest
 import torch
 
 from npll.bootstrap import (
-    NPLL_MODEL_KEY,
-    ODIN_MODELS_COLLECTION,
     BootstrapResult,
     KnowledgeBootstrapper,
     TrainingReport,
+    TrainingConvergenceError,
 )
 from npll.training.npll_trainer import TrainingResult
+from odin.backends.base import ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, StoredModel
+from tests.utils.backend_fakes import MemorySource, MemoryStore
 
 
 def make_training_result(**overrides) -> TrainingResult:
@@ -78,128 +80,77 @@ class TestTrainingReport:
         assert TrainingReport.from_dict(json.loads(encoded)) == report
 
 
-class _Collection:
-    def __init__(self):
-        self.docs = {}
-
-    def get(self, key):
-        return self.docs.get(key)
-
-    def has(self, key):
-        return key in self.docs
-
-    def insert(self, doc):
-        self.docs[doc["_key"]] = doc
-
-    def update(self, doc):
-        self.docs[doc["_key"]].update(doc)
-
-    def count(self):
-        return len(self.docs)
-
-
-class _AQL:
-    def __init__(self, responses):
-        self._responses = list(responses)
-
-    def execute(self, query, **kwargs):
-        return iter(self._responses.pop(0)) if self._responses else iter([])
-
-
-class _FakeDB:
-    """Minimal StandardDatabase stand-in for bootstrapper tests."""
-
-    def __init__(self, aql_responses=None):
-        self._collections = {ODIN_MODELS_COLLECTION: _Collection()}
-        self.aql = _AQL(aql_responses or [])
-
-    def has_collection(self, name):
-        return name in self._collections
-
-    def create_collection(self, name):
-        self._collections[name] = _Collection()
-
-    def collection(self, name):
-        return self._collections.setdefault(name, _Collection())
-
-
 class TestBootstrapResultThreading:
-    def test_failed_extraction_returns_failed_result(self):
-        bootstrapper = KnowledgeBootstrapper(db=_FakeDB())
-
-        with patch.object(bootstrapper, "_compute_data_hash", return_value="h" * 64), \
-             patch.object(bootstrapper, "_extract_triples", return_value=[]):
-            result = bootstrapper.ensure_model_ready()
+    def test_empty_snapshot_returns_failed_result(self):
+        source = MemorySource()
+        bootstrapper = KnowledgeBootstrapper(source, MemoryStore())
+        result = bootstrapper.ensure_model_ready()
 
         assert isinstance(result, BootstrapResult)
         assert result.model is None
         assert result.source == "failed"
         assert result.report is None
-        assert result.data_hash == "h" * 64
+        assert result.data_hash == source.snapshot().data_hash
 
     def test_cached_weights_rehydrate_report(self):
-        db = _FakeDB()
-        report = TrainingReport.from_training_result(
-            make_training_result(converged=False, convergence_epoch=None),
-            "2026-09-01T00:00:00Z",
-        )
-        db.collection(ODIN_MODELS_COLLECTION).insert(
-            {
-                "_key": NPLL_MODEL_KEY,
-                "data_hash": "h" * 64,
-                "rule_weights": [0.5],
-                "training_report": report.to_dict(),
-                "trained_at": report.trained_at,
-            }
-        )
-        bootstrapper = KnowledgeBootstrapper(db=db)
-
-        sentinel_model = object()
-        with patch.object(bootstrapper, "_compute_data_hash", return_value="h" * 64), \
-             patch.object(bootstrapper, "_extract_triples", return_value=[("A", "r1", "B")]), \
-             patch.object(bootstrapper, "_generate_smart_rules", return_value=[object()]), \
-             patch("npll.bootstrap.create_initialized_npll_model") as create_model:
+        source = MemorySource([("A", "r1", "B"), ("B", "r2", "C")])
+        store = MemoryStore()
+        bootstrapper = KnowledgeBootstrapper(source, store)
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
+             patch("npll.bootstrap.create_trainer") as trainer:
             model = create_model.return_value
-            model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.0]))
+            def initialize(snapshot, kg, rules, config):
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                    "example_count": 2}
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
+            model.config = NPLLConfig(device="cpu")
+            model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+            trainer.return_value.train.return_value = make_training_result()
+            trained = bootstrapper.ensure_model_ready()
+            model.mln.rule_weights.data.zero_()
             result = bootstrapper.ensure_model_ready()
 
         assert result.source == "cached_weights"
         assert result.model is not None
-        assert result.report == report
-        assert result.report.converged is False
+        assert result.report == trained.report
+        assert result.report.converged is True
+        assert torch.all(result.model.mln.rule_weights == 0.5)
+        assert source.calls == 2
+        assert store.saves == 1
 
-    def test_legacy_doc_without_report_yields_none_report(self):
-        db = _FakeDB()
-        db.collection(ODIN_MODELS_COLLECTION).insert(
-            {
-                "_key": NPLL_MODEL_KEY,
-                "data_hash": "h" * 64,
-                "rule_weights": [0.5],
-                "trained_at": "2026-08-01T00:00:00Z",
-            }
-        )
-        bootstrapper = KnowledgeBootstrapper(db=db)
-
-        with patch.object(bootstrapper, "_compute_data_hash", return_value="h" * 64), \
-             patch.object(bootstrapper, "_extract_triples", return_value=[("A", "r1", "B")]), \
-             patch.object(bootstrapper, "_generate_smart_rules", return_value=[object()]), \
-             patch("npll.bootstrap.create_initialized_npll_model") as create_model:
-            model = create_model.return_value
-            model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.0]))
-            result = bootstrapper.ensure_model_ready()
-
-        assert result.source == "cached_weights"
-        assert result.report is None
+    def test_legacy_doc_is_stale_at_contract_boundary(self):
+        store = MemoryStore()
+        store.docs[MODEL_KEY] = StoredModel({"rule_weights": [0.5], "version": "2.1"}, "1")
+        bootstrapper = KnowledgeBootstrapper(MemorySource(), store)
+        assert bootstrapper.ensure_model_ready().source == "failed"
 
     def test_persisted_doc_contains_full_training_report(self):
-        db = _FakeDB()
-        bootstrapper = KnowledgeBootstrapper(db=db)
-        training_result = make_training_result(converged=False, convergence_epoch=None)
+        store = MemoryStore()
+        bootstrapper = KnowledgeBootstrapper(
+            MemorySource([("A", "r1", "B"), ("B", "r2", "C")]), store,
+        )
+        training_result = make_training_result()
 
-        with patch.object(bootstrapper, "_extract_triples", return_value=[("A", "r1", "B"), ("B", "r2", "C")]), \
-             patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
              patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
+            def initialize(snapshot, kg, rules, config):
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                    "example_count": 2}
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
+            model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
 
@@ -207,30 +158,55 @@ class TestBootstrapResultThreading:
 
         assert result.source == "trained"
         assert result.report is not None
-        assert result.report.converged is False
+        assert result.report.converged is True
 
-        doc = db.collection(ODIN_MODELS_COLLECTION).get(NPLL_MODEL_KEY)
-        assert doc["version"] == "2.1"
+        doc = store.load(MODEL_KEY).document
+        assert doc["version"] == ARTIFACT_VERSION
         stored = TrainingReport.from_dict(doc["training_report"])
         assert stored == result.report
         assert stored.elbo_history == training_result.elbo_history
 
-    def test_non_convergence_logs_warning(self, caplog):
-        db = _FakeDB()
-        bootstrapper = KnowledgeBootstrapper(db=db)
+    @pytest.mark.parametrize("existing_model", [False, True])
+    def test_non_convergence_raises_without_saving(self, existing_model):
+        bootstrapper = KnowledgeBootstrapper(
+            MemorySource([("A", "r1", "B"), ("B", "r2", "C")]), MemoryStore(),
+        )
         training_result = make_training_result(converged=False, convergence_epoch=None)
 
-        with patch.object(bootstrapper, "_extract_triples", return_value=[("A", "r1", "B"), ("B", "r2", "C")]), \
-             patch("npll.bootstrap.create_initialized_npll_model") as create_model, \
-             patch("npll.bootstrap.create_trainer") as create_trainer_mock, \
-             caplog.at_level(logging.WARNING, logger="npll.bootstrap"):
+        with patch("npll.bootstrap.create_snapshot_trained_model") as create_model, \
+             patch("npll.bootstrap.create_trainer") as create_trainer_mock:
             model = create_model.return_value
+            def initialize(snapshot, kg, rules, config):
+                from npll.scoring.scoring_module import create_scoring_module
+                model.scoring_module = create_scoring_module(config, kg)
+                model.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                    "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                    "example_count": 2}
+                model.config = config
+                model.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+                return model
+            create_model.side_effect = initialize
+            model.config = NPLLConfig(device="cpu")
             model.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
             create_trainer_mock.return_value.train.return_value = training_result
 
-            bootstrapper.ensure_model_ready(force_retrain=True)
+            if existing_model:
+                create_trainer_mock.return_value.train.return_value = make_training_result()
+                bootstrapper.ensure_model_ready()
+            previous = bootstrapper.model_store.load(MODEL_KEY)
+            create_trainer_mock.return_value.train.return_value = training_result
+            with pytest.raises(TrainingConvergenceError) as caught:
+                bootstrapper.ensure_model_ready(force_retrain=True)
 
-        assert any("WITHOUT convergence" in message for message in caplog.messages)
+        assert caught.value.report.elbo_history == training_result.elbo_history
+        assert caught.value.report.rule_weight_delta_history == training_result.rule_weight_delta_history
+        assert bootstrapper.model_store.saves == int(existing_model)
+        assert bootstrapper.model_store.load(MODEL_KEY) == previous
+        from npll.utils.config import get_config
+        training_config = create_trainer_mock.call_args.args[1]
+        config = get_config("OdinTriples")
+        assert training_config.num_epochs == config.max_epochs
+        assert training_config.max_em_iterations_per_epoch == config.em_iterations
 
 
 class TestEngineWarning:

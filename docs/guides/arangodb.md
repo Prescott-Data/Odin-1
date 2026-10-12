@@ -8,19 +8,76 @@ Odin's reference backend is [ArangoDB](https://www.arangodb.com/). This guide co
 
 ## Connecting
 
-The ArangoDB Python driver (`python-arango`) is installed automatically with `odin-engine` and imports as `arango`. You connect, select a database, and hand the resulting object to the engine:
+Install the ArangoDB Python driver with the `arango` extra. It imports as
+`arango`; connect, select a database, and wrap the connected handle in
+`ArangoBackend`:
+
+```bash
+pip install "odin-engine[arango]"
+```
 
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+    entity_type_field="record_type",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend)
 ```
 
-The important detail is that `OdinEngine` takes an already-connected `StandardDatabase` object and never manages credentials itself. That keeps secrets in your connection code and out of Odin entirely.
+The important detail is that `OdinEngine` takes a backend, while `ArangoBackend`
+uses an already-connected `StandardDatabase` object and never manages credentials
+itself. That keeps secrets in your connection code and out of Odin entirely.
+
+## Map your graph data
+
+`ArangoGraphConfig` is required and makes the backend portable across your
+existing Arango schemas. Odin reads node IDs from `_id`, edge endpoints from
+`_from` and `_to`, and relation labels from the field you configure. It does
+not require collection names such as `ExtractedEntities` or a node label field.
+
+For the configuration above, an edge looks like:
+
+```json
+{
+  "_from": "CaseRecords/claim_1042",
+  "_to": "CaseRecords/person_73",
+  "predicate": "submitted_by"
+}
+```
+
+`predicate` must be a non-empty string on every edge included in training.
+`record_type` is optional, but when configured its non-null node values must be
+non-empty strings. Odin adds these as `has_type` training triples. Optional
+retrieval metadata such as `weight`, `created_at`, and provenance can remain in
+your own fields; it is not required to train or retrieve. To make a numeric
+edge field affect structural traversal, set `edge_weight_field` explicitly.
+Without it, Odin assigns every edge a structural weight of `1.0` and does not
+assume a field named `weight`.
+
+Set `edge_timestamp_field`, `edge_valid_from_field`, `edge_valid_to_field`,
+`edge_status_field`, or `edge_provenance_fields` only when your graph supplies
+those signals. Omitted fields disable the corresponding signal rather than
+falling back to a named Arango property. The standalone Arango analytics and
+content helpers likewise require their collection and field mappings and return
+complete source documents; normal engine use needs only the graph mapping above.
+
+### Optional status and provenance filters
+
+`edge_status_field` exposes metadata. Set `allowed_edge_statuses=("active",)` to
+filter edges by mapped status values. `provenance_target_collections=("Reports",)`
+restricts mapped provenance edges to those source collections. A configured
+provenance collection must exist; missing collections raise
+`BackendConfigurationError`.
 
 ## Production connections
 
@@ -59,15 +116,37 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want both retrieval and the NPLL model focused on one partition:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend:
 
 ```python
-# Global exploration (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+# Global exploration (default); `graph` is the explicit mapping above.
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global", community_mode="none")
 
-# Scoped to one partition
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+# Scoped to one partition. Add all three membership fields to `graph`.
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 ```
+
+Mapping mode requires `membership_collection`, `membership_entity_field`, and
+`membership_community_field` together. Without that complete mapping Odin
+raises `BackendConfigurationError`; it never guesses a membership schema.
+Property mode instead requires `community_property_field`; Odin does not assume
+a node field named `community_id`.
+
+Bridge mapping requires `bridge_collection`, `bridge_entity_field`,
+`bridge_strength_field`, and `bridge_community_field`. Store full document IDs
+in the mapped entity field. Affinity mapping requires `affinity_collection`,
+`affinity_from_field`, `affinity_to_field`, and `affinity_score_field`.
+Each signal can be configured independently. Unconfigured signals issue no queries.
+
+Algorithm filters are opt-in: set `membership_algorithm_field`,
+`bridge_algorithm_field`, or `affinity_algorithm_field` with `community_algorithm`.
+Membership lookups use the same filter in scoped and global access. Configured
+query failures raise `BackendIOError` and are not cached as absent data.
+Membership metadata remains available in `community_mode="none"`, allowing
+cross-community affinity scoring during global exploration. Scoped traversal
+continues to respect its boundary.
 
 ## Verifying it worked
 
@@ -79,11 +158,12 @@ print(engine.get_status())
 #  'intelligence_mode': 'NPLL', 'cache_size': 5000}
 ```
 
-An `intelligence_mode` of `Constant` means the NPLL model has not trained yet, which [Model Lifecycle](npll-lifecycle.md) explains how to resolve.
+An `intelligence_mode` of `Constant` means NPLL was explicitly disabled with
+`auto_train=False`. Requested training failures raise. See [Model Lifecycle](npll-lifecycle.md).
 
 ## Other backends
 
-The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See [Adapters](../concepts/adapters.md) for the full picture.
+`ArangoBackend` is the only complete backend today. A JanusGraph accessor supports retrieval only, and Neo4j is planned. To build your own, see [Adapters](../concepts/adapters.md) and [Backend contracts](../development/backend-contracts.md#implementing-a-backend).
 
 ## Next
 

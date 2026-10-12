@@ -15,11 +15,21 @@ When you have a specific prohibited relationship in mind, score it directly, wit
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 db = ArangoClient(hosts="http://localhost:8529").db(
     "compliance", username="root", password=""
 )
-engine = OdinEngine(db, community_id="compliance", community_mode="mapping")
+graph = ArangoGraphConfig(
+    node_collection="compliance_entities",
+    edge_collection="compliance_relationships",
+    relation_field="relation",
+    membership_collection="entity_communities",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="compliance", community_mode="mapping")
 
 score = engine.score_edge(
     "entity/investment_fund",

@@ -419,7 +419,7 @@ When you initialize Odin with your knowledge graph:
 \item \textbf{Auto-Training:} If not, automatically extracts patterns, generates domain-aware rules, and trains the semantic model (10-30 seconds)
 \item \textbf{Efficient Storage:} Stores only learned rule weights (typically $<$1KB), not full embeddings
 \item \textbf{Lazy Reconstruction:} Rebuilds entity embeddings from graph data on-demand
-\item \textbf{Graceful Fallback:} If training fails, falls back to structural-only scoring
+\item \textbf{Explicit Failure:} Requested training failures raise; failed retraining preserves the active serving model. Structural-only retrieval requires explicit configuration.
 \end{enumerate}
 
 This eliminates the operational overhead of ML deployment while ensuring model freshness.
@@ -442,28 +442,31 @@ Odin is designed as a \textbf{Python library} that agents import, not a standalo
 \begin{lstlisting}[language=Python]
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://your-db:8529")
 db = client.db("knowledge_graph", username="user", password="pass")
 
-# Initialize Odin - auto-trains on first run
-odin = OdinEngine(db=db, community_id="healthcare")
+# Initialize Odin with an explicit graph mapping; auto-trains on first run.
+graph = ArangoGraphConfig(
+    node_collection="PatientRecords",
+    edge_collection="ClinicalLinks",
+    relation_field="predicate",
+)
+odin = OdinEngine(ArangoBackend(db, graph))
 
 # Use during agent exploration
 result = odin.retrieve(
-    seeds=["entity/patient_12345"],
+    seeds=["PatientRecords/patient_12345"],
     max_paths=50,
     hop_limit=3
 )
 
-# Access discovered paths with decomposed scores
-for path in result["paths"][:10]:
-    print(f"Path: {path['nodes']}")
-    print(f"  Total Score: {path['score']:.3f}")
-    print(f"    Structural: {path['scores']['structural']:.3f}")
-    print(f"    Plausibility: {path['scores']['plausibility']:.3f}")
-    print(f"    Temporal: {path['scores']['temporal']:.3f}")
+# Access complete discovered paths as ordered edges
+for path in result["paths"]:
+    print(f"Path: {[(edge['u'], edge['relation'], edge['v']) for edge in path['edges']]}")
+    print(f"  Score: {path['score']:.3f}")
 \end{lstlisting}
 
 \subsection{Production Optimizations}
@@ -476,7 +479,7 @@ Enterprise deployment requires careful optimization:
 
 \textbf{Graceful Degradation:} If the semantic model fails, Odin continues with structural-only scoring rather than failing entirely.
 
-\textbf{Database Abstraction:} Works with ArangoDB (primary), Neo4j, and in-memory graphs without code changes.
+\textbf{Database Abstraction:} The current release supplies an explicit ArangoDB backend and in-memory graph support. Other stores require a caller-provided backend; Neo4j support is planned separately.
 
 \section{Applications}
 

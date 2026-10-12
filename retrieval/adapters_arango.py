@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import OrderedDict
 from typing import Iterable, Tuple, Optional, List, Dict, Any, NamedTuple
 
 from .adapters import GraphAccessor, NodeId, RelId
@@ -15,18 +16,28 @@ class EdgeView(NamedTuple):
     raw_confidence: Optional[float]
     npll_posterior: Optional[float]
     calibration: Optional[float]
-    sources: List[str]             # doc/text ids from inline fields & EXTRACTED_FROM
+    sources: List[str]             # source IDs from configured inline/provenance mappings
+    assertion: Dict[str, Any]
+    timestamp: Optional[str] = None
+
+
+def edge_record(node: NodeId, edge: EdgeView) -> Dict[str, Any]:
+    return {"_id": edge.edge_id, "u": node, "rel": edge.relation,
+            "v": edge.neighbor_id, "weight": edge.weight,
+            "created_at": edge.timestamp, "valid_from": edge.valid_from,
+            "valid_to": edge.valid_to, "status": edge.status,
+            "source_confidence": edge.raw_confidence,
+            "npll_posterior": edge.npll_posterior, "calibration": edge.calibration,
+            "provenance": {"assertion": edge.assertion, "sources": edge.sources}}
+
 
 
 class ArangoCommunityAccessor(GraphAccessor):
     """
     Arango-backed GraphAccessor for a single community.
 
-    Defaults match your schema:
-      - nodes:  ExtractedEntities
-      - edges:  ExtractedRelationships  (field: relationship, created_at)
-      - community via mapping: EntityCommunities(entity_id, community_id)
-      - provenance: inline fields + EXTRACTED_FROM (entity -> Documents/TextBlocks)
+    Every application collection and schema field is supplied explicitly by the
+    caller or a backend-owned graph configuration.
 
     Structural weight only by default:
         w_struct = base_weight * type_prior(relation) * recency_decay
@@ -38,23 +49,24 @@ class ArangoCommunityAccessor(GraphAccessor):
         db,
         community_id: str,
         # Collections
-        nodes_collection: str = "ExtractedEntities",
-        edges_collection: str = "ExtractedRelationships",
+        nodes_collection: str,
+        edges_collection: str,
         # Core field names
-        relation_property: str = "relationship",
-        weight_property: str = "weight",
-        node_type_property: str = "type",
+        relation_property: str,
+        weight_property: Optional[str] = None,
+        node_type_property: Optional[str] = None,
         # Time fields
-        edge_timestamp_property: str = "created_at",
-        edge_valid_from_property: Optional[str] = "valid_from",
-        edge_valid_to_property: Optional[str] = "valid_to",
-        edge_status_property: Optional[str] = "status",
+        edge_timestamp_property: Optional[str] = None,
+        edge_valid_from_property: Optional[str] = None,
+        edge_valid_to_property: Optional[str] = None,
+        edge_status_property: Optional[str] = None,
+        allowed_edge_statuses: Optional[List[str]] = None,
         # Community scoping (mapping mode by default)
-        community_mode: str = "mapping",  # "mapping" | "property"
-        community_property: str = "community_id",  # only used if community_mode == "property"
-        membership_collection: str = "EntityCommunities",
-        membership_entity_field: str = "entity_id",
-        membership_community_field: str = "community_id",
+        community_mode: str = "none",  # "none" | "mapping" | "property"
+        community_property: Optional[str] = None,
+        membership_collection: Optional[str] = None,
+        membership_entity_field: Optional[str] = None,
+        membership_community_field: Optional[str] = None,
         # Dynamic constraints
         allowed_relations: Optional[List[str]] = None,
         disallowed_relations: Optional[List[str]] = None,
@@ -67,32 +79,73 @@ class ArangoCommunityAccessor(GraphAccessor):
         # Priors
         type_priors: Optional[Dict[str, float]] = None,  # e.g., {"assessor": 1.1}
         # Provenance
-        edge_provenance_fields: Optional[List[str]] = None,  # defaults: ["source_document_id","source_text_id"]
-        provenance_edge_collection: Optional[str] = "EXTRACTED_FROM",
-        provenance_target_collections: Optional[List[str]] = None,  # defaults: ["Documents","TextBlocks"]
+        edge_provenance_fields: Optional[List[str]] = None,
+        provenance_edge_collection: Optional[str] = None,
+        provenance_target_collections: Optional[List[str]] = None,
         # Confidence fusion (usually False; you do NPLL in engine)
         fuse_edge_confidence: bool = False,
         missing_confidence_prior: float = 1.0,
-        edge_raw_confidence_property: Optional[str] = "raw_confidence",
-        edge_npll_posterior_property: Optional[str] = "npll_posterior",
-        edge_calibration_property: Optional[str] = "calibration",
+        edge_raw_confidence_property: Optional[str] = None,
+        edge_npll_posterior_property: Optional[str] = None,
+        edge_calibration_property: Optional[str] = None,
         # Performance
         aql_batch_size: int = 1000,
         aql_stream: bool = True,
         outbound_index_hint: Optional[str] = None,  # e.g. "edges_from_rel_ts"
         inbound_index_hint: Optional[str] = None,   # e.g. "edges_to_rel_ts"
         # Bridge / GNN integration
-        bridge_collection: str = "BridgeEntities",
-        affinity_collection: str = "CommunityAffinity",
-        algorithm: str = "gnn",  # Default to GNN as per pipeline
+        bridge_collection: Optional[str] = None,
+        affinity_collection: Optional[str] = None,
+        algorithm: Optional[str] = None,
+        membership_algorithm_field: Optional[str] = None,
+        bridge_entity_field: Optional[str] = None,
+        bridge_strength_field: Optional[str] = None,
+        bridge_community_field: Optional[str] = None,
+        bridge_algorithm_field: Optional[str] = None,
+        affinity_from_field: Optional[str] = None,
+        affinity_to_field: Optional[str] = None,
+        affinity_score_field: Optional[str] = None,
+        affinity_algorithm_field: Optional[str] = None,
     ):
         self.db = db
+        if community_mode not in {"none", "mapping", "property"}:
+            raise ValueError("community_mode must be 'none', 'mapping', or 'property'")
+        if community_mode == "property" and not community_property:
+            raise ValueError("property community mode requires community_property")
+        if community_mode == "mapping" and not all((
+            membership_collection,
+            membership_entity_field,
+            membership_community_field,
+        )):
+            raise ValueError("mapping community mode requires membership mapping fields")
+        for label, values in (
+            ("bridge", (bridge_collection, bridge_entity_field, bridge_strength_field,
+                        bridge_community_field)),
+            ("affinity", (affinity_collection, affinity_from_field, affinity_to_field,
+                          affinity_score_field)),
+        ):
+            if any(v is not None for v in values) and not all(
+                isinstance(v, str) and v for v in values
+            ):
+                raise ValueError(f"{label} access requires complete mapping fields")
+        if any((membership_algorithm_field, bridge_algorithm_field, affinity_algorithm_field)) and not algorithm:
+            raise ValueError("algorithm field mappings require algorithm")
         self._cid = community_id
         self.bridge_col = bridge_collection
         self.affinity_col = affinity_collection
         self.algorithm = algorithm
+        self.membership_algorithm_field = membership_algorithm_field
+        self.bridge_entity_field = bridge_entity_field
+        self.bridge_strength_field = bridge_strength_field
+        self.bridge_community_field = bridge_community_field
+        self.bridge_algorithm_field = bridge_algorithm_field
+        self.affinity_from_field = affinity_from_field
+        self.affinity_to_field = affinity_to_field
+        self.affinity_score_field = affinity_score_field
+        self.affinity_algorithm_field = affinity_algorithm_field
         self._bridge_cache: Dict[str, Optional[dict]] = {}
         self._affinity_cache: Dict[str, float] = {}
+        self._membership_cache = OrderedDict()
 
         self.nodes_col = nodes_collection
         self.edges_col = edges_collection
@@ -104,6 +157,7 @@ class ArangoCommunityAccessor(GraphAccessor):
         self.ts_prop = edge_timestamp_property
         self.edge_valid_from_prop = edge_valid_from_property
         self.edge_valid_to_prop = edge_valid_to_property
+        self.allowed_edge_statuses = allowed_edge_statuses
         self.edge_status_prop = edge_status_property
 
         self.community_mode = community_mode
@@ -119,13 +173,15 @@ class ArangoCommunityAccessor(GraphAccessor):
         self.time_window = time_window
         self.as_of = as_of
         self.current_only = current_only
+        if current_only and (not as_of or not (edge_valid_from_property or edge_valid_to_property)):
+            raise ValueError("current_only requires as_of and a configured validity field")
         self.recency_half_life_days = recency_half_life_days
 
         self.type_priors = type_priors or {}
 
-        self.edge_prov_fields = edge_provenance_fields or ["source_document_id", "source_text_id"]
+        self.edge_prov_fields = edge_provenance_fields or []
         self.prov_edges_col = provenance_edge_collection
-        self.prov_target_cols = provenance_target_collections or ["Documents", "TextBlocks"]
+        self.prov_target_cols = provenance_target_collections or []
 
         self.fuse_edge_confidence = fuse_edge_confidence
         self.missing_confidence_prior = missing_confidence_prior
@@ -145,6 +201,10 @@ class ArangoCommunityAccessor(GraphAccessor):
         for ev in self._iter_neighbors(node, direction="OUTBOUND", rich=True):
             yield ev.neighbor_id, ev.relation, ev.weight
 
+    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
+        """Arango retrieval accepts full document IDs without remapping."""
+        return seeds
+
     def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         for ev in self._iter_neighbors(node, direction="INBOUND", rich=True):
             yield ev.neighbor_id, ev.relation, ev.weight
@@ -152,44 +212,43 @@ class ArangoCommunityAccessor(GraphAccessor):
     def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
         """
         Return all node IDs in this community.
-        - mapping mode: EntityCommunities -> entity_id
-        - property mode: filter ExtractedEntities by community_id field (if you add it)
+        - mapping mode: configured membership collection -> configured entity ID
+        - property mode: filter configured nodes by configured property field
         - none mode: return all nodes
         """
         cid = community_id or self._cid
         if self.community_mode == "property":
             aql = f"""
-            FOR v IN {self.nodes_col}
-              FILTER v.{self.community_prop} == @cid
+            FOR v IN @@nodes
+              FILTER v[@community_field] == @cid
               RETURN v._id
             """
             cursor = self.db.aql.execute(
-                aql, bind_vars={"cid": cid}, batch_size=self.aql_batch_size, stream=self.aql_stream
+                aql, bind_vars={"cid": cid, "@nodes": self.nodes_col, "community_field": self.community_prop}, batch_size=self.aql_batch_size, stream=self.aql_stream
             )
         elif self.community_mode == "mapping":
+            bind = {"cid": cid, "@mcol": self.membership_col,
+                    "m_ent": self.memb_ent_field, "m_com": self.memb_com_field}
+            guard = self._algorithm_filter("m", self.membership_algorithm_field, bind)
             aql = f"""
             FOR m IN @@mcol
               FILTER m[@m_com] == @cid
+              {guard}
               RETURN m[@m_ent]
             """
             cursor = self.db.aql.execute(
                 aql,
-                bind_vars={
-                    "cid": cid,
-                    "@mcol": self.membership_col,
-                    "m_ent": self.memb_ent_field,
-                    "m_com": self.memb_com_field,
-                },
+                bind_vars=bind,
                 batch_size=self.aql_batch_size,
                 stream=self.aql_stream,
             )
         else:  # community_mode == "none"
             aql = f"""
-            FOR v IN {self.nodes_col}
+            FOR v IN @@nodes
               RETURN v._id
             """
             cursor = self.db.aql.execute(
-                aql, batch_size=self.aql_batch_size, stream=self.aql_stream
+                aql, bind_vars={"@nodes": self.nodes_col}, batch_size=self.aql_batch_size, stream=self.aql_stream
             )
         for vid in cursor:
             yield vid
@@ -201,13 +260,13 @@ class ArangoCommunityAccessor(GraphAccessor):
         )
         aql = f"""
         RETURN LENGTH(
-          FOR e IN {self.edges_col}
+          FOR e IN @@edges
             {hint_clause}
             FILTER e._from == @node
             RETURN 1
         )
         """
-        bind = {"node": node}
+        bind = {"node": node, "@edges": self.edges_col}
         if self.outbound_index_hint:
             bind["idx"] = self.outbound_index_hint
         cur = self.db.aql.execute(aql, bind_vars=bind)
@@ -219,6 +278,10 @@ class ArangoCommunityAccessor(GraphAccessor):
     def iter_out_rich(self, node: NodeId) -> Iterable[EdgeView]:
         yield from self._iter_neighbors(node, direction="OUTBOUND", rich=True)
 
+    def iter_out_edges(self, node: NodeId):
+        for edge in self.iter_out_rich(node):
+            yield edge_record(node, edge)
+
     def iter_in_rich(self, node: NodeId) -> Iterable[EdgeView]:
         yield from self._iter_neighbors(node, direction="INBOUND", rich=True)
 
@@ -229,13 +292,14 @@ class ArangoCommunityAccessor(GraphAccessor):
         """
         Return provenance targets for a relationship edge:
           - inline fields (source_document_id, source_text_id)
-          - EXTRACTED_FROM edges for either endpoint entity
+          - configured provenance edges for either endpoint entity
         """
         # Build the provenance edges clause safely (avoid nested f-strings)
         prov_edges_clause = (
             f"""
-            FOR p IN {self.prov_edges_col}
+            FOR p IN @@provenance_edges
               FILTER p._from IN [e._from, e._to]
+              FILTER LENGTH(@provenance_targets) == 0 OR PARSE_IDENTIFIER(p._to).collection IN @provenance_targets
               RETURN p._to
             """
             if self.prov_edges_col else "[]"
@@ -243,7 +307,7 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         aql = f"""
         LET e = DOCUMENT(@eid)
-        LET inline_candidates = [{", ".join([f"e['{f}']" for f in self.edge_prov_fields])}]
+        LET inline_candidates = (FOR field IN @inline_fields RETURN e[field])
         LET inline = (
           FOR x IN inline_candidates
             FILTER x != null
@@ -254,41 +318,44 @@ class ArangoCommunityAccessor(GraphAccessor):
         )
         RETURN UNIQUE(APPEND(inline, via_edges))
         """
-        cur = self.db.aql.execute(aql, bind_vars={"eid": edge_id}, batch_size=self.aql_batch_size, stream=self.aql_stream)
+        bind = {"eid": edge_id, "inline_fields": self.edge_prov_fields}
+        if self.prov_edges_col:
+            bind.update({"@provenance_edges": self.prov_edges_col,
+                         "provenance_targets": self.prov_target_cols})
+        cur = self.db.aql.execute(aql, bind_vars=bind, batch_size=self.aql_batch_size, stream=self.aql_stream)
         out = list(cur)
         return out[0] if out else []
 
     def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, Any]:
+        bind = {"id": node_id}
         if fields:
-            proj = ", ".join([f"{f}: d.{f}" for f in fields])
-            aql = f"LET d = DOCUMENT(@id) RETURN {{ _id: d._id, {proj} }}"
+            aql = "LET d = DOCUMENT(@id) FILTER d != null RETURN KEEP(d, @fields)"
+            bind["fields"] = list(dict.fromkeys(["_id", *fields]))
         else:
             aql = "RETURN DOCUMENT(@id)"
-        cur = self.db.aql.execute(aql, bind_vars={"id": node_id})
-        res = list(cur)
-        return res[0] if res else {}
+        rows = list(self.db.aql.execute(aql, bind_vars=bind))
+        return (rows[0] or {}) if rows else {}
 
-    # --------------------------
-    # Stats / quick analytics
-    # --------------------------
     @staticmethod
     def get_top_n_entities_by_degree(
         db,
-        edges_collection: str = "ExtractedRelationships",
+        edges_collection: str,
         limit: Optional[int] = None,
         time_window: Optional[Tuple[str, str]] = None,
-        time_property: str = "created_at",
+        time_property: Optional[str] = None,
     ) -> List[dict]:
-        bind: Dict[str, Any] = {}
+        bind: Dict[str, Any] = {"@edges": edges_collection}
         where = ""
         if time_window:
+            if time_property is None:
+                raise ValueError("time_property is required with time_window")
             where = "FILTER HAS(e, @ts) AND e[@ts] >= @start_ts AND e[@ts] <= @end_ts"
             bind.update({"ts": time_property, "start_ts": time_window[0], "end_ts": time_window[1]})
         limit_clause = "LIMIT @lim" if limit else ""
         if limit:
             bind["lim"] = limit
         aql = f"""
-        FOR e IN {edges_collection}
+        FOR e IN @@edges
           {where}
           COLLECT entity = e._from WITH COUNT INTO degree
           SORT degree DESC
@@ -300,32 +367,34 @@ class ArangoCommunityAccessor(GraphAccessor):
     @staticmethod
     def get_entity_type_counts(
         db,
-        nodes_collection: str = "ExtractedEntities",
-        type_property: str = "type"
+        nodes_collection: str,
+        type_property: str,
     ) -> List[dict]:
         aql = f"""
-        FOR doc IN {nodes_collection}
-          COLLECT t = doc.{type_property} WITH COUNT INTO c
+        FOR doc IN @@nodes
+          COLLECT t = doc[@type_field] WITH COUNT INTO c
           SORT c DESC
           RETURN {{ "type": t, "count": c }}
         """
-        return list(db.aql.execute(aql))
+        return list(db.aql.execute(aql, bind_vars={"@nodes": nodes_collection, "type_field": type_property}))
 
     @staticmethod
     def get_relationship_type_counts(
         db,
-        edges_collection: str = "ExtractedRelationships",
-        relation_property: str = "relationship",
+        edges_collection: str,
+        relation_property: str,
         time_window: Optional[Tuple[str, str]] = None,
-        time_property: str = "created_at",
+        time_property: Optional[str] = None,
     ) -> List[dict]:
-        bind: Dict[str, Any] = {"rel_prop": relation_property}
+        bind: Dict[str, Any] = {"@edges": edges_collection, "rel_prop": relation_property}
         where = "FILTER HAS(rel, @rel_prop)"
         if time_window:
+            if time_property is None:
+                raise ValueError("time_property is required with time_window")
             where += " AND HAS(rel, @ts) AND rel[@ts] >= @start_ts AND rel[@ts] <= @end_ts"
             bind.update({"ts": time_property, "start_ts": time_window[0], "end_ts": time_window[1]})
         aql = f"""
-        FOR rel IN {edges_collection}
+        FOR rel IN @@edges
           {where}
           COLLECT t = rel[@rel_prop] WITH COUNT INTO c
           SORT c DESC
@@ -336,132 +405,171 @@ class ArangoCommunityAccessor(GraphAccessor):
     @staticmethod
     def get_community_summaries(
         db,
-        communities_collection: str = "Communities",
+        communities_collection: str,
+        community_id_property: str,
+        summary_property: str,
+        size_property: str,
+        level_property: str,
         limit: Optional[int] = None,
         skip: int = 0,
         require_summary: bool = True
     ) -> List[dict]:
-        filter_clause = "FILTER c.summary != null AND c.summary != ''" if require_summary else "FILTER c.summary == null OR c.summary == ''"
+        filter_clause = (
+            "FILTER HAS(c, @summary_property) AND c[@summary_property] != null "
+            "AND c[@summary_property] != ''"
+            if require_summary
+            else "FILTER !HAS(c, @summary_property) OR c[@summary_property] == null "
+            "OR c[@summary_property] == ''"
+        )
         limit_clause = "LIMIT @skip, @limit" if limit is not None else ""
-        bind: Dict[str, Any] = {}
+        bind: Dict[str, Any] = {
+            "@communities": communities_collection,
+            "community_id_property": community_id_property,
+            "summary_property": summary_property,
+            "size_property": size_property,
+            "level_property": level_property,
+        }
         if limit is not None:
             bind.update({"skip": skip, "limit": limit})
-            aql = f"""
-            FOR c IN {communities_collection}
-              {filter_clause}
-              SORT c.community_id ASC
+        aql = f"""
+        FOR c IN @@communities
+          {filter_clause}
+          SORT c[@community_id_property] ASC
           {limit_clause}
-              RETURN {{ id: c.community_id, summary: c.summary, size: c.size, level: c.level }}
-            """
+          RETURN {{
+              id: c[@community_id_property],
+              summary: c[@summary_property],
+              size: c[@size_property],
+              level: c[@level_property],
+              document: c
+          }}
+        """
         return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_unique_table_headers(
         db,
-        tables_collection: str = "Tables",
-        headers_property: str = "headers"
+        tables_collection: str,
+        headers_property: str,
     ) -> List[List[str]]:
         aql = f"""
-        FOR t IN {tables_collection}
+        FOR t IN @@tables
           FILTER HAS(t, @hp)
           COLLECT h = t[@hp]
           RETURN h
         """
-        return list(db.aql.execute(aql, bind_vars={"hp": headers_property}))
+        return list(db.aql.execute(aql, bind_vars={"hp": headers_property, "@tables": tables_collection}))
 
     # --------------------------
     # Bridge / GNN Integration Methods (Mirrored from GlobalGraphAccessor)
     # --------------------------
 
-    def is_bridge(self, entity_key: str) -> Optional[dict]:
-        """
-        Check if an entity is a bridge and return its bridge data.
-        Uses caching for performance.
-        """
-        # Strip collection if present to get key
-        if "/" in entity_key:
-            entity_key = entity_key.split("/")[-1]
-
-        if entity_key in self._bridge_cache:
-            return self._bridge_cache[entity_key]
-        
-        aql = """
-        FOR b IN @@bridge_col
-          FILTER b.entity_key == @entity_key
-          FILTER b.algorithm == @algorithm
-          RETURN b
-        """
+    def _signal_query(self, query, bind):
+        from odin.backends.base import BackendIOError
         try:
-            result = list(self.db.aql.execute(
-                aql,
-                bind_vars={
-                    "@bridge_col": self.bridge_col,
-                    "entity_key": entity_key,
-                    "algorithm": self.algorithm,
-                }
-            ))
-            bridge_data = result[0] if result else None
-        except Exception:
-            # Fallback if collection doesn't exist yet
-            bridge_data = None
+            return list(self.db.aql.execute(query, bind_vars=bind))
+        except Exception as exc:
+            raise BackendIOError("Could not read configured Arango community signal") from exc
 
-        self._bridge_cache[entity_key] = bridge_data
-        return bridge_data
+    @staticmethod
+    def _numeric_signal(value, label):
+        import math
+        from odin.backends.base import BackendConfigurationError
+        if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+            raise BackendConfigurationError(f"Mapped {label} must be a finite nonnegative number")
+        return float(value)
+
+    def _algorithm_filter(self, alias, field, bind):
+        if field is None:
+            return ""
+        bind["algorithm_field"] = field
+        bind["algorithm"] = self.algorithm
+        return f"FILTER {alias}[@algorithm_field] == @algorithm"
+
+    def is_bridge(self, entity_id: str) -> Optional[dict]:
+        """Read a bridge by its full document ID; errors are never cached."""
+        if self.bridge_col is None:
+            return None
+        if entity_id in self._bridge_cache:
+            return self._bridge_cache[entity_id]
+        bind = {"@bridge_col": self.bridge_col, "entity_id": entity_id,
+                "entity_field": self.bridge_entity_field}
+        guard = self._algorithm_filter("b", self.bridge_algorithm_field, bind)
+        result = self._signal_query(f"""
+        FOR b IN @@bridge_col
+          FILTER b[@entity_field] == @entity_id
+          {guard}
+          RETURN b
+        """, bind)
+        bridge = result[0] if result else None
+        if bridge is not None:
+            # Keep the complete record and expose the configured numeric signal.
+            strength = self._numeric_signal(bridge.get(self.bridge_strength_field), "bridge strength")
+            bridge = {"record": bridge, "bridge_strength": strength}
+        self._bridge_cache[entity_id] = bridge
+        return bridge
+
+    def clear_cache(self):
+        """Invalidate configured signal lookups after external data updates."""
+        self._bridge_cache.clear()
+        self._affinity_cache.clear()
+        self._membership_cache.clear()
 
     def get_entity_community(self, entity_id: str) -> Optional[str]:
-        """Get the community ID for an entity."""
-        # For ArangoCommunityAccessor, we might know the community if mode is 'mapping'
-        # But we should check the mapping collection to be sure (or if it's a bridge to another community)
-        
-        # If we are in 'mapping' mode, we can query membership collection
-        if self.community_mode == "mapping":
-            aql = f"""
-            FOR m IN {self.membership_col}
-              FILTER m.{self.memb_ent_field} == @entity_id
-              // We don't filter by algorithm here usually, but if needed we can
-              RETURN m.{self.memb_com_field}
-            """
-            try:
-                result = list(self.db.aql.execute(aql, bind_vars={"entity_id": entity_id}))
-                return result[0] if result else None
-            except Exception:
-                return None
-        return None
+        """Return an unambiguous membership, independently of traversal scope."""
+        from odin.backends.base import BackendConfigurationError
+        if entity_id in self._membership_cache:
+            self._membership_cache.move_to_end(entity_id)
+            return self._membership_cache[entity_id]
+        if self.membership_col:
+            bind = {"@membership_col": self.membership_col, "entity_id": entity_id,
+                    "membership_entity_field": self.memb_ent_field,
+                    "membership_community_field": self.memb_com_field}
+            guard = self._algorithm_filter("m", self.membership_algorithm_field, bind)
+            result = self._signal_query(f"""
+            FOR m IN @@membership_col
+              FILTER m[@membership_entity_field] == @entity_id
+              {guard}
+              RETURN DISTINCT m[@membership_community_field]
+            """, bind)
+        elif self.community_prop:
+            result = self._signal_query(
+                "LET d = DOCUMENT(@id) RETURN d == null ? null : d[@community_field]",
+                {"id": entity_id, "community_field": self.community_prop})
+            if result == [None]:
+                result = []
+        else:
+            return None
+        if any(not isinstance(value, str) or not value for value in result):
+            raise BackendConfigurationError("Mapped membership community must be a non-empty string")
+        communities = set(result)
+        if len(communities) > 1:
+            raise BackendConfigurationError(f"Ambiguous community membership for {entity_id}")
+        community = next(iter(communities)) if communities else None
+        if len(self._membership_cache) >= 10000:
+            self._membership_cache.popitem(last=False)
+        self._membership_cache[entity_id] = community
+        return community
 
     def get_affinity(self, community_a: str, community_b: str) -> float:
-        """
-        Get the affinity score between two communities.
-        Returns 0.0 if no affinity data exists.
-        """
-        if not community_a or not community_b:
+        """Read an explicitly mapped affinity; missing rows have zero signal."""
+        if self.affinity_col is None or not community_a or not community_b:
             return 0.0
-            
-        cache_key = f"{min(community_a, community_b)}_{max(community_a, community_b)}"
-        
+        cache_key = tuple(sorted((community_a, community_b)))
         if cache_key in self._affinity_cache:
             return self._affinity_cache[cache_key]
-        
-        aql = """
+        bind = {"@affinity_col": self.affinity_col, "comm_a": community_a,
+                "comm_b": community_b, "from_field": self.affinity_from_field,
+                "to_field": self.affinity_to_field, "score_field": self.affinity_score_field}
+        guard = self._algorithm_filter("a", self.affinity_algorithm_field, bind)
+        result = self._signal_query(f"""
         FOR a IN @@affinity_col
-          FILTER a.algorithm == @algorithm
-          FILTER (a.community_a == @comm_a AND a.community_b == @comm_b)
-              OR (a.community_a == @comm_b AND a.community_b == @comm_a)
-          RETURN a.affinity_score
-        """
-        try:
-            result = list(self.db.aql.execute(
-                aql,
-                bind_vars={
-                    "@affinity_col": self.affinity_col,
-                    "algorithm": self.algorithm,
-                    "comm_a": community_a,
-                    "comm_b": community_b,
-                }
-            ))
-            affinity = result[0] if result else 0.0
-        except Exception:
-            affinity = 0.0
-            
+          {guard}
+          FILTER (a[@from_field] == @comm_a AND a[@to_field] == @comm_b)
+              OR (a[@from_field] == @comm_b AND a[@to_field] == @comm_a)
+          RETURN a[@score_field]
+        """, bind)
+        affinity = self._numeric_signal(result[0], "affinity score") if result else 0.0
         self._affinity_cache[cache_key] = affinity
         return affinity
 
@@ -478,11 +586,11 @@ class ArangoCommunityAccessor(GraphAccessor):
     def get_top_entities_in_community(
         db,
         community_id: str,
-        membership_collection: str = "EntityCommunities",
-        membership_entity_field: str = "entity_id",
-        membership_community_field: str = "community_id",
-        edges_collection: str = "ExtractedRelationships",
-        limit: int = 20,
+        membership_collection: str,
+        membership_entity_field: str,
+        membership_community_field: str,
+        edges_collection: str,
+        limit: Optional[int] = None,
     ) -> List[dict]:
         """
         Get top entities by degree WITHIN a specific community.
@@ -491,7 +599,17 @@ class ArangoCommunityAccessor(GraphAccessor):
         Returns:
             List of {entity: str, degree: int}
         """
-        aql = """
+        limit_clause = "LIMIT @limit" if limit is not None else ""
+        bind: Dict[str, Any] = {
+            "@membership": membership_collection,
+            "@edges": edges_collection,
+            "m_ent": membership_entity_field,
+            "m_com": membership_community_field,
+            "cid": community_id,
+        }
+        if limit is not None:
+            bind["limit"] = limit
+        aql = f"""
         LET community_entities = (
             FOR m IN @@membership
                 FILTER m[@m_com] == @cid
@@ -501,30 +619,24 @@ class ArangoCommunityAccessor(GraphAccessor):
             FILTER e._from IN community_entities
             COLLECT entity = e._from WITH COUNT INTO degree
             SORT degree DESC
-            LIMIT @limit
-            RETURN { entity: entity, degree: degree }
+            {limit_clause}
+            RETURN {{ entity: entity, degree: degree }}
         """
-        return list(db.aql.execute(aql, bind_vars={
-            "@membership": membership_collection,
-            "@edges": edges_collection,
-            "m_ent": membership_entity_field,
-            "m_com": membership_community_field,
-            "cid": community_id,
-            "limit": limit,
-        }))
+        return list(db.aql.execute(aql, bind_vars=bind))
 
     @staticmethod
     def get_recent_entities(
         db,
         since: str,  # ISO timestamp
         community_id: Optional[str] = None,
-        nodes_collection: str = "ExtractedEntities",
-        membership_collection: str = "EntityCommunities",
-        membership_entity_field: str = "entity_id",
-        membership_community_field: str = "community_id",
-        created_at_property: str = "created_at",
-        updated_at_property: str = "updated_at",
-        limit: int = 100,
+        *,
+        nodes_collection: str,
+        membership_collection: Optional[str] = None,
+        membership_entity_field: Optional[str] = None,
+        membership_community_field: Optional[str] = None,
+        created_at_property: str,
+        updated_at_property: str,
+        limit: Optional[int] = None,
     ) -> List[dict]:
         """
         Get entities created or updated since a timestamp.
@@ -539,13 +651,16 @@ class ArangoCommunityAccessor(GraphAccessor):
         """
         bind: Dict[str, Any] = {
             "since": since,
-            "limit": limit,
+            "@nodes": nodes_collection,
             "created_prop": created_at_property,
             "updated_prop": updated_at_property,
         }
         
         community_filter = ""
         if community_id:
+            if not all((membership_collection, membership_entity_field,
+                        membership_community_field)):
+                raise ValueError("community filtering requires membership mapping fields")
             community_filter = """
             LET community_entities = (
                 FOR m IN @@membership
@@ -558,20 +673,23 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["m_ent"] = membership_entity_field
             bind["m_com"] = membership_community_field
             bind["cid"] = community_id
+
+        limit_clause = "LIMIT @limit" if limit is not None else ""
+        if limit is not None:
+            bind["limit"] = limit
         
         aql = f"""
-        FOR e IN {nodes_collection}
+        FOR e IN @@nodes
             FILTER (HAS(e, @created_prop) AND e[@created_prop] >= @since)
                 OR (HAS(e, @updated_prop) AND e[@updated_prop] >= @since)
             {community_filter}
             SORT HAS(e, @created_prop) ? e[@created_prop] : e[@updated_prop] DESC
-            LIMIT @limit
+            {limit_clause}
             RETURN {{
                 entity: e._id,
                 created_at: HAS(e, @created_prop) ? e[@created_prop] : null,
                 updated_at: HAS(e, @updated_prop) ? e[@updated_prop] : null,
-                type: e.type,
-                name: e.name
+                document: e
             }}
         """
         return list(db.aql.execute(aql, bind_vars=bind))
@@ -581,12 +699,13 @@ class ArangoCommunityAccessor(GraphAccessor):
         db,
         query: str,
         community_id: Optional[str] = None,
-        nodes_collection: str = "ExtractedEntities",
-        membership_collection: str = "EntityCommunities",
-        membership_entity_field: str = "entity_id",
-        membership_community_field: str = "community_id",
-        search_fields: List[str] = None,
-        limit: int = 20,
+        *,
+        nodes_collection: str,
+        membership_collection: Optional[str] = None,
+        membership_entity_field: Optional[str] = None,
+        membership_community_field: Optional[str] = None,
+        search_fields: List[str],
+        limit: Optional[int] = None,
     ) -> List[dict]:
         """
         Text search for entities matching query.
@@ -594,27 +713,24 @@ class ArangoCommunityAccessor(GraphAccessor):
         
         Args:
             query: Search string
-            search_fields: Fields to search in (default: ["name", "description"])
+            search_fields: Fields to search.
             
         Returns:
-            List of {entity: str, name: str, type: str, matched_field: str}
+            List of complete matching entity documents and matched field names.
         """
-        if search_fields is None:
-            search_fields = ["name", "description"]
-        
+        if not search_fields:
+            raise ValueError("search_fields must contain at least one field")
         bind: Dict[str, Any] = {
             "query": f"%{query.lower()}%",
-            "limit": limit,
+            "search_fields": search_fields,
+            "@nodes": nodes_collection,
         }
-        
-        # Build search conditions
-        search_conditions = []
-        for field in search_fields:
-            search_conditions.append(f"LOWER(e.{field}) LIKE @query")
-        search_clause = " OR ".join(search_conditions)
         
         community_filter = ""
         if community_id:
+            if not all((membership_collection, membership_entity_field,
+                        membership_community_field)):
+                raise ValueError("community filtering requires membership mapping fields")
             community_filter = """
             LET community_entities = (
                 FOR m IN @@membership
@@ -627,17 +743,25 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["m_ent"] = membership_entity_field
             bind["m_com"] = membership_community_field
             bind["cid"] = community_id
+
+        limit_clause = "LIMIT @limit" if limit is not None else ""
+        if limit is not None:
+            bind["limit"] = limit
         
         aql = f"""
-        FOR e IN {nodes_collection}
-            FILTER {search_clause}
+        FOR e IN @@nodes
+            LET matched_fields = (
+                FOR field IN @search_fields
+                    FILTER HAS(e, field) AND LOWER(TO_STRING(e[field])) LIKE @query
+                    RETURN field
+            )
+            FILTER LENGTH(matched_fields) > 0
             {community_filter}
-            LIMIT @limit
+            {limit_clause}
             RETURN {{
                 entity: e._id,
-                name: e.name,
-                type: e.type,
-                description: e.description
+                matched_fields: matched_fields,
+                document: e
             }}
         """
         return list(db.aql.execute(aql, bind_vars=bind))
@@ -650,10 +774,11 @@ class ArangoCommunityAccessor(GraphAccessor):
     def get_document_content(
         db,
         doc_id: str,
-        text_collection: str = "TextBlocks",
-        table_collection: str = "Tables",
-        image_collection: str = "Images",
-        document_collection: str = "Documents",
+        *,
+        text_collection: str,
+        table_collection: str,
+        image_collection: str,
+        document_collection: str,
     ) -> Optional[dict]:
         """
         Fetch content from any document collection by ID.
@@ -663,131 +788,82 @@ class ArangoCommunityAccessor(GraphAccessor):
             doc_id: Document ID in format "CollectionName/key"
             
         Returns:
-            Dict with type-specific content, or None if not found
+            The complete document and its configured collection, or None if not found.
         """
         try:
             collection, key = doc_id.split("/", 1)
         except ValueError:
             return None
         
-        if collection == text_collection:
-            aql = f"""
-            FOR tb IN {text_collection}
-                FILTER tb._id == @doc_id
-                RETURN {{
-                    type: "text",
-                    text: tb.text,
-                    document_id: tb.document_id,
-                    page: tb.page,
-                    char_span: tb.char_span,
-                    metadata: tb.metadata
-                }}
-            """
-        elif collection == table_collection:
-            aql = f"""
-            FOR t IN {table_collection}
-                FILTER t._id == @doc_id
-                RETURN {{
-                    type: "table",
-                    headers: t.headers,
-                    rows: t.rows,
-                    caption: t.caption,
-                    document_id: t.document_id,
-                    page: t.page,
-                    metadata: t.metadata
-                }}
-            """
-        elif collection == image_collection:
-            aql = f"""
-            FOR img IN {image_collection}
-                FILTER img._id == @doc_id
-                RETURN {{
-                    type: "image",
-                    caption: img.caption,
-                    ocr_text: img.ocr_text,
-                    url: img.storage_url,
-                    document_id: img.document_id,
-                    page: img.page,
-                    metadata: img.metadata
-                }}
-            """
-        elif collection == document_collection:
-            aql = f"""
-            FOR d IN {document_collection}
-                FILTER d._id == @doc_id
-                RETURN {{
-                    type: "document",
-                    filename: d.filename,
-                    content: d.content,
-                    metadata: d.metadata
-                }}
-            """
-        else:
+        if collection not in {
+            text_collection,
+            table_collection,
+            image_collection,
+            document_collection,
+        }:
             return None
-        
-        result = list(db.aql.execute(aql, bind_vars={"doc_id": doc_id}))
+
+        aql = """
+        FOR source IN @@collection
+            FILTER source._id == @doc_id
+            RETURN {
+                source_id: source._id,
+                source_type: @source_type,
+                document: source
+            }
+        """
+        result = list(db.aql.execute(aql, bind_vars={
+            "@collection": collection,
+            "doc_id": doc_id,
+            "source_type": collection,
+        }))
         return result[0] if result else None
 
     @staticmethod
     def get_entity_sources(
         db,
         entity_id: str,
-        extracted_from_collection: str = "EXTRACTED_FROM",
-        max_sources: int = 10,
+        *,
+        extracted_from_collection: str,
     ) -> List[dict]:
         """
-        Get all source documents/blocks for an entity via EXTRACTED_FROM edges.
+        Get all sources for an entity through the configured provenance edges.
         Critical for evidence gathering - shows WHERE an entity was mentioned.
         
         Args:
-            entity_id: Entity ID (e.g., "ExtractedEntities/ent_123")
-            max_sources: Limit number of sources returned
-            
+            entity_id: Arango document ID (e.g., "CaseRecords/ent_123")
         Returns:
-            List of {source_id, source_type, content, char_span, confidence, metadata}
+            Complete provenance-edge and source-document records.
         """
         aql = f"""
-        FOR edge IN {extracted_from_collection}
+        FOR edge IN @@provenance_edges
             FILTER edge._from == @entity_id
-            LIMIT @max_sources
             LET source = DOCUMENT(edge._to)
+            FILTER source != null
             LET collection = PARSE_IDENTIFIER(edge._to).collection
             RETURN {{
                 source_id: edge._to,
                 source_type: collection,
-                char_span: edge.char_span,
-                extraction_confidence: edge.extraction_confidence,
-                content: CASE
-                    WHEN collection == "TextBlocks" THEN source.text
-                    WHEN collection == "Tables" THEN {{ headers: source.headers, rows: source.rows }}
-                    WHEN collection == "Images" THEN {{ caption: source.caption, ocr_text: source.ocr_text }}
-                    WHEN collection == "Documents" THEN SUBSTRING(source.content, 0, 500)
-                    ELSE null
-                END,
-                metadata: {{
-                    page: source.page,
-                    document_id: source.document_id,
-                    filename: source.filename
-                }}
+                edge: edge,
+                document: source
             }}
         """
         return list(db.aql.execute(aql, bind_vars={
-            "entity_id": entity_id,
-            "max_sources": max_sources,
+            "entity_id": entity_id, "@provenance_edges": extracted_from_collection,
         }))
 
     @staticmethod
     def search_content(
         db,
         query: str,
-        community_id: Optional[str] = None,
-        content_types: List[str] = None,
-        text_collection: str = "TextBlocks",
-        table_collection: str = "Tables",
-        image_collection: str = "Images",
-        membership_collection: str = "EntityCommunities",
-        extracted_from_collection: str = "EXTRACTED_FROM",
-        limit: int = 10,
+        *,
+        content_types: Optional[List[str]] = None,
+        text_collection: str,
+        table_collection: str,
+        image_collection: str,
+        text_search_fields: List[str],
+        table_search_fields: List[str],
+        image_search_fields: List[str],
     ) -> List[dict]:
         """
         Semantic/text search across content collections.
@@ -795,80 +871,45 @@ class ArangoCommunityAccessor(GraphAccessor):
         
         Args:
             query: Search string
-            content_types: Collections to search (default: ["TextBlocks", "Tables", "Images"])
-            community_id: Optional filter to content linked to community entities
+            content_types: Collections to search; defaults to every explicitly
+                supplied content collection.
+            *_search_fields: Fields searched in the corresponding collection.
             
         Returns:
-            List of {source_id, source_type, content, score, metadata}
+            Complete matching source documents.
         """
         if content_types is None:
             content_types = [text_collection, table_collection, image_collection]
-        
-        bind: Dict[str, Any] = {
-            "query": f"%{query.lower()}%",
-            "limit": limit,
+        requested_collections = {
+            text_collection: text_search_fields,
+            table_collection: table_search_fields,
+            image_collection: image_search_fields,
         }
-        
+        for collection in content_types:
+            if collection not in requested_collections:
+                raise ValueError(f"unknown content collection: {collection}")
+            if not requested_collections[collection]:
+                raise ValueError(f"search fields are required for {collection}")
+
         results = []
-        
-        # Search TextBlocks
-        if text_collection in content_types:
-            aql_text = f"""
-            FOR tb IN {text_collection}
-                FILTER LOWER(tb.text) LIKE @query
-                LIMIT @limit
-                RETURN {{
-                    source_id: tb._id,
-                    source_type: "TextBlocks",
-                    content: tb.text,
-                    score: 1.0,
-                    metadata: {{
-                        document_id: tb.document_id,
-                        page: tb.page
-                    }}
-                }}
+        for collection in content_types:
+            query_aql = """
+            FOR document IN @@sources
+              LET matched = (
+                FOR field IN @search_fields
+                  FILTER HAS(document, field) AND LOWER(TO_STRING(document[field])) LIKE @query
+                  RETURN field
+              )
+              FILTER LENGTH(matched) > 0
+              RETURN {source_id: document._id, source_type: @source_type, document: document}
             """
-            results.extend(list(db.aql.execute(aql_text, bind_vars=bind)))
-        
-        # Search Tables (caption)
-        if table_collection in content_types:
-            aql_table = f"""
-            FOR t IN {table_collection}
-                FILTER LOWER(t.caption) LIKE @query
-                LIMIT @limit
-                RETURN {{
-                    source_id: t._id,
-                    source_type: "Tables",
-                    content: {{ headers: t.headers, rows: t.rows, caption: t.caption }},
-                    score: 1.0,
-                    metadata: {{
-                        document_id: t.document_id,
-                        page: t.page
-                    }}
-                }}
-            """
-            results.extend(list(db.aql.execute(aql_table, bind_vars=bind)))
-        
-        # Search Images (OCR text)
-        if image_collection in content_types:
-            aql_image = f"""
-            FOR img IN {image_collection}
-                FILTER LOWER(img.ocr_text) LIKE @query OR LOWER(img.caption) LIKE @query
-                LIMIT @limit
-                RETURN {{
-                    source_id: img._id,
-                    source_type: "Images",
-                    content: {{ caption: img.caption, ocr_text: img.ocr_text }},
-                    score: 1.0,
-                    metadata: {{
-                        document_id: img.document_id,
-                        page: img.page
-                    }}
-                }}
-            """
-            results.extend(list(db.aql.execute(aql_image, bind_vars=bind)))
-        
-        return results[:limit]
+            results.extend(list(db.aql.execute(query_aql, bind_vars={
+                "@sources": collection, "source_type": collection,
+                "search_fields": requested_collections[collection],
+                "query": f"%{query.lower()}%",
+            })))
+
+        return results
 
     # --------------------------
     # Internal neighbor routine
@@ -878,8 +919,8 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         bind: Dict[str, Any] = {
             "node": node,
+            "@edges": self.edges_col,
             "rel_prop": self.rel_prop,
-            "w_prop": self.w_prop,
             "priors_map": self.type_priors,
         }
         
@@ -901,13 +942,16 @@ class ArangoCommunityAccessor(GraphAccessor):
 
         # Community filter
         if self.community_mode == "property":
-            filters.append(f"v.{self.community_prop} == @cid")
+            bind["community_field"] = self.community_prop
+            filters.append("v[@community_field] == @cid")
         elif self.community_mode == "mapping":
             bind.update({"@mcol": self.membership_col, "m_ent": self.memb_ent_field, "m_com": self.memb_com_field})
-            filters.append("""
+            guard = self._algorithm_filter("m", self.membership_algorithm_field, bind)
+            filters.append(f"""
               FIRST(
                 FOR m IN @@mcol
                   FILTER m[@m_com] == @cid AND m[@m_ent] == v._id
+                  {guard}
                   LIMIT 1
                   RETURN 1
               )
@@ -923,7 +967,8 @@ class ArangoCommunityAccessor(GraphAccessor):
             filters.append("!(e[@rel_prop] IN @disallowed_relations)")
         if self.allowed_neighbor_types:
             bind["allowed_neighbor_types"] = self.allowed_neighbor_types
-            filters.append(f"v.{self.node_type_prop} IN @allowed_neighbor_types")
+            bind["node_type_field"] = self.node_type_prop
+            filters.append("v[@node_type_field] IN @allowed_neighbor_types")
 
         # Time window filter on edge timestamp
         if self.time_window and self.ts_prop:
@@ -931,21 +976,23 @@ class ArangoCommunityAccessor(GraphAccessor):
             bind["ts_prop"] = self.ts_prop
             filters.append("HAS(e, @ts_prop) AND e[@ts_prop] >= @start_ts AND e[@ts_prop] <= @end_ts")
 
-        # Current-only validity wrt as_of
-        if self.current_only and self.as_of:
+        # Validity fields are strictly opt-in; an active filter needs a mapping.
+        if self.current_only:
             bind["as_of"] = self.as_of
-            vf_prop = self.edge_valid_from_prop or "valid_from"
-            vt_prop = self.edge_valid_to_prop or "valid_to"
-            filters.append(
-                f"( (HAS(e, '{vf_prop}') ? e['{vf_prop}'] <= @as_of : true) "
-                f"AND (HAS(e, '{vt_prop}') ? (e['{vt_prop}'] == null OR e['{vt_prop}'] >= @as_of) : true) )"
-            )
+            if self.edge_valid_from_prop:
+                bind["valid_from_field"] = self.edge_valid_from_prop
+                filters.append("(e[@valid_from_field] == null OR e[@valid_from_field] <= @as_of)")
+            if self.edge_valid_to_prop:
+                bind["valid_to_field"] = self.edge_valid_to_prop
+                filters.append("(e[@valid_to_field] == null OR e[@valid_to_field] >= @as_of)")
 
-        # Optional status guard
-        status_guard = ""
-        if self.edge_status_prop:
-            status_guard = "LET _status = e[@status_prop]"
-            bind["status_prop"] = self.edge_status_prop
+        # Mapping status exposes metadata. Filtering requires explicit allowed values.
+        if self.allowed_edge_statuses is not None:
+            if not self.edge_status_prop:
+                raise ValueError("allowed_edge_statuses requires edge_status_property")
+            bind["status_field"] = self.edge_status_prop
+            bind["allowed_statuses"] = self.allowed_edge_statuses
+            filters.append("e[@status_field] IN @allowed_statuses")
 
         # Recency decay: 2^(- age_days / half_life)
         recency_clause = "1.0"
@@ -956,7 +1003,10 @@ class ArangoCommunityAccessor(GraphAccessor):
             recency_clause = "POW(2, -1 * DATE_DIFF(@as_of, e[@ts_prop], 'days') / @half_life)"
 
         # Base weight
-        weight_clause = "(HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0)"
+        weight_clause = "1.0"
+        if self.w_prop is not None:
+            bind["w_prop"] = self.w_prop
+            weight_clause = "(HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0)"
 
         # Confidence fusion (usually disabled; you do it in engine)
         conf_clause = "1.0"
@@ -978,19 +1028,34 @@ class ArangoCommunityAccessor(GraphAccessor):
         # Build the src edges clause safely
         src_edges_clause = (
             f"""
-            FOR p IN {self.prov_edges_col}
+            FOR p IN @@provenance_edges
               FILTER p._from IN [e._from, e._to]
+              FILTER LENGTH(@provenance_targets) == 0 OR PARSE_IDENTIFIER(p._to).collection IN @provenance_targets
               RETURN p._to
             """
             if self.prov_edges_col else "[]"
         )
 
+        if self.prov_edges_col:
+            bind["@provenance_edges"] = self.prov_edges_col
+            bind["provenance_targets"] = self.prov_target_cols
+        expressions = {}
+        for name, field in (("vf", self.edge_valid_from_prop), ("vt", self.edge_valid_to_prop),
+                            ("status", self.edge_status_prop), ("timestamp", self.ts_prop),
+                            ("raw_confidence", self.edge_raw_conf_prop),
+                            ("npll_posterior", self.edge_npll_post_prop),
+                            ("calibration", self.edge_calibration_prop)):
+            expressions[name] = "null"
+            if field:
+                bind[f"meta_{name}"] = field
+                expressions[name] = f"e[@meta_{name}]"
+        bind["inline_provenance_fields"] = self.edge_prov_fields
+
         aql = f"""
         LET priors = @priors_map
-        FOR v, e IN 1..1 {direction} @node {self.edges_col}
+        FOR v, e IN 1..1 {direction} @node @@edges
           {hint}
           FILTER {filters_str}
-          {status_guard}
           LET _rel = e[@rel_prop]
           LET _prior = TO_NUMBER(NOT_NULL(priors[_rel], 1.0))
           LET _base_w = {weight_clause}
@@ -998,12 +1063,12 @@ class ArangoCommunityAccessor(GraphAccessor):
           LET _conf   = {conf_clause}
           LET _w_eff  = TO_NUMBER(_base_w) * TO_NUMBER(_prior) * TO_NUMBER(_rec) * TO_NUMBER(_conf)
 
-          LET _vf = {f"e['{self.edge_valid_from_prop}']" if self.edge_valid_from_prop else 'null'}
-          LET _vt = {f"e['{self.edge_valid_to_prop}']" if self.edge_valid_to_prop else 'null'}
-          LET _status2 = {f"e['{self.edge_status_prop}']" if self.edge_status_prop else 'null'}
+          LET _vf = {expressions["vf"]}
+          LET _vt = {expressions["vt"]}
+          LET _status2 = {expressions["status"]}
 
-          // Provenance: inline fields + EXTRACTED_FROM for both endpoints
-          LET _src_inline_candidates = [{", ".join([f"e['{f}']" for f in self.edge_prov_fields])}]
+          // Provenance: configured inline fields and provenance edges for both endpoints
+          LET _src_inline_candidates = (FOR field IN @inline_provenance_fields RETURN e[field])
           LET _src_inline = (
             FOR x IN _src_inline_candidates
               FILTER x != null
@@ -1019,13 +1084,15 @@ class ArangoCommunityAccessor(GraphAccessor):
             rel: _rel,
             weight: _w_eff,
             edge_id: e._id,
+            timestamp: {expressions["timestamp"]},
             valid_from: _vf,
             valid_to: _vt,
             status: _status2,
-            raw_confidence: {f"e['{self.edge_raw_conf_prop}']" if self.edge_raw_conf_prop else 'null'},
-            npll_posterior: {f"e['{self.edge_npll_post_prop}']" if self.edge_npll_post_prop else 'null'},
-            calibration: {f"e['{self.edge_calibration_prop}']" if self.edge_calibration_prop else 'null'},
-            sources: _sources
+            raw_confidence: {expressions["raw_confidence"]},
+            npll_posterior: {expressions["npll_posterior"]},
+            calibration: {expressions["calibration"]},
+            sources: _sources,
+            assertion: e
           }}
         """
 
@@ -1051,368 +1118,59 @@ class ArangoCommunityAccessor(GraphAccessor):
                     npll_posterior=d.get("npll_posterior"),
                     calibration=d.get("calibration"),
                     sources=d.get("sources") or [],
+                    assertion=d["assertion"],
+                    timestamp=d.get("timestamp"),
                 )
             else:
                 yield d["v_id"], d["rel"], float(d["weight"])
 
 
-class GlobalGraphAccessor(GraphAccessor):
-    """
-    Cross-community graph accessor using pre-computed bridge entities.
-    
-    This accessor enables intelligent traversal across community boundaries
-    by leveraging the BridgeEntities and CommunityAffinity collections
-    created during community detection.
-    
-    Key features:
-    - Uses bridge entities to efficiently cross community boundaries
-    - Scores cross-community paths using affinity scores
-    - Mission-aware: can weight community crossings based on context
-    - Maintains all ArangoCommunityAccessor features
-    """
+class GlobalGraphAccessor(ArangoCommunityAccessor):
+    """Unscoped graph access with the same explicit mapping and evidence contract."""
 
-    def __init__(
-        self,
-        db,
-        algorithm: str = "leiden",
-        # Base accessor settings
-        nodes_collection: str = "ExtractedEntities",
-        edges_collection: str = "ExtractedRelationships",
-        relation_property: str = "relationship",
-        weight_property: str = "weight",
-        # Bridge collections
-        bridge_collection: str = "BridgeEntities",
-        affinity_collection: str = "CommunityAffinity",
-        membership_collection: str = "EntityCommunities",
-        # Cross-community scoring
-        cross_community_bonus: float = 1.5,  # Boost for cross-community edges (often valuable)
-        min_affinity_threshold: float = 0.0,  # Minimum affinity to allow crossing
-        # Performance
-        aql_batch_size: int = 1000,
-        aql_stream: bool = True,
-    ):
-        self.db = db
-        self.algorithm = algorithm
-        
-        self.nodes_col = nodes_collection
-        self.edges_col = edges_collection
-        self.rel_prop = relation_property
-        self.w_prop = weight_property
-        
-        self.bridge_col = bridge_collection
-        self.affinity_col = affinity_collection
-        self.membership_col = membership_collection
-        
-        self.cross_community_bonus = cross_community_bonus
-        self.min_affinity_threshold = min_affinity_threshold
-        
-        self.aql_batch_size = aql_batch_size
-        self.aql_stream = aql_stream
-        
-        # Cache for bridge status and affinities
-        self._bridge_cache: Dict[str, Optional[dict]] = {}
-        self._affinity_cache: Dict[str, float] = {}
+    def __init__(self, db, community_id="global", community_mode="none", **mapping):
+        if community_mode != "none":
+            raise ValueError("GlobalGraphAccessor requires community_mode='none'")
+        super().__init__(db, community_id=community_id, community_mode=community_mode, **mapping)
 
-    # --------------------------
-    # Core traversal API
-    # --------------------------
-    
-    def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """Iterate outbound edges, scoring cross-community edges appropriately."""
-        for ev in self._iter_neighbors_global(node, direction="OUTBOUND"):
-            yield ev.neighbor_id, ev.relation, ev.weight
-
-    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """Iterate inbound edges, scoring cross-community edges appropriately."""
-        for ev in self._iter_neighbors_global(node, direction="INBOUND"):
-            yield ev.neighbor_id, ev.relation, ev.weight
-
-    def iter_out_rich(self, node: NodeId) -> Iterable[EdgeView]:
-        """Rich outbound edges with cross-community metadata."""
-        yield from self._iter_neighbors_global(node, direction="OUTBOUND")
-
-    def iter_in_rich(self, node: NodeId) -> Iterable[EdgeView]:
-        """Rich inbound edges with cross-community metadata."""
-        yield from self._iter_neighbors_global(node, direction="INBOUND")
-
-    def nodes(self) -> Iterable[NodeId]:
-        """Return all nodes (no community restriction)."""
-        aql = f"FOR v IN {self.nodes_col} RETURN v._id"
-        cursor = self.db.aql.execute(aql, batch_size=self.aql_batch_size, stream=self.aql_stream)
-        for vid in cursor:
-            yield vid
-
-    def degree(self, node: NodeId) -> int:
-        """Out-degree of a node."""
-        aql = f"""
-        RETURN LENGTH(
-          FOR e IN {self.edges_col}
-            FILTER e._from == @node
-            RETURN 1
-        )
-        """
-        cur = self.db.aql.execute(aql, bind_vars={"node": node})
-        return int(list(cur)[0] or 0)
-
-    # --------------------------
-    # Bridge-aware methods
-    # --------------------------
-
-    def is_bridge(self, entity_key: str) -> Optional[dict]:
-        """
-        Check if an entity is a bridge and return its bridge data.
-        Uses caching for performance.
-        """
-        if entity_key in self._bridge_cache:
-            return self._bridge_cache[entity_key]
-        
-        aql = """
+    def get_bridges_from_community(self, community_id: str, min_strength: int = 1):
+        if self.bridge_col is None:
+            return []
+        bind = {"@bridge_col": self.bridge_col, "community_field": self.bridge_community_field,
+                "strength_field": self.bridge_strength_field, "community_id": community_id,
+                "min_strength": min_strength}
+        guard = self._algorithm_filter("b", self.bridge_algorithm_field, bind)
+        return self._signal_query(f"""
         FOR b IN @@bridge_col
-          FILTER b.entity_key == @entity_key
-          FILTER b.algorithm == @algorithm
+          {guard}
+          FILTER b[@community_field] == @community_id
+          FILTER b[@strength_field] >= @min_strength
+          SORT b[@strength_field] DESC
           RETURN b
-        """
-        result = list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@bridge_col": self.bridge_col,
-                "entity_key": entity_key,
-                "algorithm": self.algorithm,
-            }
-        ))
-        
-        bridge_data = result[0] if result else None
-        self._bridge_cache[entity_key] = bridge_data
-        return bridge_data
+        """, bind)
 
-    def get_entity_community(self, entity_id: str) -> Optional[str]:
-        """Get the community ID for an entity."""
-        aql = """
-        FOR m IN @@membership_col
-          FILTER m.entity_id == @entity_id
-          FILTER m.algorithm == @algorithm
-          RETURN m.community_id
-        """
-        result = list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@membership_col": self.membership_col,
-                "entity_id": entity_id,
-                "algorithm": self.algorithm,
-            }
-        ))
-        return result[0] if result else None
+    def get_top_bridges(self):
+        """Return every mapped bridge, ordered by strength."""
+        if self.bridge_col is None:
+            return []
+        bind = {"@bridge_col": self.bridge_col, "strength_field": self.bridge_strength_field}
+        guard = self._algorithm_filter("b", self.bridge_algorithm_field, bind)
+        return self._signal_query(f"""
+        FOR b IN @@bridge_col
+          {guard}
+          SORT b[@strength_field] DESC
+          RETURN b
+        """, bind)
 
-    def get_affinity(self, community_a: str, community_b: str) -> float:
-        """
-        Get the affinity score between two communities.
-        Returns 0.0 if no affinity data exists.
-        """
-        cache_key = f"{min(community_a, community_b)}_{max(community_a, community_b)}"
-        
-        if cache_key in self._affinity_cache:
-            return self._affinity_cache[cache_key]
-        
-        aql = """
+    def get_strongest_affinities(self):
+        """Return every mapped affinity, ordered by score."""
+        if self.affinity_col is None:
+            return []
+        bind = {"@affinity_col": self.affinity_col, "score_field": self.affinity_score_field}
+        guard = self._algorithm_filter("a", self.affinity_algorithm_field, bind)
+        return self._signal_query(f"""
         FOR a IN @@affinity_col
-          FILTER a.algorithm == @algorithm
-          FILTER (a.community_a == @comm_a AND a.community_b == @comm_b)
-              OR (a.community_a == @comm_b AND a.community_b == @comm_a)
-          RETURN a.affinity_score
-        """
-        result = list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@affinity_col": self.affinity_col,
-                "algorithm": self.algorithm,
-                "comm_a": community_a,
-                "comm_b": community_b,
-            }
-        ))
-        
-        affinity = result[0] if result else 0.0
-        self._affinity_cache[cache_key] = affinity
-        return affinity
-
-    def get_bridges_from_community(self, community_id: str, min_strength: int = 1) -> List[dict]:
-        """Get all bridge entities from a specific community."""
-        aql = """
-        FOR b IN @@bridge_col
-          FILTER b.algorithm == @algorithm
-          FILTER b.home_community == @community_id
-          FILTER b.bridge_strength >= @min_strength
-          SORT b.bridge_strength DESC
-          RETURN b
-        """
-        return list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@bridge_col": self.bridge_col,
-                "algorithm": self.algorithm,
-                "community_id": community_id,
-                "min_strength": min_strength,
-            }
-        ))
-
-    def get_top_bridges(self, limit: int = 20) -> List[dict]:
-        """Get the top bridge entities by bridge strength."""
-        aql = """
-        FOR b IN @@bridge_col
-          FILTER b.algorithm == @algorithm
-          SORT b.bridge_strength DESC
-          LIMIT @limit
-          RETURN b
-        """
-        return list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@bridge_col": self.bridge_col,
-                "algorithm": self.algorithm,
-                "limit": limit,
-            }
-        ))
-
-    def get_strongest_affinities(self, limit: int = 20) -> List[dict]:
-        """Get the strongest inter-community affinities."""
-        aql = """
-        FOR a IN @@affinity_col
-          FILTER a.algorithm == @algorithm
-          SORT a.affinity_score DESC
-          LIMIT @limit
+          {guard}
+          SORT a[@score_field] DESC
           RETURN a
-        """
-        return list(self.db.aql.execute(
-            aql,
-            bind_vars={
-                "@affinity_col": self.affinity_col,
-                "algorithm": self.algorithm,
-                "limit": limit,
-            }
-        ))
-
-    # --------------------------
-    # Cross-community traversal
-    # --------------------------
-
-    def _iter_neighbors_global(self, node: NodeId, direction: str) -> Iterable[EdgeView]:
-        """
-        Iterate neighbors with cross-community awareness.
-        
-        - Gets all neighbors (no community restriction)
-        - Detects cross-community edges
-        - Applies bonus/penalty based on affinity
-        """
-        assert direction in ("OUTBOUND", "INBOUND")
-        
-        # Get source node's community
-        source_community = self.get_entity_community(node)
-        
-        # Get all neighbors
-        aql = f"""
-        FOR v, e IN 1..1 {direction} @node {self.edges_col}
-          LET rel = e[@rel_prop]
-          LET base_weight = HAS(e, @w_prop) && IS_NUMBER(e[@w_prop]) ? e[@w_prop] : 1.0
-          RETURN {{
-            v_id: v._id,
-            v_key: v._key,
-            rel: rel,
-            base_weight: base_weight,
-            edge_id: e._id,
-            sources: []
-          }}
-        """
-        
-        cursor = self.db.aql.execute(
-            aql,
-            bind_vars={
-                "node": node,
-                "rel_prop": self.rel_prop,
-                "w_prop": self.w_prop,
-            },
-            batch_size=self.aql_batch_size,
-            stream=self.aql_stream,
-        )
-        
-        for d in cursor:
-            neighbor_id = d["v_id"]
-            base_weight = float(d["base_weight"])
-            
-            # Check if this is a cross-community edge
-            neighbor_community = self.get_entity_community(neighbor_id)
-            
-            weight = base_weight
-            is_cross_community = False
-            
-            if source_community and neighbor_community and source_community != neighbor_community:
-                is_cross_community = True
-                
-                # Get affinity between communities
-                affinity = self.get_affinity(source_community, neighbor_community)
-                
-                # Apply cross-community scoring
-                if affinity >= self.min_affinity_threshold:
-                    # Bonus for crossing to well-connected communities
-                    weight = base_weight * self.cross_community_bonus * (1 + affinity)
-                else:
-                    # Penalty for crossing to poorly-connected communities
-                    weight = base_weight * 0.5
-            
-            yield EdgeView(
-                neighbor_id=neighbor_id,
-                relation=d["rel"],
-                weight=weight,
-                edge_id=d["edge_id"],
-                valid_from=None,
-                valid_to=None,
-                status="cross_community" if is_cross_community else "same_community",
-                raw_confidence=None,
-                npll_posterior=None,
-                calibration=None,
-                sources=d.get("sources") or [],
-            )
-
-    # --------------------------
-    # Mission-aware scoring
-    # --------------------------
-
-    def score_community_crossing(
-        self,
-        from_community: str,
-        to_community: str,
-        mission: Optional[str] = None
-    ) -> float:
-        """
-        Score a community crossing based on mission context.
-        
-        Args:
-            from_community: Source community
-            to_community: Target community
-            mission: Optional mission context (e.g., "fraud_detection", "patient_care")
-            
-        Returns:
-            Score multiplier for the crossing (>1 = valuable, <1 = not valuable)
-        """
-        base_affinity = self.get_affinity(from_community, to_community)
-        
-        if not mission:
-            return 1.0 + base_affinity
-        
-        # Mission-specific scoring (customize based on your domain)
-        mission_lower = mission.lower()
-        
-        # Example: fraud detection values Claims -> Clinical crossings
-        if "fraud" in mission_lower:
-            # This would need actual community type detection
-            # For now, just boost high-affinity crossings
-            return (1.0 + base_affinity) * 1.5
-        
-        # Example: patient care values Clinical -> Lab crossings
-        if "patient" in mission_lower or "clinical" in mission_lower:
-            return (1.0 + base_affinity) * 1.3
-        
-        return 1.0 + base_affinity
-
-    def clear_cache(self):
-        """Clear internal caches (useful after data updates)."""
-        self._bridge_cache.clear()
-        self._affinity_cache.clear()
+        """, bind)

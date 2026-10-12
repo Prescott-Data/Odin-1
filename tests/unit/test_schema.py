@@ -1,9 +1,17 @@
 """
-Unit tests for ArangoDB Schema Inspector
+Unit tests for ArangoDB schema inspection.
 """
 import pytest
 from unittest.mock import Mock, MagicMock
-from odin.schema import SchemaInspector, CollectionSchema, EdgeSchema, inspect_arango_schema
+from odin.schema import inspect_schema
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.base import BackendCapabilityError, BackendIOError
+from odin.backends.arango_schema import (
+    ArangoSchemaInspector,
+    CollectionSchema,
+    EdgeSchema,
+    inspect_arango_schema,
+)
 
 
 @pytest.fixture
@@ -17,12 +25,13 @@ def mock_db():
 @pytest.fixture
 def mock_collections():
     """Mock collection metadata."""
+    # python-arango reports collection types as strings.
     return [
-        {'name': 'ExtractedEntities', 'type': 2},  # Document collection
-        {'name': 'ExtractedRelationships', 'type': 3},  # Edge collection
-        {'name': 'Documents', 'type': 2},
-        {'name': 'EXTRACTED_FROM', 'type': 3},
-        {'name': '_system', 'type': 2},  # System collection (should be ignored)
+        {'name': 'ExtractedEntities', 'type': 'document'},
+        {'name': 'ExtractedRelationships', 'type': 'edge'},
+        {'name': 'Documents', 'type': 'document'},
+        {'name': 'EXTRACTED_FROM', 'type': 'edge'},
+        {'name': '_system', 'type': 'document'},  # System collection (should be ignored)
     ]
 
 
@@ -72,12 +81,12 @@ def mock_relationship_edges():
     ]
 
 
-class TestSchemaInspector:
-    """Test cases for SchemaInspector class."""
+class TestArangoSchemaInspector:
+    """Test cases for ArangoSchemaInspector."""
     
     def test_init(self, mock_db):
-        """Test SchemaInspector initialization."""
-        inspector = SchemaInspector(mock_db, max_sample_docs=10)
+        """Test ArangoSchemaInspector initialization."""
+        inspector = ArangoSchemaInspector(mock_db, max_sample_docs=10)
         assert inspector.db == mock_db
         assert inspector.max_sample_docs == 10
         assert inspector._schema_cache is None
@@ -100,7 +109,7 @@ class TestSchemaInspector:
         mock_db.aql = mock_aql
         mock_db.collection.return_value = entity_col
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         
         # First call should query database
         schema1 = inspector.get_schema_map()
@@ -130,7 +139,7 @@ class TestSchemaInspector:
         mock_db.aql = mock_aql
         mock_db.collection.return_value = entity_col
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         col_schema = inspector._inspect_document_collection('ExtractedEntities')
         
         assert col_schema.name == 'ExtractedEntities'
@@ -154,7 +163,7 @@ class TestSchemaInspector:
         mock_db.aql = mock_aql
         mock_db.collection.return_value = edge_col
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         edge_schema = inspector._inspect_edge_collection('ExtractedRelationships')
         
         assert edge_schema.name == 'ExtractedRelationships'
@@ -181,7 +190,7 @@ class TestSchemaInspector:
         mock_db.collection.return_value = entity_col
         mock_db.collections.return_value = [mock_collections[0]]  # Only ExtractedEntities
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         
         # Get existing collection
         col_info = inspector.get_collection_info('ExtractedEntities')
@@ -207,7 +216,7 @@ class TestSchemaInspector:
         mock_db.collection.return_value = edge_col
         mock_db.collections.return_value = [mock_collections[1]]  # Only ExtractedRelationships
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         
         # Get existing edge collection
         edge_info = inspector.get_edge_info('ExtractedRelationships')
@@ -235,13 +244,25 @@ class TestSchemaInspector:
         mock_db.aql = mock_aql
         mock_db.collection.return_value = entity_col
         
-        inspector = SchemaInspector(mock_db)
+        inspector = ArangoSchemaInspector(mock_db)
         schema = inspector.get_schema_map()
         
         # Verify _system collection is not in results
         all_names = [col['name'] for col in schema['collections']]
         all_names.extend([edge['name'] for edge in schema['edges']])
         assert '_system' not in all_names
+
+    def test_collections_are_classified_by_python_arango_type(self, mock_db, mock_collections):
+        mock_db.collections.return_value = mock_collections
+        mock_db.collection.return_value.count.return_value = 0
+        schema = ArangoSchemaInspector(mock_db).get_schema_map()
+        assert [c['name'] for c in schema['collections']] == ['ExtractedEntities', 'Documents']
+        assert [e['name'] for e in schema['edges']] == ['ExtractedRelationships', 'EXTRACTED_FROM']
+
+    def test_unknown_collection_type_raises(self, mock_db):
+        mock_db.collections.return_value = [{'name': 'Mystery', 'type': 3}]
+        with pytest.raises(BackendIOError, match='Unexpected Arango collection type'):
+            ArangoSchemaInspector(mock_db).get_schema_map()
 
 
 class TestConvenienceFunction:
@@ -260,3 +281,38 @@ class TestConvenienceFunction:
         assert schema is not None
         assert 'database_name' in schema
         assert output_file.exists()
+
+
+class TestBackendNeutralSchemaInspection:
+    def test_inspect_schema_uses_the_backend_capability(self, mock_db, tmp_path):
+        mock_db.collections.return_value = []
+        mock_db.aql = Mock()
+        output_file = tmp_path / "schema.json"
+
+        graph = ArangoGraphConfig(
+            node_collection="ExtractedEntities",
+            edge_collection="ExtractedRelationships",
+            relation_field="relationship",
+            entity_type_field="type",
+        )
+        schema = inspect_schema(ArangoBackend(mock_db, graph), output_file=str(output_file))
+
+        assert schema["database_name"] == "test_db"
+        assert output_file.exists()
+
+    def test_inspect_schema_rejects_backends_without_schema_support(self):
+        with pytest.raises(BackendCapabilityError, match="schema inspection"):
+            inspect_schema(object())
+
+
+def test_public_schema_refresh_uses_a_backend_owned_cache(mock_db):
+    mock_db.collections.return_value = []
+    backend = ArangoBackend(mock_db, ArangoGraphConfig("Records", "Links", "predicate"))
+    assert inspect_schema(backend)["collections"] == []
+    assert mock_db.collections.call_count == 1
+    mock_db.collections.return_value = [{"name": "new-collection", "type": "document"}]
+    mock_db.collection.return_value.count.return_value = 0
+    assert inspect_schema(backend)["collections"] == []
+    assert mock_db.collections.call_count == 1
+    assert inspect_schema(backend, refresh=True)["collections"][0]["name"] == "new-collection"
+    assert mock_db.collections.call_count == 2

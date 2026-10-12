@@ -27,6 +27,11 @@ class MockAccessor:
         return iter([
             (f"{node}_parent_1", "rel1", 0.9),
         ])
+
+    def iter_out_edges(self, node):
+        return ({"_id": f"test/{node}/{index}", "u": node, "rel": relation,
+                 "v": neighbor, "weight": weight, "provenance": None}
+                for index, (neighbor, relation, weight) in enumerate(self.iter_out(node)))
     
     def nodes(self, community_id=None):
         return iter(["A", "B", "C"])
@@ -178,3 +183,24 @@ class TestCachedGraphAccessor:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_ppr_and_beam_share_one_complete_assertion_fetch():
+    base = MockAccessor()
+    cached = CachedGraphAccessor(base, cache_size=2)
+    triples = list(cached.iter_out("A"))
+    edges = list(cached.iter_out_edges("A"))
+    assert base.out_calls == 1
+    assert [(e["v"], e["rel"], e["weight"]) for e in edges] == triples
+    cached.clear_cache()
+    assert list(cached.iter_out_edges("A")) == edges
+    assert list(cached.iter_out("A")) == triples
+    assert base.out_calls == 2
+
+
+def test_clear_cache_invalidates_underlying_signal_caches():
+    from unittest.mock import Mock
+    base = Mock()
+    accessor = CachedGraphAccessor(base)
+    accessor.clear_cache()
+    base.clear_cache.assert_called_once_with()

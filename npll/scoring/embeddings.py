@@ -276,11 +276,11 @@ class EmbeddingManager(nn.Module):
         logger.info("Building vocabulary from knowledge graph...")
         
         # Add all entities
-        for entity in kg.entities:
+        for entity in sorted(kg.entities, key=lambda item: item.name):
             self.entity_embeddings.add_entity(entity.name)
         
         # Add all relations
-        for relation in kg.relations:
+        for relation in sorted(kg.relations, key=lambda item: item.name):
             self.relation_embeddings.add_relation(relation.name)
         
         logger.info(f"Vocabulary built: {self.entity_embeddings.vocab_size} entities, "

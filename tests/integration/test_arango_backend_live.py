@@ -1,0 +1,250 @@
+"""Live backend contract checks in a new, disposable Arango database.
+
+Set ODIN_TEST_ARANGO_URL and ODIN_TEST_ARANGO_PASSWORD. The test account must
+be able to create databases. Only the UUID-named database created here is
+removed; existing databases are never modified.
+"""
+
+import math
+import os
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from uuid import uuid4
+
+import pytest
+
+from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
+from odin.backends.base import MODEL_KEY, ModelConflictError, TrainingSnapshot
+from tests.utils.backend_fakes import model_artifact
+
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("ODIN_TEST_ARANGO_URL"), reason="ODIN_TEST_ARANGO_URL not set",
+)
+
+
+ARANGO_GRAPH = ArangoGraphConfig(
+    node_collection="ExtractedEntities",
+    edge_collection="ExtractedRelationships",
+    relation_field="relationship",
+    entity_type_field="type",
+)
+
+
+@pytest.fixture
+def db():
+    from arango import ArangoClient
+
+    client = ArangoClient(hosts=os.environ["ODIN_TEST_ARANGO_URL"])
+    password = os.environ.get("ODIN_TEST_ARANGO_PASSWORD", "")
+    system = client.db("_system", username="root", password=password)
+    name = "odin_backend_test_" + uuid4().hex
+    system.create_database(name)
+    database = client.db(name, username="root", password=password)
+    try:
+        entities = database.create_collection("ExtractedEntities")
+        edges = database.create_collection("ExtractedRelationships", edge=True)
+        for key in ("A", "B", "C"):
+            entities.insert({"_key": key, "type": "Person"})
+        edges.insert({"_key": "ab", "_from": "ExtractedEntities/A",
+                      "_to": "ExtractedEntities/B", "relationship": "Submitted By"})
+        edges.insert({"_key": "bc", "_from": "ExtractedEntities/B",
+                      "_to": "ExtractedEntities/C", "relationship": "Submitted By"})
+        yield database
+    finally:
+        system.delete_database(name)
+        client.close()
+
+
+def configure_fast_training(monkeypatch):
+    """Keep the live lifecycle tests practical while using real training."""
+    import npll.bootstrap as bootstrap_module
+    from npll.utils.config import NPLLConfig
+
+    config = NPLLConfig(
+        entity_embedding_dim=4,
+        relation_embedding_dim=4,
+        rule_embedding_dim=8,
+        scoring_hidden_dim=8,
+        max_ground_rules=16,
+        batch_size=4,
+        learning_rate=0.01,
+        device="cpu",
+    )
+    monkeypatch.setattr(bootstrap_module, "get_config", lambda name: config)
+
+
+def test_snapshot_tracks_same_count_mutations_and_types(db):
+    source = ArangoBackend(db, ARANGO_GRAPH).triple_source()
+    first = source.snapshot()
+    expected = [("ExtractedEntities/" + key, "has_type", "Person") for key in ("A", "B", "C")]
+    expected += [("ExtractedEntities/A", "Submitted By", "ExtractedEntities/B"),
+                 ("ExtractedEntities/B", "Submitted By", "ExtractedEntities/C")]
+    assert first == TrainingSnapshot(expected)
+    db.collection("ExtractedRelationships").update({"_key": "ab", "_to": "ExtractedEntities/C"})
+    second = source.snapshot()
+    assert len(first.triples) == len(second.triples)
+    assert first.data_hash != second.data_hash
+    db.collection("ExtractedEntities").update({"_key": "A", "type": "Organization"})
+    assert second.data_hash != source.snapshot().data_hash
+
+
+def test_configured_bridge_affinity_and_membership_queries(db):
+    membership = db.create_collection("TenantMemberships")
+    bridges = db.create_collection("BridgeRecords")
+    affinity = db.create_collection("AffinityRecords")
+    membership.insert({
+        "_key": "a",
+        "record_id": "ExtractedEntities/A",
+        "group_id": "claims",
+        "algorithm": "leiden",
+    })
+    membership.insert({
+        "_key": "b",
+        "record_id": "ExtractedEntities/B",
+        "group_id": "supply",
+        "algorithm": "leiden",
+    })
+    bridges.insert({
+        "_key": "a",
+        "entity_key": "ExtractedEntities/A",
+        "bridge_strength": 2,
+        "home_community": "claims",
+        "algorithm": "leiden",
+    })
+    affinity.insert({
+        "_key": "claims-supply",
+        "community_a": "claims",
+        "community_b": "supply",
+        "affinity_score": 0.75,
+        "algorithm": "leiden",
+    })
+    graph = replace(
+        ARANGO_GRAPH,
+        membership_collection="TenantMemberships",
+        membership_entity_field="record_id",
+        membership_community_field="group_id",
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
+    )
+    backend = ArangoBackend(db, graph)
+
+    accessor = backend.accessor("global", "none")
+    assert accessor.is_bridge("ExtractedEntities/A")["record"]["entity_key"] == "ExtractedEntities/A"
+    assert accessor.get_affinity("claims", "supply") == pytest.approx(0.75)
+
+    global_accessor = backend.global_accessor()
+    assert global_accessor.get_entity_community("ExtractedEntities/A") == "claims"
+    engine = OdinEngine(backend, auto_train=False)
+    result = engine.retrieve(["ExtractedEntities/A"], hop_limit=2)
+    assert any(0.75 in path["decomp"]["affinity_scores"] for path in result["paths"])
+
+
+def test_configured_weight_and_property_scope_fields(db):
+    entities = db.collection("ExtractedEntities")
+    edges = db.collection("ExtractedRelationships")
+    entities.update({"_key": "A", "tenant_code": "claims"})
+    entities.update({"_key": "B", "tenant_code": "claims"})
+    entities.update({"_key": "C", "tenant_code": "supply"})
+    edges.update({"_key": "ab", "weight": 0.25, "importance": 0.75})
+
+    uniform = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+    assert list(uniform.iter_out("ExtractedEntities/A")) == [
+        ("ExtractedEntities/B", "Submitted By", 1.0),
+    ]
+
+    graph = replace(
+        ARANGO_GRAPH,
+        edge_weight_field="importance",
+        community_property_field="tenant_code",
+    )
+    weighted = ArangoBackend(db, graph).accessor("claims", "property")
+    assert list(weighted.iter_out("ExtractedEntities/A")) == [
+        ("ExtractedEntities/B", "Submitted By", 0.75),
+    ]
+    assert set(weighted.nodes()) == {"ExtractedEntities/A", "ExtractedEntities/B"}
+
+
+def test_lossless_roundtrip_and_concurrent_replacement(db):
+    backend = ArangoBackend(db, ARANGO_GRAPH)
+    store = backend.model_store()
+    artifact = model_artifact(101, 120)
+    revision = store.save(MODEL_KEY, artifact, expected_revision=None)
+    assert store.load(MODEL_KEY).document == artifact
+
+    def compete(weight):
+        candidate = model_artifact(101, 120)
+        candidate["rule_weights"] = [weight]
+        try:
+            backend.model_store().save(
+                MODEL_KEY, candidate, expected_revision=revision,
+            )
+            return "saved"
+        except ModelConflictError:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        assert sorted(pool.map(compete, [0.25, 0.75])) == ["conflict", "saved"]
+    latest = store.load(MODEL_KEY)
+    del latest.document["evidence"]
+    store.save(MODEL_KEY, latest.document, expected_revision=latest.revision)
+    assert store.load(MODEL_KEY).document == latest.document
+    assert ArangoBackend(db, ARANGO_GRAPH).model_store().load(MODEL_KEY).document == latest.document
+
+
+def test_real_train_save_reload_and_serve(db, monkeypatch):
+    from npll.bootstrap import KnowledgeBootstrapper
+    from retrieval.confidence import NPLLConfidence
+
+    configure_fast_training(monkeypatch)
+    backend = ArangoBackend(db, ARANGO_GRAPH)
+    store = backend.model_store()
+    first = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
+    assert first.source == "trained"
+    assert first.report.converged
+    second = KnowledgeBootstrapper(backend.triple_source(), store).ensure_model_ready()
+    assert second.source == "cached_weights"
+    assert first.report == second.report
+    assert first.data_hash == second.data_hash
+    assert first.model.mln.rule_weights.tolist() == second.model.mln.rule_weights.tolist()
+    confidence = NPLLConfidence(second.model).confidence(
+        "ExtractedEntities/A", "Submitted By", "ExtractedEntities/B",
+    )
+    assert math.isfinite(confidence) and 0 <= confidence <= 1
+    assert NPLLConfidence(first.model).confidence(
+        "ExtractedEntities/A", "Submitted By", "ExtractedEntities/B") == confidence
+
+
+def test_public_engine_train_save_reload_and_retrieve(db, monkeypatch):
+    configure_fast_training(monkeypatch)
+
+    first = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
+    assert first.has_npll
+    assert first.npll_source == "trained"
+    assert first.training_report.converged
+
+    reloaded = OdinEngine(ArangoBackend(db, ARANGO_GRAPH), community_id="global")
+    assert reloaded.has_npll
+    assert reloaded.npll_source == "cached_weights"
+
+    result = reloaded.retrieve(
+        seeds=["ExtractedEntities/A"],
+        max_paths=2,
+        hop_limit=2,
+    )
+    assert result["paths"]
+    assert all(path["edges"] for path in result["paths"])
+    assert any(
+        edge["relation"] == "Submitted By"
+        for path in result["paths"]
+        for edge in path["edges"]
+    )

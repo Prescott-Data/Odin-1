@@ -4,7 +4,7 @@ icon: material/engine
 
 # OdinEngine API
 
-`OdinEngine` is the main entry point. Construct it with a connected ArangoDB database, then call its methods.
+`OdinEngine` is the main entry point. Construct it with a graph backend, then call its methods.
 
 ```python
 from odin import OdinEngine
@@ -16,7 +16,7 @@ from odin import OdinEngine
 
 ```python
 OdinEngine(
-    db,
+    backend,
     community_id: str = "global",
     cache_size: int = 5000,
     auto_train: bool = True,
@@ -26,13 +26,19 @@ OdinEngine(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | required | A connected `python-arango` database instance |
+| `backend` | `GraphBackend` | required | Graph access plus optional NPLL training and persistence capabilities |
 | `community_id` | `str` | `"global"` | Scope to explore within |
 | `cache_size` | `int` | `5000` | LRU size for the graph accessor |
 | `auto_train` | `bool` | `True` | Train NPLL if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
-On first construction against a graph, NPLL trains (2-5 min) unless `auto_train=False`. See [Model Lifecycle](../guides/npll-lifecycle.md).
+For ArangoDB, construct `ArangoBackend(db, graph)` from a connected `python-arango`
+database. Arango shares globally trained artifacts across retrieval scopes. On first
+construction against a training-capable graph, NPLL trains unless `auto_train=False`. A
+retrieval-only backend must set `auto_train=False`; otherwise construction
+raises `BackendCapabilityError`. `graph` is a required `ArangoGraphConfig`.
+See [Connecting ArangoDB](../guides/arangodb.md#map-your-graph-data) and
+[Model Lifecycle](../guides/npll-lifecycle.md).
 
 ---
 
@@ -72,7 +78,7 @@ result["paths"]               # ranked paths
 score_edge(src: str, rel: str, dst: str) -> float
 ```
 
-Returns the NPLL plausibility of a single edge, from `0.0` (impossible) to `1.0` (highly plausible).
+Returns the learned NPLL plausibility of a single edge, from `0.0` to `1.0`. Higher means a better match to patterns learned from the graph; it is not a calibrated probability or a verification of truth.
 
 ```python
 engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
@@ -126,6 +132,11 @@ retrain_model() -> bool
 
 Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns `True` on success. Use after **structural** graph changes; see [Model Lifecycle](../guides/npll-lifecycle.md).
 
+Failures raise and preserve the active model and serving components. Trainer
+exceptions and results without a model raise `npll.TrainingError`; backend
+errors retain their distinct types. This method does not return `False` or
+switch to constant confidence on failure.
+
 ---
 
 ## `has_npll`
@@ -151,7 +162,7 @@ Returns a small status dictionary:
     "community_id": "global",
     "npll_loaded": True,
     "intelligence_mode": "NPLL",       # or "Constant"
-    "npll_source": "trained",          # "trained" | "cached_weights" | "failed" | "disabled"
+    "npll_source": "trained",          # "trained" | "cached_weights" | "disabled"
     "npll_converged": True,            # None when no training report is available
     "npll_trained_at": "2026-09-08T12:00:00Z",
     "cache_size": 5000,
@@ -168,8 +179,8 @@ training_report -> TrainingReport | None    # attribute
 
 The audit record for the NPLL training run behind the active model — available
 both when the model was just trained and when it was rebuilt from cached
-weights. `None` when auto-train is disabled, training failed, or the weights
-were persisted before reports existed.
+weights. `None` when auto-train is disabled. Failed retraining preserves the
+report associated with the active model; current artifacts require a report.
 
 Fields: `converged`, `convergence_epoch`, `final_elbo`, `best_elbo`,
 `total_epochs`, `total_em_iterations`, `elbo_history` (complete, per E-M

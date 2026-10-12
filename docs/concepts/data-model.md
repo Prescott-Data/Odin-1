@@ -18,42 +18,62 @@ An **entity** is a thing in your domain, addressed by an ID; a **relationship** 
 | **Path** | An ordered sequence of entities joined by edges | `A → B → C` |
 | **Seed** | An entity you start exploration from | `["entity/claim_123"]` |
 
-Node IDs are opaque strings. In ArangoDB they follow the `collection/key` convention (`ExtractedEntities/claim_123`, say), and Odin passes them straight through without interpreting them.
+Node IDs are opaque strings. In ArangoDB they follow the `collection/key`
+convention (`CaseRecords/claim_123`, say), and Odin passes them straight
+through without interpreting them.
 
 ## What edges can carry
 
-Odin works with a bare `_from`/`_to`/relation edge, but it makes use of richer metadata when it is present. A `weight` gives an edge structural importance; a `confidence` supplies a pre-existing plausibility (and falls back to `weight` when absent); `created_at` feeds the recency signal, and `provenance` links the edge back to a source document.
+Odin requires Arango endpoints and an explicitly mapped relation field. Optional
+metadata influences retrieval only through its mapping; a raw field named
+`created_at`, `weight`, or `confidence` is not automatically interpreted.
 
-| Field | Used for |
-|-------|----------|
-| `_from` / `_to` | Direction of the relationship |
-| relation / type | The relation label |
-| `weight` | Optional structural weight |
-| `confidence` | Optional pre-existing confidence (falls back to `weight`) |
-| `created_at` | Optional recency signal in aggregation |
-| `provenance` | Optional source/document reference |
+| Mapping | Used for |
+|---------|----------|
+| `_from` / `_to` | Canonical full document IDs and edge direction |
+| `relation_field` | Exact, non-empty relation label |
+| `edge_weight_field` | Structural weight; absent mapping means uniform weight |
+| `edge_timestamp_field` | Canonical `created_at` metadata for aggregation |
+| `edge_valid_from_field` / `edge_valid_to_field` | Explicit validity metadata |
+| `edge_status_field` | Status metadata; `allowed_edge_statuses` explicitly enables filtering |
+| `edge_provenance_fields` / `provenance_edge_collection` | Mapped source references |
 
-None of the optional fields are required (Odin defaults them sensibly), but the more of them your edges carry, the more the [aggregation](aggregation.md) and [triage](scoring.md) signals have to work with. Richer edges simply produce more trustworthy scores.
+Retrieved edge confidence comes from the configured confidence provider. The full
+raw assertion is retained under `provenance.assertion`, independent of mapped
+metadata. Every application field, including numeric embedding vectors, is
+preserved. Callers apply model-input filtering at their tool boundary.
 
 ## Communities scope the graph
 
-A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval, and the model behind it, focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with `community_mode`:
+A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps retrieval focused on one tenant, dataset, or domain instead of the whole graph. You choose the behavior with `community_mode`:
 
 ```python
 # Global exploration across the whole graph (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+engine = OdinEngine(
+    ArangoBackend(db, graph),
+    community_id="global", community_mode="none",
+)
 
 # Scoped to a single community
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+engine = OdinEngine(
+    ArangoBackend(db, graph),
+    community_id="medicare_claims", community_mode="mapping",
+)
 ```
 
-Communities are also the natural unit for [NPLL](npll.md): a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.
+For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Retrieval communities share the same global training artifact.
 
 ## What Odin does *not* need from you
 
-Notably, there is a lot you do **not** have to prepare. There is no fixed schema to declare, because Odin discovers collections and fields at runtime via [Schema Introspection](../guides/schema-introspection.md). There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.
+Notably, there is a lot you do **not** have to prepare. There is no fixed Odin
+schema or collection name: you declare the small Arango mapping once with
+`ArangoGraphConfig`, and can inspect the rest with [Schema
+Introspection](../guides/schema-introspection.md). There are no pre-computed
+embeddings, because NPLL trains straight from the graph's edge structure. And
+there is no query language to write on your side: you hand Odin entity IDs and
+it handles the traversal.
 
-The reference backend is **ArangoDB**, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See [Adapters](adapters.md) for the interface and how to plug in a backend.
+The reference backend is **ArangoDB**, but the graph accessor is an interface. `ArangoBackend` is the only complete backend today. A JanusGraph accessor ships for retrieval only, and you can implement the backend contracts for other stores such as Neo4j. See [Adapters](adapters.md) for the accessor interface and [Backend contracts](../development/backend-contracts.md#implementing-a-backend) for a full backend.
 
 ---
 

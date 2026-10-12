@@ -5,16 +5,17 @@ graphs; no database required.
 """
 
 import math
+from types import SimpleNamespace
 
 import pytest
 import torch
 
 from npll.core import Relation, load_knowledge_graph_from_triples
-from npll.core.logical_rules import Atom, LogicalRule, RuleType, Variable
+from npll.core.logical_rules import Atom, GroundRule, LogicalRule, RuleType, Variable
 from npll.core.mln import create_mln_from_kg_and_rules
 from npll.inference.e_step import create_e_step_runner
 from npll.inference.elbo import ELBOComputer, VariationalInference
-from npll.inference.m_step import MStepRunner
+from npll.inference.m_step import MStepRunner, PseudoLikelihoodComputer
 from npll.npll_model import create_initialized_npll_model
 from npll.scoring import create_scoring_module
 from npll.training.npll_trainer import TrainingConfig, create_trainer
@@ -80,6 +81,84 @@ def tiny_mln(tiny_kg, config):
 
 
 class TestELBOComputer:
+    def test_batched_joint_term_preserves_values_and_weight_gradients(self, tiny_mln, config):
+        computer = ELBOComputer(config)
+        worlds = tiny_mln._generate_sample_states(num_samples=137)
+        expected = torch.stack([
+            tiny_mln.compute_joint_probability(world) for world in worlds
+        ]).mean()
+        expected_gradient, = torch.autograd.grad(expected, tiny_mln.rule_weights)
+        actual = computer._compute_joint_term(tiny_mln, worlds, propagate_grads=True)
+        actual_gradient, = torch.autograd.grad(actual, tiny_mln.rule_weights)
+        assert torch.allclose(actual, expected, atol=1e-6)
+        assert torch.allclose(actual_gradient, expected_gradient, atol=1e-6)
+        assert not computer._compute_joint_term(tiny_mln, worlds).requires_grad
+
+    def test_batched_counts_preserve_sample_stream_and_implication_semantics(self, tiny_mln):
+        x, y = Variable("?x"), Variable("?y")
+        tiny_mln.add_logical_rules([
+            LogicalRule("prior", [], Atom(Relation("r1"), (x, y)), RuleType.PRIOR),
+        ])
+        worlds = tiny_mln._generate_sample_states(num_samples=137)
+        expected = torch.stack([tiny_mln.compute_ground_rule_counts(world) for world in worlds])
+        assert torch.equal(tiny_mln.compute_ground_rule_counts_batch(worlds), expected)
+        assert torch.equal(tiny_mln._sample_ground_rule_counts(num_samples=137), expected)
+        worlds = [{}, {fact: True for fact in tiny_mln.ground_rule_facts}]
+        expected = torch.stack([tiny_mln.compute_ground_rule_counts(world) for world in worlds])
+        assert torch.equal(tiny_mln.compute_ground_rule_counts_batch(worlds), expected)
+
+    def test_partition_reuses_counts_with_fresh_weight_gradients(self, tiny_mln, monkeypatch):
+        original = tiny_mln._sample_ground_rule_counts
+        calls = []
+        def sample(num_samples):
+            calls.append(num_samples)
+            return original(num_samples)
+        monkeypatch.setattr(tiny_mln, "_sample_ground_rule_counts", sample)
+        for weight in (0.5, 1.5):
+            with torch.no_grad():
+                tiny_mln.rule_weights.fill_(weight)
+            tiny_mln.rule_weights.grad = None
+            value = tiny_mln.compute_partition_function()
+            value.backward()
+            assert torch.isfinite(tiny_mln.rule_weights.grad).all()
+        assert calls == [1000]
+        tiny_mln.knowledge_graph.hold_out_fact(next(iter(tiny_mln.knowledge_graph.known_facts)))
+        tiny_mln.compute_partition_function()
+        assert calls == [1000, 1000]
+
+    def test_explicit_partition_worlds_do_not_reuse_default_cache(self, tiny_mln):
+        with torch.no_grad():
+            tiny_mln.rule_weights.fill_(1.0)
+        tiny_mln.compute_partition_function()
+        all_true = {fact: True for fact in tiny_mln.ground_rule_facts}
+        violated = dict(all_true)
+        for gr in tiny_mln.ground_rules:
+            violated[gr.head_fact] = False
+        first = tiny_mln.compute_partition_function([all_true])
+        second = tiny_mln.compute_partition_function([violated])
+        assert first.item() != second.item()
+        assert first.item() == tiny_mln.compute_ground_rule_counts(all_true).sum().item()
+        assert second.item() == tiny_mln.compute_ground_rule_counts(violated).sum().item()
+
+    def test_world_samples_are_stable_without_changing_global_rng(self, tiny_kg, config):
+        computer = ELBOComputer(config)
+        known = list(tiny_kg.known_facts)
+        unknown = list(tiny_kg.unknown_facts)
+        probabilities = torch.tensor([0.4])
+        rng_state = torch.random.get_rng_state().clone()
+        first = computer._sample_possible_worlds(known, unknown, probabilities, num_samples=100)
+        assert torch.equal(torch.random.get_rng_state(), rng_state)
+        torch.rand(17)
+        second = computer._sample_possible_worlds(known, unknown, probabilities, num_samples=100)
+        assert first == second
+
+    def test_partition_samples_are_stable_without_changing_global_rng(self, tiny_mln):
+        rng_state = torch.random.get_rng_state().clone()
+        first = tiny_mln._generate_sample_states(num_samples=100)
+        assert torch.equal(torch.random.get_rng_state(), rng_state)
+        torch.rand(17)
+        assert tiny_mln._generate_sample_states(num_samples=100) == first
+
     def test_entropy_of_uniform_bernoulli_is_ln2(self, config):
         computer = ELBOComputer(config)
         entropy = computer._compute_entropy_term(torch.tensor([0.5]))
@@ -219,6 +298,51 @@ class TestEStep:
 
 
 class TestMStep:
+    def test_indexed_targets_do_not_scan_unrelated_rules(self, tiny_mln, tiny_kg, config, monkeypatch):
+        computer = PseudoLikelihoodComputer(config)
+        fact = next(iter(tiny_kg.unknown_facts))
+        x, y = Variable("?x"), Variable("?y")
+        prior = LogicalRule("indexed_prior", [], Atom(fact.relation, (x, y)), RuleType.PRIOR)
+        grounding = GroundRule("indexed_grounding", [], fact, prior)
+        tiny_mln.logical_rules = [prior]
+        tiny_mln.ground_rules = [grounding]
+        tiny_mln.fact_to_groundrules = {fact: [grounding]}
+        targets = {fact: 0.8}
+        expected = computer.compute_pseudo_likelihood(tiny_mln, targets)
+        expected_gradient, = torch.autograd.grad(expected, tiny_mln.rule_weights)
+
+        class UnscannableRules(list):
+            def __iter__(self):
+                raise AssertionError("An indexed target must not scan all ground rules")
+
+        monkeypatch.setattr(tiny_mln, "ground_rules", UnscannableRules(tiny_mln.ground_rules))
+        actual = computer.compute_pseudo_likelihood(tiny_mln, targets)
+        actual_gradient, = torch.autograd.grad(actual, tiny_mln.rule_weights)
+        assert torch.equal(actual, expected)
+        assert torch.equal(actual_gradient, expected_gradient)
+        tiny_kg.add_unknown_fact("X", "unrelated", "Y")
+        absent = next(f for f in tiny_kg.unknown_facts if f.relation.name == "unrelated")
+        assert computer.compute_pseudo_likelihood(tiny_mln, {absent: 0.3}).item() == pytest.approx(-LN2)
+
+    def test_positive_only_prior_reaches_finite_regularized_stationary_point(self, tiny_kg):
+        fact = next(iter(tiny_kg.unknown_facts))
+        x, y = Variable("?x"), Variable("?y")
+        prior = LogicalRule("prior", [], Atom(fact.relation, (x, y)), RuleType.PRIOR)
+        grounding = GroundRule("prior_ground", [], fact, prior)
+        weights = torch.nn.Parameter(torch.tensor([10.0]))
+        mln = SimpleNamespace(rule_weights=weights, logical_rules=[prior],
+                              ground_rules=[grounding], fact_to_groundrules={fact: [grounding]},
+                              knowledge_graph=tiny_kg)
+        runner = MStepRunner(small_config(learning_rate=0.05, weight_decay=0.1))
+        targets = SimpleNamespace(fact_probabilities={fact: 1.0})
+        for _ in range(20):
+            result = runner.run_m_step(mln, targets)
+        # d[-log sigmoid(w) + 0.05*w²]/dw = sigmoid(w) - 1 + 0.1*w
+        gradient = torch.sigmoid(weights.detach()) - 1.0 + 0.1 * weights.detach()
+        assert gradient.abs().max().item() < 1e-4
+        assert result.weight_changes.abs().max().item() < 1e-4
+        assert 0.0 < weights.item() < 3.0
+
     @pytest.fixture
     def e_step_result(self, tiny_kg, tiny_mln, config):
         scoring = create_scoring_module(config, tiny_kg)
@@ -255,6 +379,27 @@ class TestTrainerLoop:
     @pytest.fixture
     def model(self, tiny_kg, config):
         return create_initialized_npll_model(tiny_kg, [chain_rule()], config)
+
+    def test_trainer_continues_past_ten_epochs_until_convergence(self, model, monkeypatch):
+        trainer = create_trainer(model, TrainingConfig(num_epochs=200, save_checkpoints=False))
+        epochs = []
+
+        def train_epoch(epoch):
+            epochs.append(epoch)
+            return {
+                "iteration_results": [{"elbo": -1.0, "rule_weight_delta": 0.0}],
+                "em_iterations": 1,
+                "final_elbo": -1.0,
+                "converged": epoch == 12,
+            }
+
+        monkeypatch.setattr(trainer, "_train_epoch", train_epoch)
+        result = trainer.train()
+        assert epochs == list(range(13))
+        assert result.converged
+        assert result.total_epochs == 13
+        assert result.convergence_epoch == 12
+        assert len(result.elbo_history) == 13
 
     def test_train_epoch_respects_em_budget(self, model):
         epoch_result = model.train_epoch(max_em_iterations=2)

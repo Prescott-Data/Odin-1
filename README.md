@@ -73,7 +73,7 @@ The engine ranks connected evidence. The agent decides what that evidence means.
 
 ---
 
-## How Odin Works — COMPASS
+## How Odin Works: COMPASS
 
 At the center of Odin is **COMPASS (Composite Oriented Multi-signal Path
 Assessment)**, the scoring framework introduced in the
@@ -130,16 +130,13 @@ investigator interprets it and chooses the next action.
 
 ## Quick Start
 
+**Upgrading from 0.3.0?** The engine now takes an explicit backend. Follow the
+[backend migration guide](docs/guides/backend-migration.md) when upgrading existing code.
+
 ### Installation
 
 ```bash
-# From PyPI (recommended)
-pip install odin-engine
-
-# From source
-git clone https://github.com/Prescott-Data/Odin-1.git
-cd Odin-1
-pip install -e .
+pip install "odin-engine[arango]"
 ```
 
 **Requirements:**
@@ -156,17 +153,24 @@ for local ArangoDB setup and data-model requirements.
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_database", username="user", password="pass")
 
-# 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-engine = OdinEngine(db=db, community_id="my_community")
+# 2. Map your graph, then initialize Odin (auto-trains NPLL on first run)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend)
 
 # 3. Explore from seed entities
 result = engine.retrieve(
-    seeds=["entity/claim_123", "entity/provider_456"],
+    seeds=["CaseRecords/claim_123", "CaseRecords/provider_456"],
     max_paths=50,
     hop_limit=3,
 )
@@ -175,20 +179,30 @@ result = engine.retrieve(
 print(f"Found {len(result['paths'])} paths")
 print(f"Triage Score: {result['triage']['score']}/100")
 
-for p in result['paths'][:5]:
+for p in result['paths']:
     edges = p['edges']
     nodes = [edges[0]['u'], *(e['v'] for e in edges)] if edges else []
     print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
-**Output Example:**
+**Output Example** (illustrative; your IDs, counts, and scores will differ):
 ```
 Found 47 paths
 Triage Score: 87/100
-  [0.94] claim_123 → billed_by → provider_456 → flagged_in → audit_07
-  [0.89] claim_123 → has_diagnosis → sepsis_dx → rare_in → nursing_home_cluster
-  [0.82] provider_456 → prescribed → medication_999 → contraindicated_with → patient_history
+  [0.94] CaseRecords/claim_123 -> CaseRecords/provider_456 -> CaseRecords/audit_07
+  [0.89] CaseRecords/claim_123 -> CaseRecords/sepsis_dx -> CaseRecords/nursing_home_cluster
+  [0.82] CaseRecords/provider_456 -> CaseRecords/medication_999 -> CaseRecords/patient_history
 ```
+
+### Use Odin with a coding agent
+
+Odin ships skills that teach coding agents (GitHub Copilot, Claude Code, Cursor and others) the API installed on your machine. Install Odin first, then from your project root:
+
+```bash
+odin init --skill
+```
+
+The skills come from the installed package, so they always match its version. Re-run the command after upgrading Odin; files you edited are kept and reported. See [AI editor setup](docs/guides/ai-editors.md).
 
 ### Automatic NPLL Lifecycle
 
@@ -233,9 +247,9 @@ for the full shape):
 }
 ```
 
-Beyond `retrieve()`, the engine exposes companion capabilities — edge
+Beyond `retrieve()`, the engine exposes companion capabilities: edge
 plausibility scoring, anchor discovery, motif aggregates, and runtime schema
-introspection — summarized in [API at a Glance](#api-at-a-glance) and fully
+introspection, summarized in [API at a Glance](#api-at-a-glance) and fully
 documented on the [docs site](https://odin.developers.prescottdata.io).
 
 ---
@@ -294,9 +308,14 @@ The entity IDs and outputs below are illustrative, not measured results.
 **Scenario:** Find providers billing unusual procedure combinations
 
 ```python
-engine = OdinEngine(db, community_id="medicare_claims")
+from dataclasses import replace
+
+scoped_graph = replace(graph, membership_collection="Memberships",
+                       membership_entity_field="entity_id", membership_community_field="community_id")
+engine = OdinEngine(ArangoBackend(db, scoped_graph), community_id="medicare_claims",
+                    community_mode="mapping")
 result = engine.retrieve(
-    seeds=["provider/high_volume_clinic"],
+    seeds=["CaseRecords/high_volume_clinic"],
     max_paths=100,
 )
 # Illustrative: Odin surfaces recurring procedure-combination motifs
@@ -318,9 +337,9 @@ result = engine.retrieve(
 
 ```python
 score = engine.score_edge(
-    head="entity/investment_fund",
-    relation="managed_by",
-    tail="entity/sanctioned_entity"
+    "entity/investment_fund",
+    "managed_by",
+    "entity/sanctioned_entity",
 )
 if score > 0.5:
     compliance_agent.flag_for_review()
@@ -344,9 +363,10 @@ if score > 0.5:
 
 ```python
 from odin import OdinEngine
+from odin.backends.base import GraphBackend
 
 engine = OdinEngine(
-    db: StandardDatabase,              # ArangoDB connection
+    backend: GraphBackend,             # Graph access and optional NPLL capabilities
     community_id: str = "global",      # Scope for exploration
     cache_size: int = 5000,            # LRU cache size
     auto_train: bool = True,           # Auto-train NPLL if needed
@@ -359,8 +379,8 @@ engine = OdinEngine(
 | `retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64)` | Find and score paths from seed entities |
 | `score_edge(src, rel, dst)` | Score plausibility of a single edge (0.0-1.0) |
 | `find_anchors(seeds, topn=20)` | Top-N nodes by Personalized PageRank |
-| `retrain_model(force_retrain=True)` | Force NPLL retraining after major graph updates |
-| `SchemaInspector(db)` | Inspect collections, fields, and edge relationships at runtime |
+| `retrain_model()` | Force NPLL retraining after major graph updates |
+| `inspect_schema(backend)` | Inspect the configured backend's schema at runtime |
 
 Full parameter and result documentation lives in the
 [API reference](https://odin.developers.prescottdata.io).
@@ -399,7 +419,7 @@ pytest tests/ --cov=odin --cov=npll --cov=retrieval --cov-report=html
 
 We welcome contributions! Areas of interest:
 
-- **Scalability**: Optimizations for graphs >10M entities
+- **Scalability**: Large-graph benchmarking and optimization
 - **Algorithms**: Alternative PPR implementations, new aggregators
 - **Database Support**: Neo4j, Neptune adapters
 - **Benchmarks**: Academic dataset comparisons

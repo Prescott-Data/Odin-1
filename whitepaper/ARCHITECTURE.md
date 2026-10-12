@@ -378,8 +378,14 @@ class GraphAccessor(Protocol):
 
 ```python
 # 1. INITIALIZATION
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
 orchestrator = RetrievalOrchestrator(
-    accessor=ArangoCommunityAccessor(db, community_id="insurance"),
+    accessor=backend.accessor("insurance", "none"),
     edge_confidence=NPLLConfidence(npll_model),
 )
 
@@ -452,7 +458,7 @@ INPUT: Triple (head, relation, tail)
        e.g., (Patient_4521, prescribed, Warfarin)
 
 STEP 1: Get Embeddings
-  head_emb = embedding_manager.get_entity_embedding("Patient_4521")
+  head_emb = embedding_manager.get_entity_embedding("entities/Patient_4521")
   rel_emb = embedding_manager.get_relation_embedding("prescribed")
   tail_emb = embedding_manager.get_entity_embedding("Warfarin")
 
@@ -591,7 +597,7 @@ Odin tells you WHERE. The LLM agent tells you WHAT IT MEANS.
 - New domains need **model fine-tuning**
 - Empty graphs return empty results
 
-**Mitigation:** Pre-trained domain models, graceful fallback to ConstantConfidence.
+**Mitigation:** Prepare model artifacts before serving, or explicitly choose retrieval-only operation with `auto_train=False`. Training failures raise.
 
 ### 3. Sparse Graphs
 
@@ -673,22 +679,25 @@ class ArangoCommunityAccessor:
     
     # Discovery methods (NEW)
     @staticmethod
-    def get_community_summaries(db, ...) -> List[dict]: ...
+    def get_community_summaries(db, collection, field_mappings, ...) -> List[dict]: ...
     @staticmethod
-    def get_top_entities_in_community(db, community_id, limit) -> List[dict]: ...
+    def get_top_entities_in_community(db, community_id, mappings, ...) -> List[dict]: ...
     @staticmethod
-    def get_recent_entities(db, since, community_id) -> List[dict]: ...
+    def get_recent_entities(db, since, mappings, ...) -> List[dict]: ...
     @staticmethod
-    def search_entities(db, query, community_id) -> List[dict]: ...
+    def search_entities(db, query, mappings, ...) -> List[dict]: ...
     
     # Content hydration methods (NEW)
     @staticmethod
-    def get_document_content(db, doc_id) -> Optional[dict]: ...
+    def get_document_content(db, doc_id, collections) -> Optional[dict]: ...
     @staticmethod
-    def get_entity_sources(db, entity_id) -> List[dict]: ...
+    def get_entity_sources(db, entity_id, provenance_collection) -> List[dict]: ...
     @staticmethod
-    def search_content(db, query, ...) -> List[dict]: ...
+    def search_content(db, query, collections, search_fields) -> List[dict]: ...
 ```
+
+All direct helper mappings are explicit and their results preserve complete
+Arango documents. Use `ArangoBackend.accessor()` for ordinary Odin retrieval.
 
 ---
 
@@ -701,13 +710,24 @@ The simplest way to use Odin is through the `OdinEngine` class, which handles al
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from retrieval.adapters_arango import ArangoCommunityAccessor
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to ArangoDB
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
-# 2. Initialize Odin (auto-trains NPLL if needed)
-engine = OdinEngine(db, community_id="my_community")
+# 2. Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+    membership_collection="entity_memberships",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="my_community", community_mode="mapping")
 
 # 3. Retrieve
 result = engine.retrieve(seeds=["entity/my_entity"], max_paths=100)
@@ -717,7 +737,7 @@ print(f"Found {len(result['paths'])} paths")
 print(f"Triage score: {result['triage']['score']}/100")
 
 # 5. Score individual edges
-score = engine.score_edge("Patient_123", "treated_by", "Dr_Smith")
+score = engine.score_edge("entities/Patient_123", "treated_by", "entities/Dr_Smith")
 print(f"Edge plausibility: {score}")
 ```
 
@@ -762,13 +782,22 @@ from retrieval.cache import CachedGraphAccessor
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import NPLLConfidence
 from npll.bootstrap import KnowledgeBootstrapper
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("mydb", username="root", password="...")
 
-# 2. Setup NPLL via bootstrapper
-bootstrapper = KnowledgeBootstrapper(db)
+# 2. Setup NPLL via an explicit Arango graph mapping
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
+bootstrapper = KnowledgeBootstrapper(
+    backend.triple_source(), backend.model_store()
+)
 bootstrap_result = bootstrapper.ensure_model_ready()
 npll_model = bootstrap_result.model
 if bootstrap_result.report and not bootstrap_result.report.converged:
@@ -776,7 +805,7 @@ if bootstrap_result.report and not bootstrap_result.report.converged:
 confidence = NPLLConfidence(npll_model, cache_size=10000)
 
 # 3. Setup accessor with caching
-base_accessor = ArangoCommunityAccessor(db, community_id="my_community")
+base_accessor = backend.accessor("my_community", "mapping")
 cached_accessor = CachedGraphAccessor(base_accessor, cache_size=5000)
 
 # 4. Create orchestrator
@@ -801,10 +830,16 @@ result = orchestrator.retrieve(
 
 ```python
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 class InvestigatorAgent:
     def __init__(self, db, llm: LLMClient):
-        self.engine = OdinEngine(db)  # One line setup
+        graph = ArangoGraphConfig(
+            node_collection="entities",
+            edge_collection="relationships",
+            relation_field="relation",
+        )
+        self.engine = OdinEngine(ArangoBackend(db, graph))
         self.llm = llm
         self.db = db
     
@@ -816,7 +851,12 @@ class InvestigatorAgent:
         evidence = []
         for anchor in result["aggregates"]["snippet_anchors"]:
             content = ArangoCommunityAccessor.get_document_content(
-                self.db, anchor["document_id"]
+                self.db,
+                anchor["document_id"],
+                text_collection="EvidenceText",
+                table_collection="EvidenceTables",
+                image_collection="EvidenceImages",
+                document_collection="EvidenceDocuments",
             )
             evidence.append(content)
         

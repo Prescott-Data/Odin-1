@@ -189,7 +189,7 @@ def score_paths_and_insight(
     community_id: str,
     seeds: List[NodeId],
     node_ppr_scores: List[Tuple[NodeId, float]],
-    candidate_paths: List[List[Tuple[NodeId, RelId, NodeId]]],
+    candidate_paths: List[List[Dict[str, object]]],
     conf_provider: EdgeConfidenceProvider = ConstantConfidence(0.8),
     now_ts: Optional[float] = None,
     edge_timestamp_lookup=None,
@@ -198,6 +198,8 @@ def score_paths_and_insight(
     top_k_paths: int = 5,
 ) -> Dict[str, object]:
     node_ppr = {n: p for n, p in node_ppr_scores}
+    triple_paths = [[(edge["u"], edge["rel"], edge["v"]) for edge in path]
+                    for path in candidate_paths]
     
     # Pre-fetch bridge & affinity data if accessor supports it
     node_bridge_scores = {}
@@ -210,7 +212,7 @@ def score_paths_and_insight(
         
         if has_bridge or has_affinity:
             unique_nodes = set()
-            for p in candidate_paths:
+            for p in triple_paths:
                 unique_nodes.add(p[0][0] if p else "") 
                 for _, _, v in p:
                     unique_nodes.add(v)
@@ -233,7 +235,7 @@ def score_paths_and_insight(
                         node_communities[n] = comm
             
             if has_affinity:
-                for p in candidate_paths:
+                for p in triple_paths:
                     for u, _, v in p:
                         pair = (u, v)
                         if pair not in edge_affinity_scores and (v, u) not in edge_affinity_scores:
@@ -245,7 +247,7 @@ def score_paths_and_insight(
 
     path_scores: List[float] = []
     scored_paths: List[Dict[str, object]] = []
-    for edges in candidate_paths:
+    for records, edges in zip(candidate_paths, triple_paths):
         ps = path_score(
             edges, node_ppr, conf_provider, now_ts, edge_timestamp_lookup, path_cfg,
             node_bridge_scores=node_bridge_scores,
@@ -270,7 +272,8 @@ def score_paths_and_insight(
         scored_paths.append({
             "score": ps,
             "nodes": nodes,
-            "edges": [{"u": u, "rel": r, "v": v} for (u, r, v) in edges],
+            "edges": [{**record, "confidence": confidence}
+                      for record, confidence in zip(records, confs)],
             "decomp": {
                 "ppr_values": ppr_vals,
                 "type_priors": pri_list,
@@ -290,5 +293,4 @@ def score_paths_and_insight(
         "community_relevance": comm_rel,
         "insight_score": ins,
     }
-
 
