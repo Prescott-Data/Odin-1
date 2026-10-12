@@ -37,9 +37,53 @@ Complete checks, corpus snapshots, logs, and synthetic retrieval results are in
 `../verification-artifacts/odin-documentation-audit-20261012/`.
 The stable audit call ID is `odin-documentation-audit-20261012`.
 
+## Skill-fix recheck
+
+Rechecked October 12, 2026 against `c7778ce` after the skill, CLI, packaging,
+evaluation-harness, and related documentation commits. Original findings below
+remain as historical evidence; the status table and per-finding notes describe
+what is open now. This recheck does not claim a new full audit of unrelated pages.
+
+| Finding | Current status | Recheck result |
+| --- | --- | --- |
+| D01 | Partially resolved | Integration guide no longer slices paths/motifs in the main example and keeps relations/direction/provenance. The guide and skill still permit disclosed truncation; PPR rows and most aggregates remain absent from model delivery. Domain examples still slice. |
+| D11 | Partially resolved | Categorical denial of nodes/decomp is fixed in AGENTS, skill, result-schema page, first-retrieval page, and editor guide. They are now explicitly undocumented internal keys, a valid public-contract choice. Examples still show assigned path IDs although current engine returns None. |
+| D15 | Partially resolved | Agent integration now treats hypotheses as plausibility, verifies sources, and uses application-supplied thresholds. Healthcare/compliance examples and the scoped-training claim remain unchanged. |
+| D17 | Resolved for the original installation mismatch | Editor setup now uses bundled version-matched skills and an explicit source-checkout note; the download-from-main command is removed. Local installation/refresh behavior passed packaging tests. Vendor discovery behavior was not independently exercised. |
+| D18 | Partially resolved | The rewritten skill uses text for signatures and valid Python for schema examples. Remaining README, aggregation, and public schema pseudocode was not repaired. |
+| D02–D10, D12–D14, D16, D19 | Open | No relevant implementation or documentation correction in this change range. |
+| D20 | New, open | The AGENTS pointer example uses a directory that the new default install does not create. |
+
+New verification:
+
+- **72 tests passed in 32.86 seconds** across CLI, skill truth, evaluation-harness
+  self-tests, and wheel/install journey tests.
+- Strict MkDocs build passed.
+- Both skills, their references, CLI target defaults and manifest refresh behavior
+  were read against code. Protocol/method signature checks, imports, complete
+  config-field coverage, and the runnable custom-backend example passed.
+- Packaging tests built a real wheel, installed it without dependencies into a
+  clean environment, and checked installation, references, hashes, preserved user
+  edits, force refresh, and target selection.
+- These results do not establish real agent discovery, reference selection, or
+  behavioral improvement across models. No paid model-provider evaluation was
+  run in this recheck. The evaluation runner itself explicitly says it loads all
+  references and therefore does not test reference selection.
+- The behavioral evaluator's visible_truncation scenario accepts an announced
+  subset. That tests the new skill wording, not the workspace requirement to
+  preserve complete required evidence. Its output checks do not prove preservation
+  of every path/edge/confidence/PPR row or excluded vector field path.
+
+Evidence: `../verification-artifacts/odin-skill-audit-20261012/tests.log` and
+`mkdocs.log`. No database mutation, training, publication, or source repair was
+performed. The original 258-test result below belongs to the earlier audit;
+this recheck ran the 72 focused tests only.
+
 ## High priority findings
 
 ### D01. Agent examples discard reasoning evidence before model delivery
+
+**Recheck: partially resolved.** The main integration example now uses all paths and motifs and preserves relation labels, direction and provenance. It still omits PPR rows and most aggregates, rounds confidences, and explicitly permits dropping paths when context is tight. Announcing a subset does not satisfy this workspace contract; stop and surface the limit instead. The new skill repeats the disclosed-truncation instruction. Domain example slices remain.
 
 Locations: `docs/guides/agent-integration.md:26`, `:27`, `:75`;
 `docs/examples/healthcare-fraud.md:66`; `docs/examples/supply-chain.md:89`.
@@ -211,6 +255,8 @@ arguments and no environment variable is read.
 
 ### D11. Result schema and packaged skill deny fields that are returned
 
+**Recheck: partially resolved.** The false denial is removed across the skill and related docs. Treating nodes/decomp as undocumented internal keys is acceptable; the docs no longer need to promise those keys. The remaining concrete mismatch is illustrative assigned path IDs versus current id=None; distinguish the illustration from actual output.
+
 Locations: `docs/reference/result-schema.md:64`;
 `odin/skills/odin/SKILL.md:94`, `:112`; `AGENTS.md:15`;
 `docs/guides/ai-editors.md:9`, `:63`.
@@ -261,6 +307,8 @@ Document these mechanics and qualify heuristic latency advice.
 
 ### D15. Examples conflate learned plausibility with verification or anomaly evidence
 
+**Recheck: partially resolved.** The agent integration guide now calls scores plausibility, asks for source verification, and takes application thresholds. Healthcare/compliance examples and the claim that community scope changes training remain open.
+
 Locations: `docs/guides/agent-integration.md:37`;
 `docs/examples/healthcare-fraud.md:55`, `:73`;
 `docs/examples/compliance.md:10`, `:43`.
@@ -290,6 +338,8 @@ imports and distinguish adapter/wrapper preparation from engine functionality.
 
 ### D17. Current editor-install instructions can fetch the wrong skill revision
 
+**Recheck: resolved for this original finding.** The direct download from main is gone. The guide now identifies the matching source checkout and uses bundled installed resources. CLI/package journey tests passed. Edited destination files are intentionally skipped and reported on refresh; consequently the phrase that installed project copies always match must be read with that documented exception. Vendor directory discovery has not been independently validated in this recheck.
+
 Location: `docs/guides/ai-editors.md:13`, `:32`.
 
 The page recommends pip install odin-engine or downloading the skill from main,
@@ -298,6 +348,8 @@ checkout/package revision or label the released versus unreleased paths. The
 CLI installation mechanics themselves are covered by unit tests.
 
 ### D18. Literal-looking Python blocks include pseudocode without clear labels
+
+**Recheck: partially resolved.** The new skill API is a text block and its Python schemas use valid booleans and syntax. The remaining candidate issues are in other files. Protocol declaration blocks intentionally require surrounding imports and are not standalone examples.
 
 Locations: `README.md:357`; `docs/concepts/aggregation.md:46`;
 `docs/reference/result-schema.md:77`; `odin/skills/odin/SKILL.md:60`.
@@ -323,6 +375,18 @@ The handover's not-pushed statement is a historical preparation-time state;
 the full review range excludes later documentation corrections. Label it as a
 dated snapshot. Production's phrase 'only recorded measurements' should be scoped
 to this validation, since the repository also contains an older demo artifact.
+
+### D20. Default skill installation and the AGENTS pointer disagree
+
+Location: `docs/guides/ai-editors.md`, Tools without skill discovery section.
+Code: `odin/cli.py`, DEFAULT_TARGETS and TARGETS.
+
+The default command installs into `.claude/skills/` and `.agents/skills/`, as
+verified by the packaging journey. The copyable AGENTS instruction still tells
+tools to read `.github/skills/odin/SKILL.md`, which does not exist after that
+default install. Point it at `.agents/skills/odin/SKILL.md`, or explicitly require
+`--target github` before using the GitHub path. This is separate from the resolved
+package-version mismatch in D17.
 
 ## Verified areas and checks
 
