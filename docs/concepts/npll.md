@@ -6,12 +6,12 @@ icon: material/shield-check
 
 [PPR](ppr.md) finds important nodes and [beam search](beam-search.md) reaches them, but neither knows whether an edge *makes sense*. That is NPLL's job. **Neural Probabilistic Logic Learning** is Odin's semantic signal: it scores how plausible any given edge is, using patterns learned directly from your graph.
 
-Given a candidate edge `(head, relation, tail)`, it returns a probability from `0.0` to `1.0`:
+Given a candidate edge `(head, relation, tail)`, it returns a learned plausibility score from `0.0` to `1.0`. It is not a calibrated probability that the edge is true:
 
 ```python
-score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
-# 0.0  → impossible / contradicts learned patterns
-# 1.0  → highly plausible / matches learned patterns
+score = engine.score_edge("CaseRecords/patient_001", "treated_by", "CaseRecords/doctor_smith")
+# Lower  → matches learned patterns less well
+# Higher → matches learned patterns better
 ```
 
 Naive traversal will happily follow an edge just because it *exists* in the data, even when it is nonsense for the domain. NPLL is what lets Odin down-weight and prune those paths instead.

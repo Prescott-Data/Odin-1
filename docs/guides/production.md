@@ -6,19 +6,13 @@ icon: material/server
 
 Running Odin against a real graph at scale comes down to a handful of concerns: sizing the host, keeping the cache warm, managing the model, and making the system observable. This guide works through each in turn.
 
-## What it has been run on
+## Performance evidence
 
-Odin has been deployed on graphs ranging from 10K to 5M entities, with typical end-to-end latency of 300 to 800 ms for a 50-path retrieval at a 3-hop limit. Some representative deployments:
-
-| Graph | Entities | Edges | Typical retrieval |
-|-------|----------|-------|-------------------|
-| Healthcare KG | 2.3M | 8.7M | ~450 ms |
-| Insurance claims | 850K | 4.1M | ~320 ms |
-| Supply chain | 450K | 2.3M | ~280 ms |
+Odin has no published benchmark across graph sizes, so treat latency and memory as things to measure on your own data and hardware. The only recorded measurements are from one small local run (`compliance_docs`, 171 nodes and 173 edges, local ArangoDB): about 98 seconds for fresh initialization, about 0.16 seconds for a cached model reload, and 292 returned paths from 32 seeds. These describe that run only and do not predict behavior on large graphs. Large-graph performance is untested.
 
 ## Sizing the host
 
-Memory is the resource to plan around: expect roughly 500 MB to 2 GB depending on `cache_size` and graph density. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL, but CPU inference is enough for scoring, so no GPU is needed. Above all, aim for a warm cache (a hit rate above 80%) before you judge latency, and tune `cache_size` to hold the working set of your typical queries as described in [Caching](../concepts/caching.md).
+Memory is the resource to plan around, and it grows with `cache_size` and graph density; measure it on your data. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL; the scorer is a small model, but check inference cost on your hardware before assuming a GPU is unnecessary. Watch the cache hit rate before you judge latency, and tune `cache_size` to hold the working set of your typical queries as described in [Caching](../concepts/caching.md).
 
 ## Managing the model
 

@@ -162,7 +162,7 @@ from odin import OdinEngine       # correct
 
 ## Out-of-memory on large graphs
 
-Memory scales with `cache_size` and graph density (~500 MB-2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
+Memory scales with `cache_size` and graph density; measure it on your data. Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
 
 ---
 

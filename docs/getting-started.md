@@ -98,7 +98,7 @@ edges.import_bulk([
 ])
 ```
 
-This graph only illustrates the shape Odin expects. NPLL training needs enough relations to generate rules, so a three-edge graph may fail to train; use `OdinEngine(backend, auto_train=False)` for a quick structural check, or use your own graph for real scores. Only the mapping in the next section changes.
+This graph only illustrates the shape Odin expects and is too small to judge scores. Training can still fail or produce uninformative scores on a graph this size; use `OdinEngine(backend, auto_train=False)` for a quick structural check, or your own graph for real results. Only the mapping in the next section changes.
 
 ---
 
@@ -157,11 +157,11 @@ Whole-path retrieval is the main event, but the same engine gives you two more f
 
 ## Score a single edge
 
-Sometimes you do not want a path, just a yes-or-no on one relationship. `score_edge()` answers exactly that:
+Sometimes you do not want a path, just a plausibility score for one relationship. `score_edge()` answers exactly that:
 
 ```python
 score = engine.score_edge("CaseRecords/patient_001", "treated_by", "CaseRecords/doctor_smith")
-print(score)   # 0.0 (impossible) … 1.0 (highly plausible)
+print(score)   # 0.0 … 1.0: learned plausibility, not a calibrated probability
 ```
 
 It is the same NPLL signal Odin uses internally, exposed so you can drop it straight into an agent's decision logic. See [Scoring Edges](guides/edge-scoring.md).

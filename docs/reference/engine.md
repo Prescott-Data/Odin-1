@@ -78,7 +78,7 @@ result["paths"]               # ranked paths
 score_edge(src: str, rel: str, dst: str) -> float
 ```
 
-Returns the NPLL plausibility of a single edge, from `0.0` (impossible) to `1.0` (highly plausible).
+Returns the learned NPLL plausibility of a single edge, from `0.0` to `1.0`. Higher means a better match to patterns learned from the graph; it is not a calibrated probability or a verification of truth.
 
 ```python
 engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")

@@ -20,7 +20,11 @@ being converted into constant confidence.
 
 ## Implementing a backend
 
-All protocols live in `odin.backends` (`odin/backends/base.py`). `ArangoBackend`
+All protocols are defined in `odin.backends.base` (`odin/backends/base.py`).
+`GraphBackend`, `TrainingBackend`, `TripleSource` and `ModelStore` are also
+re-exported from `odin.backends`; `GlobalAccessBackend`,
+`SchemaInspectionBackend` and `SchemaIntrospector` are imported from
+`odin.backends.base`. `ArangoBackend`
 is the reference implementation; the in-memory example in
 [Adapters](../concepts/adapters.md) is the smallest retrieval-only one.
 

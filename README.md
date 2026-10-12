@@ -412,7 +412,7 @@ pytest tests/ --cov=odin --cov=npll --cov=retrieval --cov-report=html
 
 We welcome contributions! Areas of interest:
 
-- **Scalability**: Optimizations for graphs >10M entities
+- **Scalability**: Large-graph benchmarking and optimization
 - **Algorithms**: Alternative PPR implementations, new aggregators
 - **Database Support**: Neo4j, Neptune adapters
 - **Benchmarks**: Academic dataset comparisons
