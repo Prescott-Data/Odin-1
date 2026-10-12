@@ -24,6 +24,10 @@ class MyAccessor(GraphAccessor):
         """Yield (neighbor, relation, weight) for each incoming edge."""
         ...
 
+    def iter_out_edges(self, node: NodeId) -> Iterable[Dict[str, object]]:
+        """Yield one edge record per outgoing edge (see below)."""
+        ...
+
     def nodes(self, community_id: str) -> Iterable[NodeId]:
         """All node IDs in this community."""
         ...
@@ -41,7 +45,21 @@ class MyAccessor(GraphAccessor):
         ...
 ```
 
-If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.
+If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. The engine validates all seven methods at construction and raises `BackendConfigurationError` if one is missing.
+
+### Edge records
+
+`iter_out_edges(node)` yields one dictionary per outgoing edge, with the exact stored assertion. These keys are required:
+
+| Key | Meaning |
+|-----|---------|
+| `_id` | Stable, unique identity of the edge |
+| `u` | Source node ID (the `node` argument) |
+| `rel` | Exact relation label |
+| `v` | Target node ID |
+| `weight` | Numeric structural weight (`1.0` if your backend has none) |
+
+These keys are optional metadata, and may be `None` or omitted when your backend does not have them: `created_at`, `valid_from`, `valid_to`, `status`, and `provenance`. `ArangoCommunityAccessor` also returns `source_confidence`, `npll_posterior`, and `calibration`, and puts the raw stored document under `provenance["assertion"]`. `iter_out` and `iter_out_edges` must describe the same edges. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.
 
 ## Adapters that ship with Odin
 
@@ -141,7 +159,7 @@ accessor = CachedGraphAccessor(JanusGraphAccessor(g), cache_size=5000)
 
 ## Writing your own
 
-To add a backend, implement all six `GraphAccessor` methods. `iter_out` is the workhorse: given a node, return its outgoing `(neighbor, relation, weight)` tuples. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
+To add a backend, implement all seven `GraphAccessor` methods. `iter_out` and `iter_out_edges` are the workhorses: given a node, return its outgoing edges as `(neighbor, relation, weight)` tuples and as full edge records. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
 
 ## Next
 

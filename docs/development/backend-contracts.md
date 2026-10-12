@@ -8,8 +8,11 @@ installation and API changes. Neo4j engine support is not included yet.
 
 ## Engine capabilities
 
-Every engine backend supplies an accessor with `iter_out`, `iter_in`, `nodes`,
-`degree`, `get_node`, and `community_seed_norm`. The engine validates this
+Every engine backend supplies an accessor with `iter_out`, `iter_in`,
+`iter_out_edges`, `nodes`, `degree`, `get_node`, and `community_seed_norm`.
+`iter_out_edges` yields one record per outgoing edge with required keys `_id`,
+`u`, `rel`, `v` and `weight`, plus optional metadata; see
+[Edge records](../concepts/adapters.md#edge-records). The engine validates this
 surface at construction rather than relying on deferred attribute errors.
 
 Backends may be retrieval-only. They initialize with `auto_train=False` and
