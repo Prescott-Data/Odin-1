@@ -4,6 +4,8 @@ from __future__ import annotations
 import os
 import subprocess
 
+TIMEOUT = 120.0  # seconds per request; a stuck call fails instead of hanging the run
+
 
 class AnthropicProvider:
     """Anthropic Messages API. Reads ANTHROPIC_API_KEY."""
@@ -11,7 +13,7 @@ class AnthropicProvider:
     def __init__(self, model: str, max_tokens: int = 4096):
         import anthropic
 
-        self.client = anthropic.Anthropic()
+        self.client = anthropic.Anthropic(timeout=TIMEOUT, max_retries=2)
         self.model = model
         self.max_tokens = max_tokens
 
@@ -41,7 +43,7 @@ class OpenAIProvider(_ChatProvider):
     def __init__(self, model: str):
         import openai
 
-        super().__init__(openai.OpenAI(), model)
+        super().__init__(openai.OpenAI(timeout=TIMEOUT, max_retries=2), model)
 
 
 class AzureOpenAIProvider(_ChatProvider):
@@ -55,6 +57,8 @@ class AzureOpenAIProvider(_ChatProvider):
             azure_endpoint=os.environ["AZURE_ENDPOINT"],
             api_key=os.environ["AZURE_API_KEY"],
             api_version=os.environ["AZURE_API_VERSION"],
+            timeout=TIMEOUT,
+            max_retries=2,
         )
         super().__init__(client, deployment or os.environ["AZURE_DEPLOYMENT"])
 

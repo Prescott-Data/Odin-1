@@ -198,9 +198,14 @@ def main(argv=None) -> int:
 
     records = []
     for entry in load_prompts(args.only):
-        samples = [run_sample(provider, judge_provider, entry, m) for m in modes for _ in range(args.samples)]
+        samples = []
+        for with_skills in modes:
+            for n in range(args.samples):
+                label = "skill" if with_skills else "baseline"
+                print(f"[{entry['id']}] {label} sample {n + 1}/{args.samples}", flush=True)
+                samples.append(run_sample(provider, judge_provider, entry, with_skills))
         records.append({"id": entry["id"], "samples": samples})
-    Path(args.out).write_text(json.dumps(records, indent=2), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(records, indent=2), encoding="utf-8")
     print(summarize(records))
     print(f"\nFull results (complete replies, code and execution output): {args.out}")
     return 0

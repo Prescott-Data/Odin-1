@@ -132,7 +132,8 @@ def test_azure_provider_uses_the_openai_sdk_with_env_settings(monkeypatch):
     assert provider.complete("sys", "usr") == "hi"
     assert record["model"] == "my-deploy"
     assert record["client_kwargs"] == {"azure_endpoint": "https://example.openai.azure.com/",
-                                       "api_key": "test-key", "api_version": "2024-06-01"}
+                                       "api_key": "test-key", "api_version": "2024-06-01",
+                                       "timeout": providers.TIMEOUT, "max_retries": 2}
     assert [m["role"] for m in record["messages"]] == ["system", "user"]
 
 
@@ -149,7 +150,7 @@ def test_anthropic_provider_uses_the_anthropic_sdk(monkeypatch):
             return type("R", (), {"content": [type("B", (), {"type": "text", "text": "ok"})()]})()
 
     fake = types.ModuleType("anthropic")
-    fake.Anthropic = lambda: type("Client", (), {"messages": Messages()})()
+    fake.Anthropic = lambda **kwargs: type("Client", (), {"messages": Messages()})()
     monkeypatch.setitem(sys.modules, "anthropic", fake)
 
     assert providers.make_provider("anthropic", "some-model").complete("sys", "usr") == "ok"
