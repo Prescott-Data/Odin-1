@@ -18,6 +18,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGET_DIRS = (".github", ".claude", ".cursor", ".agents")
+DEFAULT_DIRS = (".claude", ".agents")
 SKILLS = ("odin", "odin-custom-backend")
 MANIFEST = ".odin-skill-manifest.json"
 LINK = re.compile(r"\]\((?!https?://|#|mailto:)([^)#\s]+)")
@@ -75,17 +76,26 @@ def test_source_version_matches_package_and_wheel(installed):
     assert version in out.stdout
 
 
-def test_fresh_install_writes_every_skill_to_every_target(installed, project):
+def test_default_install_writes_every_skill_to_claude_and_agents(installed, project):
     result = _init(installed, project)
+    assert result.returncode == 0, result.stdout + result.stderr
+    for target in DEFAULT_DIRS:
+        for skill in SKILLS:
+            assert (project / target / "skills" / skill / "SKILL.md").is_file()
+    assert not (project / ".github").exists() and not (project / ".cursor").exists()
+    assert result.stdout.count("installed") >= len(DEFAULT_DIRS) * len(SKILLS)
+
+
+def test_target_all_writes_every_skill_to_every_location(installed, project):
+    result = _init(installed, project, "--target", "all")
     assert result.returncode == 0, result.stdout + result.stderr
     for target in TARGET_DIRS:
         for skill in SKILLS:
             assert (project / target / "skills" / skill / "SKILL.md").is_file()
-    assert result.stdout.count("installed") >= len(TARGET_DIRS) * len(SKILLS)
 
 
 def test_installed_skills_reference_only_files_that_exist(installed, project):
-    assert _init(installed, project).returncode == 0
+    assert _init(installed, project, "--target", "all").returncode == 0
     for target in TARGET_DIRS:
         for skill in SKILLS:
             skill_dir = project / target / "skills" / skill
@@ -97,12 +107,12 @@ def test_installed_skills_reference_only_files_that_exist(installed, project):
 
 def test_manifest_records_version_and_hashes(installed, project):
     assert _init(installed, project).returncode == 0
-    manifest_path = project / ".github" / "skills" / MANIFEST
+    manifest_path = project / ".claude" / "skills" / MANIFEST
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["version"] == _source_version()
     assert manifest["files"], "manifest lists no files"
     for rel, digest in manifest["files"].items():
-        assert _sha(project / ".github" / "skills" / rel) == digest
+        assert _sha(project / ".claude" / "skills" / rel) == digest
 
 
 def test_refresh_keeps_user_edits_and_reports_them(installed, project):

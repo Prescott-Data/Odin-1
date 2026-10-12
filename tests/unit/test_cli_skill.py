@@ -143,9 +143,18 @@ def test_cli_reports_per_file_and_summary(tmp_path, monkeypatch, capsys):
     assert out.rstrip().splitlines()[-1].startswith("Summary: ")
 
 
-def test_default_target_is_all(tmp_path, monkeypatch):
+def test_default_targets_are_claude_and_agents(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli, "bundled_skills", lambda: BUNDLE_V1)
     assert main(["init", "--skill"]) == 0
+    for target in (".claude", ".agents"):
+        assert (tmp_path / target / "skills" / "odin" / "SKILL.md").is_file()
+    assert not (tmp_path / ".github").exists() and not (tmp_path / ".cursor").exists()
+
+
+def test_target_all_installs_every_location(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli, "bundled_skills", lambda: BUNDLE_V1)
+    assert main(["init", "--skill", "--target", "all"]) == 0
     for target in TARGETS.values():
         assert (tmp_path / target / "skills" / "odin" / "SKILL.md").is_file()

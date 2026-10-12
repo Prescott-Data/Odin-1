@@ -20,6 +20,7 @@ TARGETS = {
     "agents": ".agents",
 }
 MANIFEST_NAME = ".odin-skill-manifest.json"
+DEFAULT_TARGETS = ("claude", "agents")
 
 
 class FileResult(NamedTuple):
@@ -175,14 +176,15 @@ def main(argv=None) -> int:
     p_init.add_argument("--skill", action="store_true",
                         help="Install the Odin skills for AI coding agents.")
     p_init.add_argument("--target", action="append", choices=[*TARGETS, "all"],
-                        help="Where to install (repeatable). Default: all.")
+                        help="Where to install (repeatable): github, claude, cursor, agents, or all. "
+                             "Default: claude and agents.")
     p_init.add_argument("--force", action="store_true",
                         help="Overwrite skill files you have modified.")
 
     args = parser.parse_args(argv)
 
     if args.command == "init" and args.skill:
-        chosen = args.target or ["all"]
+        chosen = args.target or list(DEFAULT_TARGETS)
         targets = list(TARGETS) if "all" in chosen else list(dict.fromkeys(chosen))
         return _report(install_skills(Path.cwd(), targets, force=args.force))
 

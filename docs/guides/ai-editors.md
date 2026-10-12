@@ -23,18 +23,30 @@ Install Odin first, then run this from your project root:
 odin init --skill
 ```
 
-By default this writes both skills to every location below. Use `--target` (repeatable) to pick some:
+By default this installs both skills to `.claude/skills/` and `.agents/skills/`. Together those cover the tools below. Use `--target` (repeatable) to choose locations, or `--target all` for every one:
 
 ```bash
-odin init --skill --target github --target claude
+odin init --skill --target github
+odin init --skill --target all
 ```
 
-| `--target` | Directory | Read by |
-|---|---|---|
-| `github` | `.github/skills/` | GitHub Copilot |
-| `claude` | `.claude/skills/` | Claude Code |
-| `cursor` | `.cursor/skills/` | Cursor |
-| `agents` | `.agents/skills/` | Tools that use the shared `.agents` location |
+Each tool reads these project locations (from each vendor's documentation):
+
+| Tool | Reads |
+|---|---|
+| Claude Code | `.claude/skills/` |
+| GitHub Copilot (VS Code) | `.github/skills/`, `.claude/skills/`, `.agents/skills/` |
+| Cursor | `.cursor/skills/`, `.agents/skills/`, `.claude/skills/`, `.codex/skills/` |
+| OpenAI Codex | `.agents/skills/` |
+
+| `--target` | Directory |
+|---|---|
+| `claude` (default) | `.claude/skills/` |
+| `agents` (default) | `.agents/skills/` |
+| `github` | `.github/skills/` |
+| `cursor` | `.cursor/skills/` |
+
+Copilot and Cursor read more than one of these directories, so with the default two they can list the same skills twice. If you use only one of them, install a single target (for example `--target claude`, which Claude Code, Copilot and Cursor all read) to avoid the duplicates. Codex reads only `.agents/skills/` among these.
 
 Commit the files so everyone who opens the project gets an agent that knows Odin. The command prints one line per file (`installed`, `updated`, `unchanged`, `skipped`, `removed` or `failed`) and exits non-zero if anything failed.
 
