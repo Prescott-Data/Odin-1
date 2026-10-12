@@ -1,0 +1,95 @@
+[
+  {
+    "id": "top_path_text",
+    "prompt": "Write `solve(engine, seeds)` that returns a one-line string describing the top-ranked path Odin finds from `seeds`, for a human reader.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "seeds"],
+    "checks": ["runs", "labels_and_direction"]
+  },
+  {
+    "id": "format_for_llm",
+    "prompt": "Write `solve(engine, seeds)` that returns text to paste into an LLM prompt as evidence: every path Odin finds from `seeds`.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "seeds"],
+    "checks": ["runs", "labels_and_direction", "all_relations_present", "provenance_kept"]
+  },
+  {
+    "id": "empty_result",
+    "prompt": "Write `solve(engine, seeds)` that returns a short message for the user saying what Odin found from `seeds`.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "empty_seeds"],
+    "checks": ["runs", "empty_not_error"]
+  },
+  {
+    "id": "backend_failure",
+    "prompt": "Write `solve(engine, seeds)` that returns a short message for the user saying what Odin found from `seeds`.",
+    "skills": ["odin"], "execute": true, "args": ["failing_engine", "seeds"],
+    "checks": ["failure_not_hidden"]
+  },
+  {
+    "id": "configurable_threshold",
+    "prompt": "Write `solve(engine, seeds, min_triage)` that returns True when retrieval from `seeds` is worth investigating, using Odin's triage score and the cutoff `min_triage` supplied by the caller.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "seeds", 50],
+    "checks": ["runs", "no_hardcoded_threshold"]
+  },
+  {
+    "id": "score_one_edge",
+    "prompt": "Write `solve(engine)` that returns a sentence saying how well the graph supports the statement: claim_1 billed_by provider_9.",
+    "skills": ["odin"], "execute": true, "args": ["engine"],
+    "checks": ["runs", "score_edge_order", "no_truth_claims"],
+    "judge": ["Does the answer present the score as learned plausibility or a ranking signal, and not as proof or a calibrated probability that the statement is true?"]
+  },
+  {
+    "id": "custom_backend",
+    "prompt": "Write `solve(edges)` that takes a list of [source, relation, target] triples and returns an OdinEngine over a retrieval-only in-memory backend that you write. Do not use ArangoDB.",
+    "skills": ["odin-custom-backend"], "execute": true, "args": ["edges"],
+    "checks": ["runs", "backend_works"]
+  },
+  {
+    "id": "arango_setup",
+    "prompt": "Write `solve()` that builds and returns an OdinEngine for ArangoDB. The database is `my_graph` on the host in the ARANGO_HOSTS environment variable, with credentials in ARANGO_USER and ARANGO_PASSWORD. The node collection is `People`, the edge collection is `Knows`, and the relation field is `kind`.",
+    "skills": ["odin"], "execute": false, "args": [],
+    "expect_kwargs": {"node_collection": "People", "edge_collection": "Knows", "relation_field": "kind"},
+    "checks": ["explicit_backend", "no_literal_password"]
+  },
+  {
+    "id": "migrate_old_code",
+    "prompt": "Rewrite this code for the current Odin API and return it as `solve(db)` that returns the retrieval result. The collections are `Entities` and `Relations`, and the relation field is `label`.\n\n```python\nfrom odin import OdinEngine\nengine = OdinEngine(db)\nresult = engine.retrieve(seeds=['Entities/a'])\n```",
+    "skills": ["odin"], "execute": false, "args": [],
+    "expect_kwargs": {"node_collection": "Entities", "edge_collection": "Relations", "relation_field": "label"},
+    "checks": ["explicit_backend"]
+  },
+  {
+    "id": "path_node_sequence",
+    "prompt": "Write `solve(engine, seeds)` that returns the node sequence of the top-ranked path as a list of node IDs.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "seeds"],
+    "checks": ["runs", "no_nodes_key", "nodes_follow_edges"]
+  },
+  {
+    "id": "visible_truncation",
+    "prompt": "Write `solve(engine, seeds, limit)` that returns evidence text for an LLM containing at most `limit` paths from `seeds`.",
+    "skills": ["odin"], "execute": true, "args": ["engine", "seeds", 1],
+    "checks": ["runs", "truncation_visible"]
+  },
+  {
+    "id": "training_failure",
+    "prompt": "Write `solve(backend)` that builds `OdinEngine(backend)` with training on. If training fails, return a readable message string for the user; otherwise return the engine.",
+    "skills": ["odin"], "execute": false, "args": [],
+    "checks": ["handles_training_error"]
+  },
+  {
+    "id": "unrelated_networkx",
+    "prompt": "Write `solve(edges)` that computes personalized PageRank from the first node of an edge list with networkx and returns the scores.",
+    "skills": [], "execute": false, "args": [],
+    "checks": ["no_odin_import"]
+  },
+  {
+    "id": "unrelated_aql",
+    "prompt": "Write `solve(db)` using python-arango that returns every document in the `People` collection whose `age` is over 30.",
+    "skills": [], "execute": false, "args": [],
+    "checks": ["no_odin_import"]
+  },
+  {
+    "id": "unrelated_pandas",
+    "prompt": "Write `solve(rows)` that groups a list of dicts by the `team` key with pandas and returns the mean `score` per team.",
+    "skills": [], "execute": false, "args": [],
+    "checks": ["no_odin_import"]
+  }
+]
