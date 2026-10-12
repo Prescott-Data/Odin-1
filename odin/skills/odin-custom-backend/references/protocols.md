@@ -27,7 +27,7 @@ class SchemaInspectionBackend(Protocol):
 
 `OdinEngine` checks these seven methods at construction.
 
-```python
+```text
 def iter_out(self, node: str) -> Iterable[Tuple[str, str, float]]       # (neighbor, relation, weight)
 def iter_in(self, node: str) -> Iterable[Tuple[str, str, float]]        # (neighbor, relation, weight)
 def iter_out_edges(self, node: str) -> Iterable[Dict[str, object]]      # edge records, below
