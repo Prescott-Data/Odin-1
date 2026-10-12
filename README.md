@@ -337,9 +337,9 @@ result = engine.retrieve(
 
 ```python
 score = engine.score_edge(
-    head="entity/investment_fund",
-    relation="managed_by",
-    tail="entity/sanctioned_entity"
+    "entity/investment_fund",
+    "managed_by",
+    "entity/sanctioned_entity",
 )
 if score > 0.5:
     compliance_agent.flag_for_review()

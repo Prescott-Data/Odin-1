@@ -96,7 +96,7 @@ def format_paths(paths):
 
 `provenance` can hold the raw stored edge, which may include large fields such as embedding vectors. Filter those before sending text to a model, and state which fields you left out.
 
-You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for comparison:
+You can also let the agent pull context itself. Odin returns plain Python data, except `result["trace"]["params"]`, which is a dataclass: convert it with `dataclasses.asdict` (or drop `trace`) before `json.dumps` for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for comparison:
 
 ```
         seeds

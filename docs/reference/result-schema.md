@@ -57,7 +57,7 @@ Each path is best-first ranked and described by its **edges**:
 
 | Field | Meaning |
 |-------|---------|
-| `id` | Path identifier |
+| `id` | Path identifier. Currently `None`; the `"path_0"` in the example above is illustrative, so do not rely on it |
 | `score` | Combined path score (structural + semantic) |
 | `edges` | Ordered edges. Each carries `u`/`v` node IDs, the `relation`, optional `u_label`/`v_label`, a `confidence`, `created_at`, and `provenance` |
 
@@ -127,7 +127,9 @@ The scoring formula and guards are documented in [Triage & Insight Scoring](../c
 
 ## `trace`
 
-Observability data, safe to log or drop:
+Observability data. `params` is an `OrchestratorParams` dataclass, so convert it
+with `dataclasses.asdict` before passing the result to `json.dumps`; the rest is
+safe to log or drop:
 
 ```python
 {

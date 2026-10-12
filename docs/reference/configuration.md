@@ -4,7 +4,9 @@ icon: material/cog
 
 # Configuration
 
-All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.
+Most configuration is passed as arguments. The one environment variable Odin
+reads itself is `ODIN_REQUIRE_NPLL`: when it is `true`, an engine that would
+run without a learned model raises instead. This page collects every parameter in one place.
 
 ---
 
@@ -105,6 +107,7 @@ See [Backend migration](../guides/backend-migration.md).
 `get_config("OdinTriples")` in `npll.utils.config` selects the explicit
 production graph configuration. Its 32-dimensional entity/relation embeddings,
 64-dimensional rules, and 64-unit scorer are sized for production graph
-lifecycle operation. Bootstrap separately sets its trainer budget to 10 epochs
-and up to 5 E-M iterations per epoch.
+lifecycle operation. Bootstrap uses its `max_epochs` (200) and `em_iterations` (10)
+as safety limits, not targets: training stops when the E-M convergence criteria
+hold, and exhausting the limits raises `TrainingConvergenceError`.
 Unknown names, including the retired `ArangoDB_Triples`, raise `ValueError`.

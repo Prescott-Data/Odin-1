@@ -74,7 +74,7 @@ Add `--force` to overwrite files you edited.
 Tools that read `AGENTS.md` can be pointed at the skill with one line in your project's `AGENTS.md`:
 
 ```markdown
-When working with odin (odin-engine) code, read .github/skills/odin/SKILL.md first.
+When working with odin (odin-engine) code, read .agents/skills/odin/SKILL.md first.
 ```
 
 ## Any tool: llms.txt
