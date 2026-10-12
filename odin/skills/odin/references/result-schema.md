@@ -36,7 +36,7 @@ Authoritative page: https://odin.developers.prescottdata.io/reference/result-sch
 }
 ```
 
-- A path has no `nodes` field. Nodes are the first edge's `u` followed by every edge's `v`.
+- The documented node sequence is the first edge's `u` followed by every edge's `v`. Paths also carry internal keys such as `nodes` and `decomp`; they are not part of the documented schema, so do not depend on them.
 - `u_label`, `v_label`, `created_at` and `provenance` can be absent or empty. `created_at` is set only when the graph mapping configures a timestamp field (`edge_timestamp_field`).
 - `confidence` is learned plausibility (or a constant when `auto_train=False`), not a calibrated probability.
 - When the Arango backend supplies the raw stored edge, it is under `provenance["assertion"]`.

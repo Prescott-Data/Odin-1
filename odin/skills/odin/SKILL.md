@@ -76,7 +76,7 @@ for p in result["paths"]:
     nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
 ```
 
-Paths have no `nodes` field; derive nodes from `edges`. Each edge has `u`, `v`, `relation`, `confidence`, `created_at` and `provenance`. Full shape: `references/result-schema.md`.
+Derive nodes from `edges`. A path dict may also carry internal keys such as `nodes` and `decomp`; they are not part of the documented schema, so do not depend on them. Each edge has `u`, `v`, `relation`, `confidence`, `created_at` and `provenance`. Full shape: `references/result-schema.md`.
 
 ## Evidence rules
 
@@ -88,7 +88,7 @@ Paths have no `nodes` field; derive nodes from `edges`. Each edge has `u`, `v`, 
 
 ## Common mistakes
 
-- `path["nodes"]` does not exist. Use `path["edges"]`.
+- `path["nodes"]` is not a documented field. Use `path["edges"]`.
 - Motif fields are `edge_count` and `path_count`, not `count`. `relation_share[rel]` is `{"count", "share"}`.
 - `score_edge` takes `(src, rel, dst)` in that order.
 - `OdinEngine` takes a backend, never a raw database handle, URL or connection string.
