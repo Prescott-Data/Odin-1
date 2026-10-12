@@ -4,7 +4,7 @@ icon: material/robot
 
 # AI Agent Integration
 
-Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable: because Odin only ever ranks relationships that already exist in your graph, there is no hallucinated evidence for the agent to reason from.
+Odin was built to sit inside an AI agent's reasoning loop. The division is clean: Odin supplies structured, scored evidence, and the agent supplies the language reasoning on top of it. Keeping that boundary sharp is what makes the whole thing reliable: Odin only ever ranks relationships that exist in your graph, so every edge it returns can be traced to a stored record. Its scores are learned plausibility, not proof, so the agent still has to treat them as ranking signals and cite the sources.
 
 | Odin (the compass) | The agent (the explorer) |
 |--------------------|--------------------------|
@@ -17,34 +17,38 @@ In practice this comes together as a few recurring patterns. Most integrations u
 
 ## Retrieve, then reason
 
-The core loop is the one you will reach for most: retrieve scored evidence, gate on the triage score so the agent never burns tokens on a low-signal region, and hand the survivors to the LLM.
+The core loop is the one you will reach for most: retrieve scored evidence, skip regions your application considers low-signal, and hand the rest to the LLM. The cutoff is your application's decision, so pass it in rather than hard-coding it. Odin returns an empty result when there is no reachable evidence and raises an exception on failure; handle the two differently.
 
 ```python
-def investigate(engine, agent, seeds):
+def investigate(engine, agent, seeds, min_triage):
+    # Exceptions (backend, training, configuration) propagate: a failure is not "no evidence".
     result = engine.retrieve(seeds=seeds, max_paths=50, hop_limit=3)
 
-    if result["triage"]["score"] < 60:
-        return agent.note("Low-signal region; skipping.")
+    if not result["paths"]:
+        return agent.note("No reachable evidence for these seeds.")
+    if result["triage"]["score"] < min_triage:
+        return agent.note("Below the configured triage threshold; skipping.")
 
-    evidence = format_paths(result["paths"][:10])
-    motifs = result["aggregates"]["motifs"][:5]
+    evidence = format_paths(result["paths"])
     return agent.reason(
         prompt="Analyze these graph findings and explain the key risk.",
         evidence=evidence,
-        motifs=motifs,
+        motifs=result["aggregates"]["motifs"],
     )
 ```
 
+If the context window forces you to send fewer paths, cut deliberately and say so in the prompt, for example "showing 10 of 47 returned paths". Do not slice the list silently.
+
 ## Validate the agent's hypotheses
 
-Reasoning runs the other way too. When the LLM *proposes* a relationship, check it against the graph before acting on it with [`score_edge()`](edge-scoring.md), which closes the loop between free-form generation and verifiable structure:
+Reasoning runs the other way too. When the LLM *proposes* a relationship, compare it with what the graph has learned using [`score_edge()`](edge-scoring.md). The score says how well the proposal matches learned patterns; it does not confirm the claim is true, so use it to prioritize, and verify against source records before acting:
 
 ```python
 hypothesis = agent.propose_relationship()   # (src, rel, dst)
-if engine.score_edge(*hypothesis) > 0.7:
-    agent.act_on(hypothesis)
+if engine.score_edge(*hypothesis) >= min_plausibility:   # your application's cutoff
+    agent.verify_against_sources(hypothesis)
 else:
-    agent.reconsider(hypothesis, reason="not supported by the graph")
+    agent.reconsider(hypothesis, reason="weak match with learned graph patterns")
 ```
 
 ## Give the agent graph context
@@ -60,34 +64,39 @@ agent.load_context("schema.json")   # now the agent knows the collections/fields
 
 ## Escalate on the margin
 
-Finally, the triage score doubles as a clean three-way gate, a natural place to bring a human in only when it is actually warranted:
+Finally, the triage score can drive a three-way routing decision, a natural place to bring a human in only when it is warranted. Both cutoffs come from your application's configuration:
 
 ```python
 score = result["triage"]["score"]
-if score >= 75:
-    agent.act(result)          # strong signal, proceed
-elif score <= 40:
-    agent.skip(result)         # weak signal, drop it
+if score >= act_at:
+    agent.act(result)              # strong signal, proceed
+elif score <= skip_at:
+    agent.skip(result)             # weak signal, record that it was skipped
 else:
     human_review.enqueue(result)   # uncertain, ask a person
 ```
 
 ## Handing evidence to the LLM
 
-Across all of these, keep the payload you give the model compact and readable: paths as arrows, plus the motifs and the score:
+Across all of these, keep the payload readable, but do not drop what makes it evidence: every edge with its relation label and direction, its confidence, and its provenance:
 
 ```python
 def format_paths(paths):
     lines = []
     for p in paths:
-        edges = p["edges"]
-        nodes = [edges[0]["u"], *(e["v"] for e in edges)] if edges else []
-        chain = " -> ".join(str(n) for n in nodes)
-        lines.append(f"[{p['score']:.2f}] {chain}")
+        hops = []
+        for e in p["edges"]:
+            hops.append(
+                f"{e['u']} --{e['relation']}--> {e['v']}"
+                f" (confidence {e['confidence']:.2f}, source {e.get('provenance')})"
+            )
+        lines.append(f"[{p['score']:.2f}] " + "; ".join(hops))
     return "\n".join(lines)
 ```
 
-You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for validation:
+`provenance` can hold the raw stored edge, which may include large fields such as embedding vectors. Filter those before sending text to a model, and state which fields you left out.
+
+You can also let the agent pull context itself: Odin returns everything as plain Python data, so it serializes to JSON cleanly for tool calls. Put together, the patterns form a simple two-way contract: Odin sends scored evidence downstream, the agent sends hypotheses back for comparison:
 
 ```
         seeds

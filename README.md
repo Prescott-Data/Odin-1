@@ -197,6 +197,16 @@ Triage Score: 87/100
   [0.82] CaseRecords/provider_456 -> CaseRecords/medication_999 -> CaseRecords/patient_history
 ```
 
+### Use Odin with a coding agent
+
+Odin ships skills that teach coding agents (GitHub Copilot, Claude Code, Cursor and others) the API installed on your machine. Install Odin first, then from your project root:
+
+```bash
+odin init --skill
+```
+
+The skills come from the installed package, so they always match its version. Re-run the command after upgrading Odin; files you edited are kept and reported. See [AI editor setup](docs/guides/ai-editors.md).
+
 ### Automatic NPLL Lifecycle
 
 Odin automatically manages its NPLL model lifecycle:
