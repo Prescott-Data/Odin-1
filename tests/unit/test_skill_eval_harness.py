@@ -82,6 +82,20 @@ def test_empty_check_accepts_a_negated_failure_but_rejects_a_claimed_one():
     assert not run("The lookup failed, so there is no evidence.")
 
 
+def test_truncation_check_accepts_returned_and_showing_wording_but_not_silence():
+    from tests.skills.checks import truncation_visible
+
+    def run(text):
+        ctx = {"entry": {"args": ["engine", "seeds", 1]}, "code": "",
+               "result": {"returned": text, "stdout": "", "path_counts": [2]}}
+        return truncation_visible(ctx)[0]
+
+    assert run("Odin returned 2 paths; showing 1 paths.")
+    assert run("Showing 1 of 2 paths")
+    assert not run("claim_1 --[billed_by]--> provider_9")
+    assert not run("Showing the top path only")
+
+
 def test_skill_context_loads_skill_and_references():
     text = runner.skill_context(["odin"])
     assert "=== odin/SKILL.md ===" in text and "=== odin/references/errors.md ===" in text

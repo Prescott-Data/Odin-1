@@ -31,7 +31,7 @@
   },
   {
     "id": "score_one_edge",
-    "prompt": "Write `solve(engine)` that returns a sentence saying how well the graph supports the statement: claim_1 billed_by provider_9.",
+    "prompt": "Write `solve(engine)` that returns a sentence saying how well the Odin graph supports the statement: claim_1 billed_by provider_9.",
     "skills": ["odin"], "execute": true, "args": ["engine"],
     "checks": ["runs", "score_edge_order", "no_truth_claims"],
     "judge": ["Does the answer present the score as learned plausibility or a ranking signal, and not as proof or a calibrated probability that the statement is true?"]

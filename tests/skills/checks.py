@@ -129,8 +129,9 @@ def truncation_visible(ctx):
         return False, "engine.retrieve was never called"
     if total <= limit:
         return True, ""
-    pattern = rf"\b{limit}\b\D{{0,20}}\bof\b\D{{0,5}}\b{total}\b"
-    return _ok(re.search(pattern, text, re.I) is not None,
+    numbers = {int(n) for n in re.findall(r"\b\d+\b", text)}
+    says_so = re.search(r"\b(of|returned|total|available|omitted|out of)\b", text, re.I)
+    return _ok({limit, total} <= numbers and says_so is not None,
                f"output does not say it shows {limit} of {total} paths")
 
 
