@@ -73,3 +73,72 @@ def test_runner_scores_good_and_bad_providers_differently():
 def test_skill_context_loads_skill_and_references():
     text = runner.skill_context(["odin"])
     assert "=== odin/SKILL.md ===" in text and "=== odin/references/errors.md ===" in text
+
+
+def test_env_file_loads_without_overriding_and_ignores_comments(tmp_path, monkeypatch):
+    env = tmp_path / ".env"
+    env.write_text("# c\nAZURE_X=\"quoted\"\nexport AZURE_Y=plain\nKEEP=new\n\nnoequals\n", encoding="utf-8")
+    monkeypatch.setenv("KEEP", "old")
+    monkeypatch.delenv("AZURE_X", raising=False)
+    monkeypatch.delenv("AZURE_Y", raising=False)
+    runner.load_env_file(str(env))
+    import os
+    assert (os.environ["AZURE_X"], os.environ["AZURE_Y"], os.environ["KEEP"]) == ("quoted", "plain", "old")
+
+
+def _fake_chat_client(record):
+    class Completions:
+        def create(self, model, messages):
+            record["model"], record["messages"] = model, messages
+            message = type("M", (), {"content": "hi"})()
+            return type("R", (), {"choices": [type("C", (), {"message": message})()]})()
+
+    class Client:
+        def __init__(self, **kwargs):
+            record["client_kwargs"] = kwargs
+            self.chat = type("Chat", (), {"completions": Completions()})()
+
+    return Client
+
+
+def test_azure_provider_uses_the_openai_sdk_with_env_settings(monkeypatch):
+    import sys
+    import types
+    from tests.skills import providers
+
+    record = {}
+    fake = types.ModuleType("openai")
+    fake.AzureOpenAI = _fake_chat_client(record)
+    monkeypatch.setitem(sys.modules, "openai", fake)
+    monkeypatch.setenv("AZURE_ENDPOINT", "https://example.openai.azure.com/")
+    monkeypatch.setenv("AZURE_DEPLOYMENT", "my-deploy")
+    monkeypatch.setenv("AZURE_API_VERSION", "2024-06-01")
+    monkeypatch.setenv("AZURE_API_KEY", "test-key")
+
+    provider = providers.make_provider("azure")
+
+    assert provider.complete("sys", "usr") == "hi"
+    assert record["model"] == "my-deploy"
+    assert record["client_kwargs"] == {"azure_endpoint": "https://example.openai.azure.com/",
+                                       "api_key": "test-key", "api_version": "2024-06-01"}
+    assert [m["role"] for m in record["messages"]] == ["system", "user"]
+
+
+def test_anthropic_provider_uses_the_anthropic_sdk(monkeypatch):
+    import sys
+    import types
+    from tests.skills import providers
+
+    seen = {}
+
+    class Messages:
+        def create(self, **kwargs):
+            seen.update(kwargs)
+            return type("R", (), {"content": [type("B", (), {"type": "text", "text": "ok"})()]})()
+
+    fake = types.ModuleType("anthropic")
+    fake.Anthropic = lambda: type("Client", (), {"messages": Messages()})()
+    monkeypatch.setitem(sys.modules, "anthropic", fake)
+
+    assert providers.make_provider("anthropic", "some-model").complete("sys", "usr") == "ok"
+    assert seen["model"] == "some-model" and seen["system"] == "sys"

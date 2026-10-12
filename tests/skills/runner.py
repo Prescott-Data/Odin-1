@@ -11,9 +11,9 @@ Stages per sample:
      context. All references are loaded, so reference selection is not tested.
   3. checks: deterministic checks in checks.py, plus the judge rubric if any.
 
-Examples:
-  ANTHROPIC_API_KEY=... python -m tests.skills.runner --provider anthropic \\
-      --model MODEL --judge-model MODEL --samples 3 --out results.json
+Examples (needs `pip install -e ".[evals]"`):
+  python -m tests.skills.runner --provider azure --env-file path/to/.env --samples 3
+  ANTHROPIC_API_KEY=... python -m tests.skills.runner --provider anthropic --model MODEL
   python -m tests.skills.runner --provider command --command "claude -p" --mode skill
 
 Generated code is executed. Run this only in a disposable environment.
@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import subprocess
 import sys
@@ -164,10 +165,22 @@ def summarize(records: List[dict]) -> str:
     return "\n".join(lines)
 
 
+def load_env_file(path: str) -> None:
+    """Load KEY=VALUE lines into os.environ without overriding existing values or printing them."""
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().removeprefix("export ").strip()
+        os.environ.setdefault(key, value.strip().strip("'\""))
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--provider", choices=("anthropic", "command"), required=True)
-    ap.add_argument("--model", default="")
+    ap.add_argument("--provider", choices=("anthropic", "openai", "azure", "command"), required=True)
+    ap.add_argument("--env-file", help="file with KEY=VALUE lines, e.g. AZURE_* settings")
+    ap.add_argument("--model", default="", help="model, or Azure deployment (default: AZURE_DEPLOYMENT)")
     ap.add_argument("--judge-model", default="")
     ap.add_argument("--command", default="")
     ap.add_argument("--samples", type=int, default=3)
@@ -175,10 +188,12 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="*", help="prompt ids to run")
     ap.add_argument("--out", default="skill-eval-results.json")
     args = ap.parse_args(argv)
+    if args.env_file:
+        load_env_file(args.env_file)
 
     provider = make_provider(args.provider, args.model, args.command)
     judge_provider = make_provider(args.provider, args.judge_model, args.command) \
-        if (args.judge_model or args.provider == "command") else None
+        if args.judge_model else provider
     modes = {"skill": [True], "baseline": [False], "both": [False, True]}[args.mode]
 
     records = []
@@ -188,8 +203,6 @@ def main(argv=None) -> int:
     Path(args.out).write_text(json.dumps(records, indent=2), encoding="utf-8")
     print(summarize(records))
     print(f"\nFull results (complete replies, code and execution output): {args.out}")
-    if judge_provider is None:
-        print("Judged checks were skipped (no --judge-model).")
     return 0
 
 

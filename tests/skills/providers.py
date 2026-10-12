@@ -1,35 +1,62 @@
-"""Model providers for skill evals. Pluggable; no third-party dependencies."""
+"""Model providers for skill evals. SDKs are imported lazily (optional `evals` extra)."""
 from __future__ import annotations
 
-import json
 import os
 import subprocess
-import urllib.request
 
 
 class AnthropicProvider:
-    """Anthropic Messages API over HTTPS. Needs ANTHROPIC_API_KEY."""
+    """Anthropic Messages API. Reads ANTHROPIC_API_KEY."""
 
     def __init__(self, model: str, max_tokens: int = 4096):
+        import anthropic
+
+        self.client = anthropic.Anthropic()
         self.model = model
         self.max_tokens = max_tokens
-        self.key = os.environ["ANTHROPIC_API_KEY"]
 
     def complete(self, system: str, user: str) -> str:
-        body = json.dumps({
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "system": system,
-            "messages": [{"role": "user", "content": user}],
-        }).encode("utf-8")
-        request = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages", data=body, method="POST",
-            headers={"x-api-key": self.key, "anthropic-version": "2023-06-01",
-                     "content-type": "application/json"},
+        kwargs = {"system": system} if system else {}
+        reply = self.client.messages.create(
+            model=self.model, max_tokens=self.max_tokens,
+            messages=[{"role": "user", "content": user}], **kwargs)
+        return "".join(b.text for b in reply.content if b.type == "text")
+
+
+class _ChatProvider:
+    def __init__(self, client, model: str):
+        self.client = client
+        self.model = model
+
+    def complete(self, system: str, user: str) -> str:
+        messages = ([{"role": "system", "content": system}] if system else []) + \
+            [{"role": "user", "content": user}]
+        reply = self.client.chat.completions.create(model=self.model, messages=messages)
+        return reply.choices[0].message.content or ""
+
+
+class OpenAIProvider(_ChatProvider):
+    """OpenAI chat completions. Reads OPENAI_API_KEY."""
+
+    def __init__(self, model: str):
+        import openai
+
+        super().__init__(openai.OpenAI(), model)
+
+
+class AzureOpenAIProvider(_ChatProvider):
+    """Azure OpenAI. Reads AZURE_ENDPOINT, AZURE_API_KEY, AZURE_API_VERSION and, unless a
+    model is given, AZURE_DEPLOYMENT (the deployment name is the model)."""
+
+    def __init__(self, deployment: str = ""):
+        import openai
+
+        client = openai.AzureOpenAI(
+            azure_endpoint=os.environ["AZURE_ENDPOINT"],
+            api_key=os.environ["AZURE_API_KEY"],
+            api_version=os.environ["AZURE_API_VERSION"],
         )
-        with urllib.request.urlopen(request, timeout=300) as response:
-            payload = json.load(response)
-        return "".join(part.get("text", "") for part in payload["content"])
+        super().__init__(client, deployment or os.environ["AZURE_DEPLOYMENT"])
 
 
 class CommandProvider:
@@ -48,6 +75,10 @@ class CommandProvider:
 def make_provider(kind: str, model: str = "", command: str = ""):
     if kind == "anthropic":
         return AnthropicProvider(model)
+    if kind == "openai":
+        return OpenAIProvider(model)
+    if kind == "azure":
+        return AzureOpenAIProvider(model)
     if kind == "command":
         return CommandProvider(command)
     raise ValueError(f"unknown provider {kind!r}")
