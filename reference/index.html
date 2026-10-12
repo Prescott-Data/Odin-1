@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -887,6 +906,8 @@
       
         
       
+        
+      
     
     
     
@@ -960,6 +981,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1554,7 +1605,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1724,6 +1775,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1839,7 +1917,7 @@
 <p><a href="engine/">Read more →</a></p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.3 17.89c1.32-2.1.7-4.89-1.41-6.21a4.52 4.52 0 0 0-6.21 1.41C10.36 15.2 11 18 13.09 19.3c1.47.92 3.33.92 4.8 0L21 22.39 22.39 21zm-2-.62c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .96.99.95 2.57-.03 3.54zM19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5.81a6.3 6.3 0 0 1-1.31-2H5v-4h4.18c.16-.71.43-1.39.82-2H5V8h6v2.81a6.3 6.3 0 0 1 2-1.31V8h6v2a6.499 6.499 0 0 1 2 2V6a2 2 0 0 0-2-2"/></svg></span> <strong>SchemaInspector API</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.3 17.89c1.32-2.1.7-4.89-1.41-6.21a4.52 4.52 0 0 0-6.21 1.41C10.36 15.2 11 18 13.09 19.3c1.47.92 3.33.92 4.8 0L21 22.39 22.39 21zm-2-.62c-.98.98-2.56.97-3.54 0-.97-.98-.97-2.56.01-3.54.97-.97 2.55-.97 3.53 0 .96.99.95 2.57-.03 3.54zM19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5.81a6.3 6.3 0 0 1-1.31-2H5v-4h4.18c.16-.71.43-1.39.82-2H5V8h6v2.81a6.3 6.3 0 0 1 2-1.31V8h6v2a6.499 6.499 0 0 1 2 2V6a2 2 0 0 0-2-2"/></svg></span> <strong>Schema Inspection API</strong></p>
 <p>Runtime schema discovery.</p>
 <p><a href="schema/">Read more →</a></p>
 </li>
@@ -1867,7 +1945,7 @@
 </div>
 <hr />
 <h2 id="public-imports">Public imports<a class="headerlink" href="#public-imports" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span><span class="p">,</span> <span class="n">SchemaInspector</span><span class="p">,</span> <span class="n">inspect_arango_schema</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span><span class="p">,</span> <span class="n">inspect_schema</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -1882,12 +1960,8 @@
 <td>Main entry point: retrieval, scoring, anchors</td>
 </tr>
 <tr>
-<td><code>SchemaInspector</code></td>
-<td>Runtime ArangoDB schema discovery</td>
-</tr>
-<tr>
-<td><code>inspect_arango_schema</code></td>
-<td>One-call schema export helper</td>
+<td><code>inspect_schema</code></td>
+<td>One-call backend schema export helper</td>
 </tr>
 </tbody>
 </table>
@@ -1904,7 +1978,7 @@ The complete API surface, parameters, and data shapes.
 
     [Read more →](engine.md)
 
--   :material-table-search: **SchemaInspector API**
+-   :material-table-search: **Schema Inspection API**
 
     Runtime schema discovery.
 
@@ -1941,14 +2015,13 @@ The complete API surface, parameters, and data shapes.
 ## Public imports
 
 ```python
-from odin import OdinEngine, SchemaInspector, inspect_arango_schema
+from odin import OdinEngine, inspect_schema
 ```
 
 | Symbol | Purpose |
 |--------|---------|
 | `OdinEngine` | Main entry point: retrieval, scoring, anchors |
-| `SchemaInspector` | Runtime ArangoDB schema discovery |
-| `inspect_arango_schema` | One-call schema export helper |
+| `inspect_schema` | One-call backend schema export helper |
 
 `odin.__version__` reports the installed version.
 </script>
@@ -2082,7 +2155,7 @@ from odin import OdinEngine, SchemaInspector, inspect_arango_schema
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>

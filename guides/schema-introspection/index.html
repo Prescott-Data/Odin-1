@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -889,6 +908,8 @@
       
         
       
+        
+      
     
     
     
@@ -965,6 +986,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1150,17 +1201,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-collections-and-edges" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading collections and edges
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#exporting-the-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1172,10 +1212,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sampling-behavior" class="md-nav__link">
+  <a href="#refreshing-cached-inspection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sampling behavior
+        Refreshing cached inspection
       
     </span>
   </a>
@@ -1658,7 +1698,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1828,6 +1868,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1866,17 +1933,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-collections-and-edges" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading collections and edges
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#exporting-the-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1888,10 +1944,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sampling-behavior" class="md-nav__link">
+  <a href="#refreshing-cached-inspection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sampling behavior
+        Refreshing cached inspection
       
     </span>
   </a>
@@ -1978,124 +2034,96 @@
 
 
 <h1 id="schema-introspection">Schema Introspection<a class="headerlink" href="#schema-introspection" title="Permanent link">&para;</a></h1>
-<p><code>SchemaInspector</code> discovers your ArangoDB structure at runtime: every collection, its fields, and how edge collections connect. Agents that write their own AQL need that structure, and hard-coding it goes stale the moment the graph changes. Reading it live keeps it correct, which is what makes introspection useful both for priming agents and for generating documentation.</p>
+<p>Schema introspection is a backend capability. It lets agents inspect the graph
+structure they are about to query without assuming an ArangoDB data model.</p>
 <h2 id="basic-usage">Basic usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<p>Construct an inspector over a connected database and ask for the schema map:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaInspector</span>
+<p>Construct a backend, then ask Odin for its complete schema map:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">inspect_schema</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin.backends.arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoBackend</span><span class="p">,</span> <span class="n">ArangoGraphConfig</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">inspector</span> <span class="o">=</span> <span class="n">SchemaInspector</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">schema</span> <span class="o">=</span> <span class="n">inspector</span><span class="o">.</span><span class="n">get_schema_map</span><span class="p">()</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Database: </span><span class="si">{</span><span class="n">schema</span><span class="p">[</span><span class="s1">'database_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Collections: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">'collections'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Edge collections: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">'edges'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">ArangoGraphConfig</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">node_collection</span><span class="o">=</span><span class="s2">"CaseRecords"</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">edge_collection</span><span class="o">=</span><span class="s2">"EvidenceLinks"</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">relation_field</span><span class="o">=</span><span class="s2">"predicate"</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">schema</span> <span class="o">=</span> <span class="n">inspect_schema</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
 </span></code></pre></div>
-<p><code>get_schema_map()</code> returns a dictionary with <code>database_name</code>, <code>collections</code>, and <code>edges</code>. It is cached after the first call, so pass <code>refresh=True</code> when you want to rebuild it.</p>
-<h2 id="reading-collections-and-edges">Reading collections and edges<a class="headerlink" href="#reading-collections-and-edges" title="Permanent link">&para;</a></h2>
-<p>Each document collection reports its <code>name</code>, <code>type</code>, <code>count</code>, and the <code>fields</code> discovered by sampling:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">"collections"</span><span class="p">]:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">col</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">col</span><span class="p">[</span><span class="s1">'count'</span><span class="p">]</span><span class="si">}</span><span class="s2"> docs"</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  fields: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">col</span><span class="p">[</span><span class="s1">'fields'</span><span class="p">][:</span><span class="mi">5</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">info</span> <span class="o">=</span> <span class="n">inspector</span><span class="o">.</span><span class="n">get_collection_info</span><span class="p">(</span><span class="s2">"ExtractedEntities"</span><span class="p">)</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">"fields"</span><span class="p">])</span>
-</span></code></pre></div>
-<p>Edge collections additionally report which collections they connect, which is exactly the <code>_from</code>/<code>_to</code> mapping an agent needs to construct a valid traversal:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">edge</span> <span class="o">=</span> <span class="n">inspector</span><span class="o">.</span><span class="n">get_edge_info</span><span class="p">(</span><span class="s2">"ExtractedRelationships"</span><span class="p">)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"From:"</span><span class="p">,</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"from_collections"</span><span class="p">])</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"To:  "</span><span class="p">,</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"to_collections"</span><span class="p">])</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Fields:"</span><span class="p">,</span> <span class="n">edge</span><span class="p">[</span><span class="s2">"fields"</span><span class="p">])</span>
-</span></code></pre></div>
+<p>The returned map is backend-defined. ArangoDB reports document collections,
+edge collections, sampled fields, and edge endpoint collections. A backend
+that cannot inspect its schema raises <code>BackendCapabilityError</code> rather than
+inventing incomplete metadata.</p>
 <h2 id="exporting-the-schema">Exporting the schema<a class="headerlink" href="#exporting-the-schema" title="Permanent link">&para;</a></h2>
-<p>For agents and documentation, export the whole map to a file in one call:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">inspect_arango_schema</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">inspect_arango_schema</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="s2">"schema.json"</span><span class="p">)</span>
+<p>For agents and documentation, write the complete map to JSON:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">inspect_schema</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="s2">"schema.json"</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">agent</span><span class="o">.</span><span class="n">load_context</span><span class="p">(</span><span class="s2">"schema.json"</span><span class="p">)</span>
 </span></code></pre></div>
-<p>That exported file has several uses: priming an agent with graph context in its system prompt, auto-generating database schema documentation, validating that collection structures match across environments, and tracking schema evolution over time in version control.</p>
-<h2 id="sampling-behavior">Sampling behavior<a class="headerlink" href="#sampling-behavior" title="Permanent link">&para;</a></h2>
-<p>Field discovery samples a small number of documents per collection, set by <code>max_sample_docs</code> (default <code>5</code>). Raise it when your documents are highly heterogeneous and a small sample would miss fields:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">inspector</span> <span class="o">=</span> <span class="n">SchemaInspector</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">max_sample_docs</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<p>The exported file can prime an agent with graph context, generate database
+documentation, validate structures across environments, and track schema
+evolution in version control.</p>
+<h2 id="refreshing-cached-inspection">Refreshing cached inspection<a class="headerlink" href="#refreshing-cached-inspection" title="Permanent link">&para;</a></h2>
+<p>When a backend caches inspection results, request a new map after a schema
+change:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">schema</span> <span class="o">=</span> <span class="n">inspect_schema</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
-<p>System collections, whose names start with <code>_</code>, are skipped automatically.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
-<p>The full method surface is in the <a href="../../reference/schema/">SchemaInspector API</a>, and <a href="../agent-integration/">AI Agent Integration</a> shows introspection used to give an agent graph context.</p>
+<p>The full method surface is in the <a href="../../reference/schema/">Schema Inspection API</a>,
+and <a href="../agent-integration/">AI Agent Integration</a> shows introspection used to
+give an agent graph context.</p>
 <script type="text/markdown" id="jc-page-source"># Schema Introspection
 
-`SchemaInspector` discovers your ArangoDB structure at runtime: every collection, its fields, and how edge collections connect. Agents that write their own AQL need that structure, and hard-coding it goes stale the moment the graph changes. Reading it live keeps it correct, which is what makes introspection useful both for priming agents and for generating documentation.
+Schema introspection is a backend capability. It lets agents inspect the graph
+structure they are about to query without assuming an ArangoDB data model.
 
 ## Basic usage
 
-Construct an inspector over a connected database and ask for the schema map:
+Construct a backend, then ask Odin for its complete schema map:
 
 ```python
-from arango import ArangoClient
-from odin import SchemaInspector
+from odin import inspect_schema
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
-client = ArangoClient(hosts="http://localhost:8529")
-db = client.db("my_graph", username="root", password="")
-
-inspector = SchemaInspector(db)
-schema = inspector.get_schema_map()
-
-print(f"Database: {schema['database_name']}")
-print(f"Collections: {len(schema['collections'])}")
-print(f"Edge collections: {len(schema['edges'])}")
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
+schema = inspect_schema(backend)
 ```
 
-`get_schema_map()` returns a dictionary with `database_name`, `collections`, and `edges`. It is cached after the first call, so pass `refresh=True` when you want to rebuild it.
-
-## Reading collections and edges
-
-Each document collection reports its `name`, `type`, `count`, and the `fields` discovered by sampling:
-
-```python
-for col in schema["collections"]:
-    print(f"{col['name']}: {col['count']} docs")
-    print(f"  fields: {', '.join(col['fields'][:5])}")
-
-info = inspector.get_collection_info("ExtractedEntities")
-print(info["fields"])
-```
-
-Edge collections additionally report which collections they connect, which is exactly the `_from`/`_to` mapping an agent needs to construct a valid traversal:
-
-```python
-edge = inspector.get_edge_info("ExtractedRelationships")
-print("From:", edge["from_collections"])
-print("To:  ", edge["to_collections"])
-print("Fields:", edge["fields"])
-```
+The returned map is backend-defined. ArangoDB reports document collections,
+edge collections, sampled fields, and edge endpoint collections. A backend
+that cannot inspect its schema raises `BackendCapabilityError` rather than
+inventing incomplete metadata.
 
 ## Exporting the schema
 
-For agents and documentation, export the whole map to a file in one call:
+For agents and documentation, write the complete map to JSON:
 
 ```python
-from odin import inspect_arango_schema
-
-inspect_arango_schema(db, output_file="schema.json")
+inspect_schema(backend, output_file="schema.json")
+agent.load_context("schema.json")
 ```
 
-That exported file has several uses: priming an agent with graph context in its system prompt, auto-generating database schema documentation, validating that collection structures match across environments, and tracking schema evolution over time in version control.
+The exported file can prime an agent with graph context, generate database
+documentation, validate structures across environments, and track schema
+evolution in version control.
 
-## Sampling behavior
+## Refreshing cached inspection
 
-Field discovery samples a small number of documents per collection, set by `max_sample_docs` (default `5`). Raise it when your documents are highly heterogeneous and a small sample would miss fields:
+When a backend caches inspection results, request a new map after a schema
+change:
 
 ```python
-inspector = SchemaInspector(db, max_sample_docs=25)
+schema = inspect_schema(backend, refresh=True)
 ```
-
-System collections, whose names start with `_`, are skipped automatically.
 
 ## Next
 
-The full method surface is in the [SchemaInspector API](../reference/schema.md), and [AI Agent Integration](agent-integration.md) shows introspection used to give an agent graph context.
+The full method surface is in the [Schema Inspection API](../reference/schema.md),
+and [AI Agent Integration](agent-integration.md) shows introspection used to
+give an agent graph context.
 </script>
 
 
@@ -2227,7 +2255,7 @@ The full method surface is in the [SchemaInspector API](../reference/schema.md),
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

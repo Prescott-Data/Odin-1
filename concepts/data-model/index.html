@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -985,6 +1004,8 @@
       
         
       
+        
+      
     
     
     
@@ -1058,6 +1079,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1647,7 +1698,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1805,6 +1856,33 @@
     
   
     Enterprise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
   
 
     
@@ -1995,56 +2073,79 @@
 </tr>
 </tbody>
 </table>
-<p>Node IDs are opaque strings. In ArangoDB they follow the <code>collection/key</code> convention (<code>ExtractedEntities/claim_123</code>, say), and Odin passes them straight through without interpreting them.</p>
+<p>Node IDs are opaque strings. In ArangoDB they follow the <code>collection/key</code>
+convention (<code>CaseRecords/claim_123</code>, say), and Odin passes them straight
+through without interpreting them.</p>
 <h2 id="what-edges-can-carry">What edges can carry<a class="headerlink" href="#what-edges-can-carry" title="Permanent link">&para;</a></h2>
-<p>Odin works with a bare <code>_from</code>/<code>_to</code>/relation edge, but it makes use of richer metadata when it is present. A <code>weight</code> gives an edge structural importance; a <code>confidence</code> supplies a pre-existing plausibility (and falls back to <code>weight</code> when absent); <code>created_at</code> feeds the recency signal, and <code>provenance</code> links the edge back to a source document.</p>
+<p>Odin requires Arango endpoints and an explicitly mapped relation field. Optional
+metadata influences retrieval only through its mapping; a raw field named
+<code>created_at</code>, <code>weight</code>, or <code>confidence</code> is not automatically interpreted.</p>
 <table>
 <thead>
 <tr>
-<th>Field</th>
+<th>Mapping</th>
 <th>Used for</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>_from</code> / <code>_to</code></td>
-<td>Direction of the relationship</td>
+<td>Canonical full document IDs and edge direction</td>
 </tr>
 <tr>
-<td>relation / type</td>
-<td>The relation label</td>
+<td><code>relation_field</code></td>
+<td>Exact, non-empty relation label</td>
 </tr>
 <tr>
-<td><code>weight</code></td>
-<td>Optional structural weight</td>
+<td><code>edge_weight_field</code></td>
+<td>Structural weight; absent mapping means uniform weight</td>
 </tr>
 <tr>
-<td><code>confidence</code></td>
-<td>Optional pre-existing confidence (falls back to <code>weight</code>)</td>
+<td><code>edge_timestamp_field</code></td>
+<td>Canonical <code>created_at</code> metadata for aggregation</td>
 </tr>
 <tr>
-<td><code>created_at</code></td>
-<td>Optional recency signal in aggregation</td>
+<td><code>edge_valid_from_field</code> / <code>edge_valid_to_field</code></td>
+<td>Explicit validity metadata</td>
 </tr>
 <tr>
-<td><code>provenance</code></td>
-<td>Optional source/document reference</td>
+<td><code>edge_status_field</code></td>
+<td>Status metadata; <code>allowed_edge_statuses</code> explicitly enables filtering</td>
+</tr>
+<tr>
+<td><code>edge_provenance_fields</code> / <code>provenance_edge_collection</code></td>
+<td>Mapped source references</td>
 </tr>
 </tbody>
 </table>
-<p>None of the optional fields are required (Odin defaults them sensibly), but the more of them your edges carry, the more the <a href="../aggregation/">aggregation</a> and <a href="../scoring/">triage</a> signals have to work with. Richer edges simply produce more trustworthy scores.</p>
+<p>Retrieved edge confidence comes from the configured confidence provider. The full
+raw assertion is retained under <code>provenance.assertion</code>, independent of mapped
+metadata. Every application field, including numeric embedding vectors, is
+preserved. Callers apply model-input filtering at their tool boundary.</p>
 <h2 id="communities-scope-the-graph">Communities scope the graph<a class="headerlink" href="#communities-scope-the-graph" title="Permanent link">&para;</a></h2>
-<p>A <strong>community</strong> is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval, and the model behind it, focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with <code>community_mode</code>:</p>
+<p>A <strong>community</strong> is a named scope for exploration. On a large multi-tenant graph, it keeps retrieval focused on one tenant, dataset, or domain instead of the whole graph. You choose the behavior with <code>community_mode</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Global exploration across the whole graph (default)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Scoped to a single community</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"medicare_claims"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"mapping"</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">),</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Scoped to a single community</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">),</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">community_id</span><span class="o">=</span><span class="s2">"medicare_claims"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"mapping"</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>Communities are also the natural unit for <a href="../npll/">NPLL</a>: a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.</p>
+<p>For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Retrieval communities share the same global training artifact.</p>
 <h2 id="what-odin-does-not-need-from-you">What Odin does <em>not</em> need from you<a class="headerlink" href="#what-odin-does-not-need-from-you" title="Permanent link">&para;</a></h2>
-<p>Notably, there is a lot you do <strong>not</strong> have to prepare. There is no fixed schema to declare, because Odin discovers collections and fields at runtime via <a href="../../guides/schema-introspection/">Schema Introspection</a>. There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.</p>
-<p>The reference backend is <strong>ArangoDB</strong>, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See <a href="../adapters/">Adapters</a> for the interface and how to plug in a backend.</p>
+<p>Notably, there is a lot you do <strong>not</strong> have to prepare. There is no fixed Odin
+schema or collection name: you declare the small Arango mapping once with
+<code>ArangoGraphConfig</code>, and can inspect the rest with <a href="../../guides/schema-introspection/">Schema
+Introspection</a>. There are no pre-computed
+embeddings, because NPLL trains straight from the graph's edge structure. And
+there is no query language to write on your side: you hand Odin entity IDs and
+it handles the traversal.</p>
+<p>The reference backend is <strong>ArangoDB</strong>, but the graph accessor is an interface. <code>ArangoBackend</code> is the only complete backend today. A JanusGraph accessor ships for retrieval only, and you can implement the backend contracts for other stores such as Neo4j. See <a href="../adapters/">Adapters</a> for the accessor interface and <a href="../../development/backend-contracts/#implementing-a-backend">Backend contracts</a> for a full backend.</p>
 <hr />
 <p>With the graph model in hand, the natural next step is how Odin ranks importance within it, <a href="../ppr/">Personalized PageRank</a>, or the practical side of wiring up a database in <a href="../../guides/arangodb/">Connecting ArangoDB</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Data Model
@@ -2063,42 +2164,62 @@ An **entity** is a thing in your domain, addressed by an ID; a **relationship** 
 | **Path** | An ordered sequence of entities joined by edges | `A → B → C` |
 | **Seed** | An entity you start exploration from | `["entity/claim_123"]` |
 
-Node IDs are opaque strings. In ArangoDB they follow the `collection/key` convention (`ExtractedEntities/claim_123`, say), and Odin passes them straight through without interpreting them.
+Node IDs are opaque strings. In ArangoDB they follow the `collection/key`
+convention (`CaseRecords/claim_123`, say), and Odin passes them straight
+through without interpreting them.
 
 ## What edges can carry
 
-Odin works with a bare `_from`/`_to`/relation edge, but it makes use of richer metadata when it is present. A `weight` gives an edge structural importance; a `confidence` supplies a pre-existing plausibility (and falls back to `weight` when absent); `created_at` feeds the recency signal, and `provenance` links the edge back to a source document.
+Odin requires Arango endpoints and an explicitly mapped relation field. Optional
+metadata influences retrieval only through its mapping; a raw field named
+`created_at`, `weight`, or `confidence` is not automatically interpreted.
 
-| Field | Used for |
-|-------|----------|
-| `_from` / `_to` | Direction of the relationship |
-| relation / type | The relation label |
-| `weight` | Optional structural weight |
-| `confidence` | Optional pre-existing confidence (falls back to `weight`) |
-| `created_at` | Optional recency signal in aggregation |
-| `provenance` | Optional source/document reference |
+| Mapping | Used for |
+|---------|----------|
+| `_from` / `_to` | Canonical full document IDs and edge direction |
+| `relation_field` | Exact, non-empty relation label |
+| `edge_weight_field` | Structural weight; absent mapping means uniform weight |
+| `edge_timestamp_field` | Canonical `created_at` metadata for aggregation |
+| `edge_valid_from_field` / `edge_valid_to_field` | Explicit validity metadata |
+| `edge_status_field` | Status metadata; `allowed_edge_statuses` explicitly enables filtering |
+| `edge_provenance_fields` / `provenance_edge_collection` | Mapped source references |
 
-None of the optional fields are required (Odin defaults them sensibly), but the more of them your edges carry, the more the [aggregation](aggregation.md) and [triage](scoring.md) signals have to work with. Richer edges simply produce more trustworthy scores.
+Retrieved edge confidence comes from the configured confidence provider. The full
+raw assertion is retained under `provenance.assertion`, independent of mapped
+metadata. Every application field, including numeric embedding vectors, is
+preserved. Callers apply model-input filtering at their tool boundary.
 
 ## Communities scope the graph
 
-A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps a retrieval, and the model behind it, focused on one tenant, dataset, or domain instead of the whole thing. You choose the behavior with `community_mode`:
+A **community** is a named scope for exploration. On a large multi-tenant graph, it keeps retrieval focused on one tenant, dataset, or domain instead of the whole graph. You choose the behavior with `community_mode`:
 
 ```python
 # Global exploration across the whole graph (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+engine = OdinEngine(
+    ArangoBackend(db, graph),
+    community_id="global", community_mode="none",
+)
 
 # Scoped to a single community
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+engine = OdinEngine(
+    ArangoBackend(db, graph),
+    community_id="medicare_claims", community_mode="mapping",
+)
 ```
 
-Communities are also the natural unit for [NPLL](npll.md): a model learns the edge patterns of the community it was trained on, so scoping and semantics line up.
+For the current Arango backend, NPLL training remains global even when retrieval is community-scoped. Retrieval communities share the same global training artifact.
 
 ## What Odin does *not* need from you
 
-Notably, there is a lot you do **not** have to prepare. There is no fixed schema to declare, because Odin discovers collections and fields at runtime via [Schema Introspection](../guides/schema-introspection.md). There are no pre-computed embeddings, because NPLL trains straight from the graph's edge structure. And there is no query language to write on your side: you hand Odin entity IDs and it handles the traversal.
+Notably, there is a lot you do **not** have to prepare. There is no fixed Odin
+schema or collection name: you declare the small Arango mapping once with
+`ArangoGraphConfig`, and can inspect the rest with [Schema
+Introspection](../guides/schema-introspection.md). There are no pre-computed
+embeddings, because NPLL trains straight from the graph's edge structure. And
+there is no query language to write on your side: you hand Odin entity IDs and
+it handles the traversal.
 
-The reference backend is **ArangoDB**, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See [Adapters](adapters.md) for the interface and how to plug in a backend.
+The reference backend is **ArangoDB**, but the graph accessor is an interface. `ArangoBackend` is the only complete backend today. A JanusGraph accessor ships for retrieval only, and you can implement the backend contracts for other stores such as Neo4j. See [Adapters](adapters.md) for the accessor interface and [Backend contracts](../development/backend-contracts.md#implementing-a-backend) for a full backend.
 
 ---
 
@@ -2234,7 +2355,7 @@ With the graph model in hand, the natural next step is how Odin ranks importance
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -16,7 +16,7 @@
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../first-retrieval/">
+        <link rel="next" href="../backend-migration/">
       
       
         
@@ -376,6 +376,25 @@
     
   
   Enterprise
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
 
       </a>
     </li>
@@ -889,6 +908,8 @@
       
         
       
+        
+      
     
     
     
@@ -1030,6 +1051,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#map-your-graph-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Map your graph data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Map your graph data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-status-and-provenance-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional status and provenance filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#production-connections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1099,6 +1148,36 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1680,7 +1759,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1850,6 +1929,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1884,6 +1990,34 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#map-your-graph-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Map your graph data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Map your graph data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optional-status-and-provenance-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional status and provenance filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2024,27 +2158,73 @@
 <h1 id="connecting-arangodb">Connecting ArangoDB<a class="headerlink" href="#connecting-arangodb" title="Permanent link">&para;</a></h1>
 <p>Odin's reference backend is <a href="https://www.arangodb.com/">ArangoDB</a>. This guide covers connecting to it, doing so safely in production, and scoping exploration to a community.</p>
 <h2 id="connecting">Connecting<a class="headerlink" href="#connecting" title="Permanent link">&para;</a></h2>
-<p>The ArangoDB Python driver (<code>python-arango</code>) is installed automatically with <code>odin-engine</code> and imports as <code>arango</code>. You connect, select a database, and hand the resulting object to the engine:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">)</span>
+<p>Install the ArangoDB Python driver with the <code>arango</code> extra. It imports as
+<code>arango</code>; connect, select a database, and wrap the connected handle in
+<code>ArangoBackend</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"odin-engine[arango]"</span>
 </span></code></pre></div>
-<p>The important detail is that <code>OdinEngine</code> takes an already-connected <code>StandardDatabase</code> object and never manages credentials itself. That keeps secrets in your connection code and out of Odin entirely.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin.backends.arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoBackend</span><span class="p">,</span> <span class="n">ArangoGraphConfig</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">ArangoGraphConfig</span><span class="p">(</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">node_collection</span><span class="o">=</span><span class="s2">"CaseRecords"</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">edge_collection</span><span class="o">=</span><span class="s2">"EvidenceLinks"</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">relation_field</span><span class="o">=</span><span class="s2">"predicate"</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">entity_type_field</span><span class="o">=</span><span class="s2">"record_type"</span><span class="p">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="p">)</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+</span></code></pre></div>
+<p>The important detail is that <code>OdinEngine</code> takes a backend, while <code>ArangoBackend</code>
+uses an already-connected <code>StandardDatabase</code> object and never manages credentials
+itself. That keeps secrets in your connection code and out of Odin entirely.</p>
+<h2 id="map-your-graph-data">Map your graph data<a class="headerlink" href="#map-your-graph-data" title="Permanent link">&para;</a></h2>
+<p><code>ArangoGraphConfig</code> is required and makes the backend portable across your
+existing Arango schemas. Odin reads node IDs from <code>_id</code>, edge endpoints from
+<code>_from</code> and <code>_to</code>, and relation labels from the field you configure. It does
+not require collection names such as <code>ExtractedEntities</code> or a node label field.</p>
+<p>For the configuration above, an edge looks like:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"_from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CaseRecords/claim_1042"</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"_to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CaseRecords/person_73"</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">"predicate"</span><span class="p">:</span><span class="w"> </span><span class="s2">"submitted_by"</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>predicate</code> must be a non-empty string on every edge included in training.
+<code>record_type</code> is optional, but when configured its non-null node values must be
+non-empty strings. Odin adds these as <code>has_type</code> training triples. Optional
+retrieval metadata such as <code>weight</code>, <code>created_at</code>, and provenance can remain in
+your own fields; it is not required to train or retrieve. To make a numeric
+edge field affect structural traversal, set <code>edge_weight_field</code> explicitly.
+Without it, Odin assigns every edge a structural weight of <code>1.0</code> and does not
+assume a field named <code>weight</code>.</p>
+<p>Set <code>edge_timestamp_field</code>, <code>edge_valid_from_field</code>, <code>edge_valid_to_field</code>,
+<code>edge_status_field</code>, or <code>edge_provenance_fields</code> only when your graph supplies
+those signals. Omitted fields disable the corresponding signal rather than
+falling back to a named Arango property. The standalone Arango analytics and
+content helpers likewise require their collection and field mappings and return
+complete source documents; normal engine use needs only the graph mapping above.</p>
+<h3 id="optional-status-and-provenance-filters">Optional status and provenance filters<a class="headerlink" href="#optional-status-and-provenance-filters" title="Permanent link">&para;</a></h3>
+<p><code>edge_status_field</code> exposes metadata. Set <code>allowed_edge_statuses=("active",)</code> to
+filter edges by mapped status values. <code>provenance_target_collections=("Reports",)</code>
+restricts mapped provenance edges to those source collections. A configured
+provenance collection must exist; missing collections raise
+<code>BackendConfigurationError</code>.</p>
 <h2 id="production-connections">Production connections<a class="headerlink" href="#production-connections" title="Permanent link">&para;</a></h2>
 <p>Outside local development, never disable authentication. Use a dedicated, least-privilege user and pull secrets from the environment rather than the source:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_HOSTS"</span><span class="p">])</span>   <span class="c1"># e.g. https://db.internal:8529</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_DB"</span><span class="p">],</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">username</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_USER"</span><span class="p">],</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">password</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_PASSWORD"</span><span class="p">],</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_HOSTS"</span><span class="p">])</span>   <span class="c1"># e.g. https://db.internal:8529</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_DB"</span><span class="p">],</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">username</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_USER"</span><span class="p">],</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">password</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"ARANGO_PASSWORD"</span><span class="p">],</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">)</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Secrets</p>
@@ -2052,30 +2232,50 @@
 </div>
 <h2 id="a-local-database-with-docker">A local database with Docker<a class="headerlink" href="#a-local-database-with-docker" title="Permanent link">&para;</a></h2>
 <p>For development, Docker gives you an instance in one command:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_NO_AUTH</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>arangodb:3.12
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_NO_AUTH</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>arangodb:3.12
 </span></code></pre></div>
 <p><code>ARANGO_NO_AUTH</code> is fine locally but never in production. For an authenticated local instance, set a root password instead:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_ROOT_PASSWORD</span><span class="o">=</span>change-me<span class="w"> </span>arangodb:3.12
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_ROOT_PASSWORD</span><span class="o">=</span>change-me<span class="w"> </span>arangodb:3.12
 </span></code></pre></div>
 <h2 id="scoping-to-a-community">Scoping to a community<a class="headerlink" href="#scoping-to-a-community" title="Permanent link">&para;</a></h2>
-<p>A <a href="../../concepts/data-model/#communities-scope-the-graph">community</a> restricts exploration to a named subset of the graph. Reach for <code>community_mode="mapping"</code> when you have partitioned a large multi-tenant graph and want both retrieval and the NPLL model focused on one partition:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Global exploration (default)</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Scoped to one partition</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"medicare_claims"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"mapping"</span><span class="p">)</span>
+<p>A <a href="../../concepts/data-model/#communities-scope-the-graph">community</a> restricts exploration to a named subset of the graph. Reach for <code>community_mode="mapping"</code> when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Global exploration (default); `graph` is the explicit mapping above.</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Scoped to one partition. Add all three membership fields to `graph`.</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"medicare_claims"</span><span class="p">,</span> <span class="n">community_mode</span><span class="o">=</span><span class="s2">"mapping"</span><span class="p">)</span>
 </span></code></pre></div>
+<p>Mapping mode requires <code>membership_collection</code>, <code>membership_entity_field</code>, and
+<code>membership_community_field</code> together. Without that complete mapping Odin
+raises <code>BackendConfigurationError</code>; it never guesses a membership schema.
+Property mode instead requires <code>community_property_field</code>; Odin does not assume
+a node field named <code>community_id</code>.</p>
+<p>Bridge mapping requires <code>bridge_collection</code>, <code>bridge_entity_field</code>,
+<code>bridge_strength_field</code>, and <code>bridge_community_field</code>. Store full document IDs
+in the mapped entity field. Affinity mapping requires <code>affinity_collection</code>,
+<code>affinity_from_field</code>, <code>affinity_to_field</code>, and <code>affinity_score_field</code>.
+Each signal can be configured independently. Unconfigured signals issue no queries.</p>
+<p>Algorithm filters are opt-in: set <code>membership_algorithm_field</code>,
+<code>bridge_algorithm_field</code>, or <code>affinity_algorithm_field</code> with <code>community_algorithm</code>.
+Membership lookups use the same filter in scoped and global access. Configured
+query failures raise <code>BackendIOError</code> and are not cached as absent data.
+Membership metadata remains available in <code>community_mode="none"</code>, allowing
+cross-community affinity scoring during global exploration. Scoped traversal
+continues to respect its boundary.</p>
 <h2 id="verifying-it-worked">Verifying it worked<a class="headerlink" href="#verifying-it-worked" title="Permanent link">&para;</a></h2>
 <p><code>get_status()</code> confirms the connection and which intelligence mode you are in:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">get_status</span><span class="p">())</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># {'community_id': 'global', 'npll_loaded': True,</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">#  'intelligence_mode': 'NPLL', 'cache_size': 5000}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">get_status</span><span class="p">())</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># {'community_id': 'global', 'npll_loaded': True,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1">#  'intelligence_mode': 'NPLL', 'cache_size': 5000}</span>
 </span></code></pre></div>
-<p>An <code>intelligence_mode</code> of <code>Constant</code> means the NPLL model has not trained yet, which <a href="../npll-lifecycle/">Model Lifecycle</a> explains how to resolve.</p>
+<p>An <code>intelligence_mode</code> of <code>Constant</code> means NPLL was explicitly disabled with
+<code>auto_train=False</code>. Requested training failures raise. See <a href="../npll-lifecycle/">Model Lifecycle</a>.</p>
 <h2 id="other-backends">Other backends<a class="headerlink" href="#other-backends" title="Permanent link">&para;</a></h2>
-<p>The accessor layer is an interface (<code>retrieval/adapters.py</code>). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See <a href="../../concepts/adapters/">Adapters</a> for the full picture.</p>
+<p><code>ArangoBackend</code> is the only complete backend today. A JanusGraph accessor supports retrieval only, and Neo4j is planned. To build your own, see <a href="../../concepts/adapters/">Adapters</a> and <a href="../../development/backend-contracts/#implementing-a-backend">Backend contracts</a>.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <p>With a connection in place, run <a href="../first-retrieval/">Your First Retrieval</a>, or let an agent discover the graph's structure with <a href="../schema-introspection/">Schema Introspection</a>.</p>
 <script type="text/markdown" id="jc-page-source"># Connecting ArangoDB
@@ -2084,19 +2284,76 @@ Odin's reference backend is [ArangoDB](https://www.arangodb.com/). This guide co
 
 ## Connecting
 
-The ArangoDB Python driver (`python-arango`) is installed automatically with `odin-engine` and imports as `arango`. You connect, select a database, and hand the resulting object to the engine:
+Install the ArangoDB Python driver with the `arango` extra. It imports as
+`arango`; connect, select a database, and wrap the connected handle in
+`ArangoBackend`:
+
+```bash
+pip install "odin-engine[arango]"
+```
 
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+    entity_type_field="record_type",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend)
 ```
 
-The important detail is that `OdinEngine` takes an already-connected `StandardDatabase` object and never manages credentials itself. That keeps secrets in your connection code and out of Odin entirely.
+The important detail is that `OdinEngine` takes a backend, while `ArangoBackend`
+uses an already-connected `StandardDatabase` object and never manages credentials
+itself. That keeps secrets in your connection code and out of Odin entirely.
+
+## Map your graph data
+
+`ArangoGraphConfig` is required and makes the backend portable across your
+existing Arango schemas. Odin reads node IDs from `_id`, edge endpoints from
+`_from` and `_to`, and relation labels from the field you configure. It does
+not require collection names such as `ExtractedEntities` or a node label field.
+
+For the configuration above, an edge looks like:
+
+```json
+{
+  "_from": "CaseRecords/claim_1042",
+  "_to": "CaseRecords/person_73",
+  "predicate": "submitted_by"
+}
+```
+
+`predicate` must be a non-empty string on every edge included in training.
+`record_type` is optional, but when configured its non-null node values must be
+non-empty strings. Odin adds these as `has_type` training triples. Optional
+retrieval metadata such as `weight`, `created_at`, and provenance can remain in
+your own fields; it is not required to train or retrieve. To make a numeric
+edge field affect structural traversal, set `edge_weight_field` explicitly.
+Without it, Odin assigns every edge a structural weight of `1.0` and does not
+assume a field named `weight`.
+
+Set `edge_timestamp_field`, `edge_valid_from_field`, `edge_valid_to_field`,
+`edge_status_field`, or `edge_provenance_fields` only when your graph supplies
+those signals. Omitted fields disable the corresponding signal rather than
+falling back to a named Arango property. The standalone Arango analytics and
+content helpers likewise require their collection and field mappings and return
+complete source documents; normal engine use needs only the graph mapping above.
+
+### Optional status and provenance filters
+
+`edge_status_field` exposes metadata. Set `allowed_edge_statuses=("active",)` to
+filter edges by mapped status values. `provenance_target_collections=("Reports",)`
+restricts mapped provenance edges to those source collections. A configured
+provenance collection must exist; missing collections raise
+`BackendConfigurationError`.
 
 ## Production connections
 
@@ -2135,15 +2392,37 @@ docker run -d --name arango -p 8529:8529 \
 
 ## Scoping to a community
 
-A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want both retrieval and the NPLL model focused on one partition:
+A [community](../concepts/data-model.md#communities-scope-the-graph) restricts exploration to a named subset of the graph. Reach for `community_mode="mapping"` when you have partitioned a large multi-tenant graph and want scoped retrieval. Training remains global for the Arango backend:
 
 ```python
-# Global exploration (default)
-engine = OdinEngine(db, community_id="global", community_mode="none")
+# Global exploration (default); `graph` is the explicit mapping above.
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global", community_mode="none")
 
-# Scoped to one partition
-engine = OdinEngine(db, community_id="medicare_claims", community_mode="mapping")
+# Scoped to one partition. Add all three membership fields to `graph`.
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="medicare_claims", community_mode="mapping")
 ```
+
+Mapping mode requires `membership_collection`, `membership_entity_field`, and
+`membership_community_field` together. Without that complete mapping Odin
+raises `BackendConfigurationError`; it never guesses a membership schema.
+Property mode instead requires `community_property_field`; Odin does not assume
+a node field named `community_id`.
+
+Bridge mapping requires `bridge_collection`, `bridge_entity_field`,
+`bridge_strength_field`, and `bridge_community_field`. Store full document IDs
+in the mapped entity field. Affinity mapping requires `affinity_collection`,
+`affinity_from_field`, `affinity_to_field`, and `affinity_score_field`.
+Each signal can be configured independently. Unconfigured signals issue no queries.
+
+Algorithm filters are opt-in: set `membership_algorithm_field`,
+`bridge_algorithm_field`, or `affinity_algorithm_field` with `community_algorithm`.
+Membership lookups use the same filter in scoped and global access. Configured
+query failures raise `BackendIOError` and are not cached as absent data.
+Membership metadata remains available in `community_mode="none"`, allowing
+cross-community affinity scoring during global exploration. Scoped traversal
+continues to respect its boundary.
 
 ## Verifying it worked
 
@@ -2155,11 +2434,12 @@ print(engine.get_status())
 #  'intelligence_mode': 'NPLL', 'cache_size': 5000}
 ```
 
-An `intelligence_mode` of `Constant` means the NPLL model has not trained yet, which [Model Lifecycle](npll-lifecycle.md) explains how to resolve.
+An `intelligence_mode` of `Constant` means NPLL was explicitly disabled with
+`auto_train=False`. Requested training failures raise. See [Model Lifecycle](npll-lifecycle.md).
 
 ## Other backends
 
-The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See [Adapters](../concepts/adapters.md) for the full picture.
+`ArangoBackend` is the only complete backend today. A JanusGraph accessor supports retrieval only, and Neo4j is planned. To build your own, see [Adapters](../concepts/adapters.md) and [Backend contracts](../development/backend-contracts.md#implementing-a-backend).
 
 ## Next
 
@@ -2221,13 +2501,13 @@ With a connection in place, run [Your First Retrieval](first-retrieval.md), or l
         
         
           
-          <a href="../first-retrieval/" class="md-footer__link md-footer__link--next" aria-label="Next: Your First Retrieval">
+          <a href="../backend-migration/" class="md-footer__link md-footer__link--next" aria-label="Next: Backend Migration">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Your First Retrieval
+                Backend Migration
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2295,7 +2575,7 @@ With a connection in place, run [Your First Retrieval](first-retrieval.md), or l
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

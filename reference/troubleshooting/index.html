@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -887,6 +906,8 @@
       
         
       
+        
+      
     
     
     
@@ -960,6 +981,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1554,7 +1605,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1721,6 +1772,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#backend-migration-and-training-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend migration and training errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovering-from-corruptmodelerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovering from CorruptModelError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#retrieve-returns-no-paths" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1872,6 +1945,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1914,6 +2014,28 @@
     <span class="md-ellipsis">
       
         First retrieval is very slow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-migration-and-training-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend migration and training errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovering-from-corruptmodelerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovering from CorruptModelError
       
     </span>
   </a>
@@ -2069,19 +2191,108 @@
 <p>Common issues and how to resolve them.</p>
 <hr />
 <h2 id="intelligence_mode-is-constant-not-npll"><code>intelligence_mode</code> is <code>Constant</code>, not <code>NPLL</code><a class="headerlink" href="#intelligence_mode-is-constant-not-npll" title="Permanent link">&para;</a></h2>
-<p><code>engine.get_status()["intelligence_mode"] == "Constant"</code> means the NPLL model is not active. Causes:</p>
-<ul>
-<li><strong><code>auto_train=False</code></strong>: you disabled training. Set <code>auto_train=True</code>.</li>
-<li><strong>Empty or tiny graph</strong>: there were not enough edges to train a model.</li>
-<li><strong>Training raised</strong>: Odin caught an error and fell back. Check logs under the <code>odin</code> logger.</li>
-</ul>
+<p><code>engine.get_status()["intelligence_mode"] == "Constant"</code> means you explicitly
+disabled NPLL with <code>auto_train=False</code>. Set <code>auto_train=True</code> only when the backend
+supplies training capabilities and the graph is ready to train. Training
+failures raise instead of selecting constant confidence.</p>
 <p>You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"odin"</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="first-retrieval-is-very-slow">First retrieval is very slow<a class="headerlink" href="#first-retrieval-is-very-slow" title="Permanent link">&para;</a></h2>
-<p>The first <code>retrieve()</code> (or engine construction) trains or loads the NPLL model, taking <strong>2-5 minutes</strong> to train or <strong>~30 seconds</strong> to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See <a href="../../guides/production/">Production Deployment</a>.</p>
+<p>Engine construction trains or loads the NPLL model when <code>auto_train=True</code>;
+<code>retrieve()</code> does not start training. Startup cost depends on graph size and
+training settings. Construct the engine before serving traffic and reuse it.
+See <a href="../../guides/production/">Production Deployment</a>.</p>
+<h2 id="backend-migration-and-training-errors">Backend migration and training errors<a class="headerlink" href="#backend-migration-and-training-errors" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BackendConfigurationError</code></td>
+<td>Pass a complete backend, such as <code>ArangoBackend(db, graph)</code>, with a valid <code>ArangoGraphConfig</code>; inherited protocol placeholders do not count.</td>
+</tr>
+<tr>
+<td><code>BackendCapabilityError</code></td>
+<td>Supply the requested capability, or explicitly disable training for a retrieval-only backend.</td>
+</tr>
+<tr>
+<td><code>npll.TrainingError</code></td>
+<td>Inspect the exception cause and verify the graph contains valid training triples. Failed retraining leaves the active serving state intact.</td>
+</tr>
+<tr>
+<td><code>BackendIOError</code></td>
+<td>Check database connectivity, access permissions, and the original exception cause.</td>
+</tr>
+<tr>
+<td><code>CorruptModelError</code></td>
+<td>Follow the recovery procedure below to inspect and remove the affected saved artifact, then train a replacement.</td>
+</tr>
+<tr>
+<td><code>NewerModelVersionError</code></td>
+<td>Upgrade Odin to a reader supporting the stored artifact version; older workers must not overwrite it.</td>
+</tr>
+<tr>
+<td><code>ModelConflictError</code></td>
+<td>Another writer changed the artifact. Coordinate training and load the current artifact rather than blindly overwriting it.</td>
+</tr>
+</tbody>
+</table>
+<p>Invalid triple identities raise <code>BackendError</code>; Arango entity IDs and relation
+labels must be non-empty strings, and entity types must be strings when present.
+See <a href="../../guides/backend-migration/">Backend migration</a> for import changes and
+the first-startup retraining requirement.</p>
+<h2 id="recovering-from-corruptmodelerror">Recovering from <code>CorruptModelError</code><a class="headerlink" href="#recovering-from-corruptmodelerror" title="Permanent link">&para;</a></h2>
+<p>A corrupt model is not automatically overwritten. <code>retrain_model()</code> and forced
+bootstrap retraining still validate the saved artifact, so they do not bypass
+this error. For ArangoDB, export the affected document for diagnosis, stop workers
+that might train against the same graph, remove that specific saved document, and
+initialize Odin again to train a replacement.</p>
+<p>Use the same connected database and <code>ArangoGraphConfig</code> as the failing engine.
+<code>OdinModels</code> stores an envelope containing <code>namespace</code>, <code>model_key</code>, and <code>artifact</code>.
+Its <code>_key</code> is SHA-256 of compact UTF-8 JSON <code>[namespace, model_key]</code>, so the key is
+a hash rather than the literal <code>npll_current</code>. The namespace covers the database
+and training graph mappings; retrieval communities share this artifact.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin.backends.arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoBackend</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin.backends.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MODEL_KEY</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># db and graph are the exact connected handle and mapping used by your engine.</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">store</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">model_store</span><span class="p">()</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">store</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span> <span class="n">MODEL_KEY</span><span class="p">],</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>                     <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">storage_key</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">collection</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">collection</span><span class="p">(</span><span class="s2">"OdinModels"</span><span class="p">)</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">saved</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">storage_key</span><span class="p">)</span>  <span class="c1"># Raw read works even when artifact validation fails.</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="k">if</span> <span class="n">saved</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"No saved model found for this database and graph mapping"</span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">"odin-corrupt-model-</span><span class="si">{</span><span class="n">storage_key</span><span class="si">}</span><span class="s2">.json"</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">saved</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="c1"># Delete only the inspected revision. A concurrent replacement makes this fail.</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="n">collection</span><span class="o">.</span><span class="n">delete</span><span class="p">({</span><span class="s2">"_key"</span><span class="p">:</span> <span class="n">storage_key</span><span class="p">,</span> <span class="s2">"_rev"</span><span class="p">:</span> <span class="n">saved</span><span class="p">[</span><span class="s2">"_rev"</span><span class="p">]},</span> <span class="n">check_rev</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+<p>In the ArangoDB web UI, open <code>OdinModels</code>, locate the computed <code>_key</code>, export the
+complete document, and delete only that document before restarting workers.
+Do not delete the entire collection: it may contain models for other graphs.
+If the error is <code>NewerModelVersionError</code>, preserve the artifact and upgrade the
+reader instead; a newer artifact is not corruption.</p>
+<p>See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a> for training failures and
+revision conflicts. No Neo4j recovery procedure is provided until its model
+store is implemented.</p>
 <hr />
 <h2 id="retrieve-returns-no-paths"><code>retrieve()</code> returns no paths<a class="headerlink" href="#retrieve-returns-no-paths" title="Permanent link">&para;</a></h2>
 <p>An empty <code>paths</code> list with <code>summary["low_support"] == True</code> usually means:</p>
@@ -2091,12 +2302,12 @@
 <li>The scope (<code>community_id</code> / <code>community_mode</code>) <strong>excludes</strong> the relevant subgraph.</li>
 </ul>
 <p>Verify a seed exists and inspect its neighborhood:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">"entity/claim_123"</span><span class="p">)[</span><span class="s2">"degree"</span><span class="p">]</span>   <span class="c1"># should be &gt; 0</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">"entity/claim_123"</span><span class="p">)[</span><span class="s2">"degree"</span><span class="p">]</span>   <span class="c1"># should be &gt; 0</span>
 </span></code></pre></div>
 <hr />
 <h2 id="triage-score-is-surprisingly-low">Triage score is surprisingly low<a class="headerlink" href="#triage-score-is-surprisingly-low" title="Permanent link">&para;</a></h2>
 <p>Inspect the components, since a guard may have fired:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"triage"</span><span class="p">][</span><span class="s2">"components"</span><span class="p">]</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"triage"</span><span class="p">][</span><span class="s2">"components"</span><span class="p">]</span>
 </span></code></pre></div>
 <ul>
 <li><code>penalty == 15.0</code> → <strong>label coverage below 0.8</strong>; improve node/edge labeling.</li>
@@ -2114,19 +2325,19 @@
 <p>See <a href="../../guides/arangodb/">Connecting ArangoDB</a>.</p>
 <hr />
 <h2 id="importerror-wrong-package"><code>ImportError</code> / wrong package<a class="headerlink" href="#importerror-wrong-package" title="Permanent link">&para;</a></h2>
-<p>Install the <strong>published</strong> package and import the <strong>short</strong> name:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>odin-engine
+<p>Install the package and import the <strong>short</strong> name:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"odin-engine[arango]"</span>
 </span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>       <span class="c1"># correct</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># not: import odin_engine</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>       <span class="c1"># correct</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># not: import odin_engine</span>
 </span></code></pre></div>
 <hr />
 <h2 id="out-of-memory-on-large-graphs">Out-of-memory on large graphs<a class="headerlink" href="#out-of-memory-on-large-graphs" title="Permanent link">&para;</a></h2>
-<p>Memory scales with <code>cache_size</code> and graph density (~500 MB-2 GB typical). Lower <code>cache_size</code> to reduce the resident working set at the cost of more database round-trips. See <a href="../../concepts/caching/">Caching</a>.</p>
+<p>Memory scales with <code>cache_size</code> and graph density; measure it on your data. Lower <code>cache_size</code> to reduce the resident working set at the cost of more database round-trips. See <a href="../../concepts/caching/">Caching</a>.</p>
 <hr />
 <h2 id="high-latency">High latency<a class="headerlink" href="#high-latency" title="Permanent link">&para;</a></h2>
 <p>Inspect where time goes before changing parameters:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"trace"</span><span class="p">][</span><span class="s2">"timings_ms"</span><span class="p">]</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"trace"</span><span class="p">][</span><span class="s2">"timings_ms"</span><span class="p">]</span>
 </span></code></pre></div>
 <p>Then, per <a href="../../guides/tuning/">Tuning Retrieval</a>: narrow <code>beam_width</code>, reduce <code>hop_limit</code>, or tighten seeds.</p>
 <hr />
@@ -2140,11 +2351,10 @@ Common issues and how to resolve them.
 
 ## `intelligence_mode` is `Constant`, not `NPLL`
 
-`engine.get_status()["intelligence_mode"] == "Constant"` means the NPLL model is not active. Causes:
-
-- **`auto_train=False`**: you disabled training. Set `auto_train=True`.
-- **Empty or tiny graph**: there were not enough edges to train a model.
-- **Training raised**: Odin caught an error and fell back. Check logs under the `odin` logger.
+`engine.get_status()["intelligence_mode"] == "Constant"` means you explicitly
+disabled NPLL with `auto_train=False`. Set `auto_train=True` only when the backend
+supplies training capabilities and the graph is ready to train. Training
+failures raise instead of selecting constant confidence.
 
 You still get PPR-driven structural exploration in constant mode; you lose semantic pruning until a model trains. See [Model Lifecycle](../guides/npll-lifecycle.md).
 
@@ -2157,7 +2367,79 @@ logging.getLogger("odin").setLevel(logging.INFO)
 
 ## First retrieval is very slow
 
-The first `retrieve()` (or engine construction) trains or loads the NPLL model, taking **2-5 minutes** to train or **~30 seconds** to load. Warm the engine before serving traffic, and reuse a single engine instance rather than constructing one per request. See [Production Deployment](../guides/production.md).
+Engine construction trains or loads the NPLL model when `auto_train=True`;
+`retrieve()` does not start training. Startup cost depends on graph size and
+training settings. Construct the engine before serving traffic and reuse it.
+See [Production Deployment](../guides/production.md).
+
+## Backend migration and training errors
+
+| Error | Action |
+| --- | --- |
+| `BackendConfigurationError` | Pass a complete backend, such as `ArangoBackend(db, graph)`, with a valid `ArangoGraphConfig`; inherited protocol placeholders do not count. |
+| `BackendCapabilityError` | Supply the requested capability, or explicitly disable training for a retrieval-only backend. |
+| `npll.TrainingError` | Inspect the exception cause and verify the graph contains valid training triples. Failed retraining leaves the active serving state intact. |
+| `BackendIOError` | Check database connectivity, access permissions, and the original exception cause. |
+| `CorruptModelError` | Follow the recovery procedure below to inspect and remove the affected saved artifact, then train a replacement. |
+| `NewerModelVersionError` | Upgrade Odin to a reader supporting the stored artifact version; older workers must not overwrite it. |
+| `ModelConflictError` | Another writer changed the artifact. Coordinate training and load the current artifact rather than blindly overwriting it. |
+
+Invalid triple identities raise `BackendError`; Arango entity IDs and relation
+labels must be non-empty strings, and entity types must be strings when present.
+See [Backend migration](../guides/backend-migration.md) for import changes and
+the first-startup retraining requirement.
+
+## Recovering from `CorruptModelError`
+
+A corrupt model is not automatically overwritten. `retrain_model()` and forced
+bootstrap retraining still validate the saved artifact, so they do not bypass
+this error. For ArangoDB, export the affected document for diagnosis, stop workers
+that might train against the same graph, remove that specific saved document, and
+initialize Odin again to train a replacement.
+
+Use the same connected database and `ArangoGraphConfig` as the failing engine.
+`OdinModels` stores an envelope containing `namespace`, `model_key`, and `artifact`.
+Its `_key` is SHA-256 of compact UTF-8 JSON `[namespace, model_key]`, so the key is
+a hash rather than the literal `npll_current`. The namespace covers the database
+and training graph mappings; retrieval communities share this artifact.
+
+```python
+import hashlib
+import json
+from pathlib import Path
+
+from odin import OdinEngine
+from odin.backends.arango import ArangoBackend
+from odin.backends.base import MODEL_KEY
+
+# db and graph are the exact connected handle and mapping used by your engine.
+backend = ArangoBackend(db, graph)
+store = backend.model_store()
+payload = json.dumps([store.namespace, MODEL_KEY],
+                     ensure_ascii=False, separators=(",", ":"))
+storage_key = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+collection = db.collection("OdinModels")
+saved = collection.get(storage_key)  # Raw read works even when artifact validation fails.
+if saved is None:
+    raise RuntimeError("No saved model found for this database and graph mapping")
+
+Path(f"odin-corrupt-model-{storage_key}.json").write_text(
+    json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
+
+# Delete only the inspected revision. A concurrent replacement makes this fail.
+collection.delete({"_key": storage_key, "_rev": saved["_rev"]}, check_rev=True)
+engine = OdinEngine(backend, auto_train=True)
+```
+
+In the ArangoDB web UI, open `OdinModels`, locate the computed `_key`, export the
+complete document, and delete only that document before restarting workers.
+Do not delete the entire collection: it may contain models for other graphs.
+If the error is `NewerModelVersionError`, preserve the artifact and upgrade the
+reader instead; a newer artifact is not corruption.
+
+See [Model Lifecycle](../guides/npll-lifecycle.md) for training failures and
+revision conflicts. No Neo4j recovery procedure is provided until its model
+store is implemented.
 
 ---
 
@@ -2205,10 +2487,10 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 
 ## `ImportError` / wrong package
 
-Install the **published** package and import the **short** name:
+Install the package and import the **short** name:
 
 ```bash
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
 
 ```python
@@ -2220,7 +2502,7 @@ from odin import OdinEngine       # correct
 
 ## Out-of-memory on large graphs
 
-Memory scales with `cache_size` and graph density (~500 MB-2 GB typical). Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
+Memory scales with `cache_size` and graph density; measure it on your data. Lower `cache_size` to reduce the resident working set at the cost of more database round-trips. See [Caching](../concepts/caching.md).
 
 ---
 
@@ -2370,7 +2652,7 @@ Open an issue with a minimal reproduction: [github.com/Prescott-Data/Odin-1/issu
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

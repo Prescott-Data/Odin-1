@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -889,6 +908,8 @@
       
         
       
+        
+      
     
     
     
@@ -965,6 +986,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1259,10 +1310,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-has-been-run-on" class="md-nav__link">
+  <a href="#performance-evidence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it has been run on
+        Performance evidence
       
     </span>
   </a>
@@ -1702,7 +1753,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1872,6 +1923,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1899,10 +1977,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-has-been-run-on" class="md-nav__link">
+  <a href="#performance-evidence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it has been run on
+        Performance evidence
       
     </span>
   </a>
@@ -2067,46 +2145,22 @@
 
 <h1 id="production-deployment">Production Deployment<a class="headerlink" href="#production-deployment" title="Permanent link">&para;</a></h1>
 <p>Running Odin against a real graph at scale comes down to a handful of concerns: sizing the host, keeping the cache warm, managing the model, and making the system observable. This guide works through each in turn.</p>
-<h2 id="what-it-has-been-run-on">What it has been run on<a class="headerlink" href="#what-it-has-been-run-on" title="Permanent link">&para;</a></h2>
-<p>Odin has been deployed on graphs ranging from 10K to 5M entities, with typical end-to-end latency of 300 to 800 ms for a 50-path retrieval at a 3-hop limit. Some representative deployments:</p>
-<table>
-<thead>
-<tr>
-<th>Graph</th>
-<th>Entities</th>
-<th>Edges</th>
-<th>Typical retrieval</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Healthcare KG</td>
-<td>2.3M</td>
-<td>8.7M</td>
-<td>~450 ms</td>
-</tr>
-<tr>
-<td>Insurance claims</td>
-<td>850K</td>
-<td>4.1M</td>
-<td>~320 ms</td>
-</tr>
-<tr>
-<td>Supply chain</td>
-<td>450K</td>
-<td>2.3M</td>
-<td>~280 ms</td>
-</tr>
-</tbody>
-</table>
+<h2 id="performance-evidence">Performance evidence<a class="headerlink" href="#performance-evidence" title="Permanent link">&para;</a></h2>
+<p>Odin has no published benchmark across graph sizes, so treat latency and memory as things to measure on your own data and hardware. The only recorded measurements are from one small local run (<code>compliance_docs</code>, 171 nodes and 173 edges, local ArangoDB): about 98 seconds for fresh initialization, about 0.16 seconds for a cached model reload, and 292 returned paths from 32 seeds. These describe that run only and do not predict behavior on large graphs. Large-graph performance is untested.</p>
 <h2 id="sizing-the-host">Sizing the host<a class="headerlink" href="#sizing-the-host" title="Permanent link">&para;</a></h2>
-<p>Memory is the resource to plan around: expect roughly 500 MB to 2 GB depending on <code>cache_size</code> and graph density. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL, but CPU inference is enough for scoring, so no GPU is needed. Above all, aim for a warm cache (a hit rate above 80%) before you judge latency, and tune <code>cache_size</code> to hold the working set of your typical queries as described in <a href="../../concepts/caching/">Caching</a>.</p>
+<p>Memory is the resource to plan around, and it grows with <code>cache_size</code> and graph density; measure it on your data. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL; the scorer is a small model, but check inference cost on your hardware before assuming a GPU is unnecessary. Watch the cache hit rate before you judge latency, and tune <code>cache_size</code> to hold the working set of your typical queries as described in <a href="../../concepts/caching/">Caching</a>.</p>
 <h2 id="managing-the-model">Managing the model<a class="headerlink" href="#managing-the-model" title="Permanent link">&para;</a></h2>
-<p>The first retrieval after startup trains or loads the <a href="../npll-lifecycle/">NPLL model</a>: loading persisted weights takes about thirty seconds, training from scratch two to five minutes. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in <a href="../npll-lifecycle/">Model Lifecycle</a>.</p>
+<p>Engine construction trains or loads the <a href="../npll-lifecycle/">NPLL model</a>: compatible artifacts load learned tensors without training. Startup still reads and fingerprints the graph; measure its cost on your data and hardware. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in <a href="../npll-lifecycle/">Model Lifecycle</a>.</p>
 <h2 id="concurrency">Concurrency<a class="headerlink" href="#concurrency" title="Permanent link">&para;</a></h2>
-<p>An <code>OdinEngine</code> holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per community and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. For multi-tenant serving, keep a small pool of engines keyed by <code>community_id</code>.</p>
+<p>An <code>OdinEngine</code> holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per configured graph and retrieval scope and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. Community scope is optional and requires an explicit membership mapping. If you use it, each scope can have its own engine while sharing the globally trained artifact. For multi-tenant serving, key engine pools by database, graph mapping, and retrieval scope; a community ID alone does not isolate tenants.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
-<p>Odin never manages credentials itself, which keeps the security story simple. Give it a dedicated, least-privilege ArangoDB user scoped to the database it needs, and inject secrets from the environment or a secrets manager rather than hard-coding them; Odin takes an already-connected <code>db</code> handle and never logs credentials. In production, keep the database on a private network and terminate TLS in front of ArangoDB. See <a href="../arangodb/#production-connections">Connecting ArangoDB</a> for the connection details.</p>
+<p>Your application owns credentials and connections. For ArangoDB, use a dedicated
+user scoped to the database it needs, obtain credentials from the environment
+or a secrets manager, and pass the connected handle plus an explicit
+<code>ArangoGraphConfig</code> to <code>ArangoBackend(db, graph)</code>.
+Pass that backend to <code>OdinEngine</code>. In production, keep the database on a private
+network and terminate TLS in front of ArangoDB. See
+<a href="../arangodb/#production-connections">Connecting ArangoDB</a> for details.</p>
 <h2 id="observability">Observability<a class="headerlink" href="#observability" title="Permanent link">&para;</a></h2>
 <p>Every result carries a trace you can log or export straight to your metrics stack:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">result</span><span class="p">[</span><span class="s2">"trace"</span><span class="p">][</span><span class="s2">"timings_ms"</span><span class="p">]</span>   <span class="c1"># per-stage timings incl. 'total'</span>
@@ -2115,17 +2169,18 @@
 </span></code></pre></div>
 <p>Emitting <code>triage["score"]</code> and <code>timings_ms["total"]</code> as metrics lets you watch signal quality and latency drift over time, which is usually the earliest sign that a model needs retraining.</p>
 <h2 id="containerizing">Containerizing<a class="headerlink" href="#containerizing" title="Permanent link">&para;</a></h2>
-<p>The repository ships a minimal <code>Dockerfile</code>. For a service, install the package on a slim Python base and add your own code on top:</p>
+<p>Odin is a library; create a Dockerfile for your service:</p>
 <div class="language-dockerfile highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">FROM</span><span class="w"> </span><span class="s">python:3.11-slim</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>odin-engine
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c"># ... copy your service code, set env, run</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/opt/odin</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span><span class="s2">"odin-engine[arango]"</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c"># ... copy your service code, set env, run</span>
 </span></code></pre></div>
 <p>Provide the ArangoDB connection through environment variables at runtime.</p>
 <h2 id="pre-flight-checklist">Pre-flight checklist<a class="headerlink" href="#pre-flight-checklist" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] Dedicated, least-privilege ArangoDB user</li>
 <li>[ ] Credentials injected via environment or secrets manager</li>
-<li>[ ] Engine constructed once per community and reused</li>
+<li>[ ] Engine constructed once per graph and retrieval scope and reused</li>
 <li>[ ] Engine warmed (model loaded) before serving</li>
 <li>[ ] <code>cache_size</code> tuned to the working set</li>
 <li>[ ] <code>timings_ms</code> and <code>triage.score</code> exported as metrics</li>
@@ -2137,31 +2192,31 @@
 
 Running Odin against a real graph at scale comes down to a handful of concerns: sizing the host, keeping the cache warm, managing the model, and making the system observable. This guide works through each in turn.
 
-## What it has been run on
+## Performance evidence
 
-Odin has been deployed on graphs ranging from 10K to 5M entities, with typical end-to-end latency of 300 to 800 ms for a 50-path retrieval at a 3-hop limit. Some representative deployments:
-
-| Graph | Entities | Edges | Typical retrieval |
-|-------|----------|-------|-------------------|
-| Healthcare KG | 2.3M | 8.7M | ~450 ms |
-| Insurance claims | 850K | 4.1M | ~320 ms |
-| Supply chain | 450K | 2.3M | ~280 ms |
+Odin has no published benchmark across graph sizes, so treat latency and memory as things to measure on your own data and hardware. The only recorded measurements are from one small local run (`compliance_docs`, 171 nodes and 173 edges, local ArangoDB): about 98 seconds for fresh initialization, about 0.16 seconds for a cached model reload, and 292 returned paths from 32 seeds. These describe that run only and do not predict behavior on large graphs. Large-graph performance is untested.
 
 ## Sizing the host
 
-Memory is the resource to plan around: expect roughly 500 MB to 2 GB depending on `cache_size` and graph density. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL, but CPU inference is enough for scoring, so no GPU is needed. Above all, aim for a warm cache (a hit rate above 80%) before you judge latency, and tune `cache_size` to hold the working set of your typical queries as described in [Caching](../concepts/caching.md).
+Memory is the resource to plan around, and it grows with `cache_size` and graph density; measure it on your data. PPR and beam search are CPU-bound, so scale horizontally for concurrency rather than reaching for a bigger box. PyTorch is required for NPLL; the scorer is a small model, but check inference cost on your hardware before assuming a GPU is unnecessary. Watch the cache hit rate before you judge latency, and tune `cache_size` to hold the working set of your typical queries as described in [Caching](../concepts/caching.md).
 
 ## Managing the model
 
-The first retrieval after startup trains or loads the [NPLL model](npll-lifecycle.md): loading persisted weights takes about thirty seconds, training from scratch two to five minutes. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in [Model Lifecycle](npll-lifecycle.md).
+Engine construction trains or loads the [NPLL model](npll-lifecycle.md): compatible artifacts load learned tensors without training. Startup still reads and fingerprints the graph; measure its cost on your data and hardware. Warm the engine before it serves traffic so no request pays that cost. Because the weights live in the database rather than in files, there is nothing to ship or mount, but the ArangoDB user does need read and write access to the weights collection. Retrain on structural change, not on every write, following the rules in [Model Lifecycle](npll-lifecycle.md).
 
 ## Concurrency
 
-An `OdinEngine` holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per community and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. For multi-tenant serving, keep a small pool of engines keyed by `community_id`.
+An `OdinEngine` holds a cache and a loaded model, which makes it something to build once and reuse. Construct one engine per configured graph and retrieval scope and share it across requests; constructing a fresh engine per request would pay the warm-up cost every time. Community scope is optional and requires an explicit membership mapping. If you use it, each scope can have its own engine while sharing the globally trained artifact. For multi-tenant serving, key engine pools by database, graph mapping, and retrieval scope; a community ID alone does not isolate tenants.
 
 ## Security
 
-Odin never manages credentials itself, which keeps the security story simple. Give it a dedicated, least-privilege ArangoDB user scoped to the database it needs, and inject secrets from the environment or a secrets manager rather than hard-coding them; Odin takes an already-connected `db` handle and never logs credentials. In production, keep the database on a private network and terminate TLS in front of ArangoDB. See [Connecting ArangoDB](arangodb.md#production-connections) for the connection details.
+Your application owns credentials and connections. For ArangoDB, use a dedicated
+user scoped to the database it needs, obtain credentials from the environment
+or a secrets manager, and pass the connected handle plus an explicit
+`ArangoGraphConfig` to `ArangoBackend(db, graph)`.
+Pass that backend to `OdinEngine`. In production, keep the database on a private
+network and terminate TLS in front of ArangoDB. See
+[Connecting ArangoDB](arangodb.md#production-connections) for details.
 
 ## Observability
 
@@ -2177,11 +2232,12 @@ Emitting `triage["score"]` and `timings_ms["total"]` as metrics lets you watch s
 
 ## Containerizing
 
-The repository ships a minimal `Dockerfile`. For a service, install the package on a slim Python base and add your own code on top:
+Odin is a library; create a Dockerfile for your service:
 
 ```dockerfile
 FROM python:3.11-slim
-RUN pip install --no-cache-dir odin-engine
+WORKDIR /opt/odin
+RUN pip install --no-cache-dir "odin-engine[arango]"
 # ... copy your service code, set env, run
 ```
 
@@ -2191,7 +2247,7 @@ Provide the ArangoDB connection through environment variables at runtime.
 
 - [ ] Dedicated, least-privilege ArangoDB user
 - [ ] Credentials injected via environment or secrets manager
-- [ ] Engine constructed once per community and reused
+- [ ] Engine constructed once per graph and retrieval scope and reused
 - [ ] Engine warmed (model loaded) before serving
 - [ ] `cache_size` tuned to the working set
 - [ ] `timings_ms` and `triage.score` exported as metrics
@@ -2331,7 +2387,7 @@ Provide the ArangoDB connection through environment variables at runtime.
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -974,6 +993,8 @@
       
         
       
+        
+      
     
     
     
@@ -1047,6 +1068,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1636,7 +1687,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1806,6 +1857,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1937,9 +2015,10 @@
 <p>Graph exploration is repetitive by nature: PPR and beam search revisit the same nodes and edges constantly. To keep that from turning into a flood of database round-trips, Odin wraps every graph read in an LRU cache, so warm data is served from memory.</p>
 <h2 id="two-layers-one-goal">Two layers, one goal<a class="headerlink" href="#two-layers-one-goal" title="Permanent link">&para;</a></h2>
 <p>There are actually two caches working together. The <strong>graph accessor</strong> cache sits over ArangoDB: when you build an engine, the raw accessor is wrapped in a <code>CachedGraphAccessor</code>, and every node fetch and neighbor lookup during a walk goes through it.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>   <span class="c1"># LRU size for graph reads</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>  <span class="c1"># `graph` is your ArangoGraphConfig</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>   <span class="c1"># LRU size for graph reads</span>
 </span></code></pre></div>
-<p>Above that, the <strong>NPLL confidence</strong> layer caches <code>score_edge</code> results internally. Because a beam search evaluates the same <code>(head, relation, tail)</code> triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.</p>
+<p>Above that, the <strong>NPLL confidence</strong> layer caches <code>score_edge</code> results internally. Because a beam search evaluates the same <code>(head, relation, tail)</code> triples over and over, this avoids repeated model evaluation after the first lookup; measure the effect on your own data and hardware.</p>
 <table>
 <thead>
 <tr>
@@ -1962,9 +2041,9 @@
 </tbody>
 </table>
 <h2 id="why-it-matters-for-latency">Why it matters for latency<a class="headerlink" href="#why-it-matters-for-latency" title="Permanent link">&para;</a></h2>
-<p>The payoff is concrete. On a warm cache Odin sees <strong>&gt;80% hit rates</strong> after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical <strong>300-800 ms</strong> range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in <a href="../../guides/production/">production</a>.</p>
+<p>A warm cache avoids repeated database reads and model evaluations, so latency is typically lower once the working set has filled; hit rates and latency depend on your graph and queries, so measure them. The first retrieval after startup is slower while the cache fills, which is why warming an engine before it serves traffic matters in <a href="../../guides/production/">production</a>.</p>
 <h2 id="sizing-the-cache">Sizing the cache<a class="headerlink" href="#sizing-the-cache" title="Permanent link">&para;</a></h2>
-<p><code>cache_size</code> is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly <strong>500 MB-2 GB</strong> of memory depending on cache size and graph density.</p>
+<p><code>cache_size</code> is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Memory use grows with cache size and graph density; measure it on your own data.</p>
 <p>One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a <strong>significant</strong> data change, construct a fresh engine, and if the edge patterns themselves shifted, <a href="../../guides/npll-lifecycle/">retrain the NPLL model</a>, so stale structure does not linger.</p>
 <hr />
 <p>Cache size is one dial among a few; <a href="../../guides/tuning/">Tuning Retrieval</a> covers how it interacts with beam width and hops, and <a href="../../guides/production/">Production Deployment</a> puts it in the context of real workloads.</p>
@@ -1977,10 +2056,11 @@ Graph exploration is repetitive by nature: PPR and beam search revisit the same 
 There are actually two caches working together. The **graph accessor** cache sits over ArangoDB: when you build an engine, the raw accessor is wrapped in a `CachedGraphAccessor`, and every node fetch and neighbor lookup during a walk goes through it.
 
 ```python
-engine = OdinEngine(db, cache_size=5000)   # LRU size for graph reads
+backend = ArangoBackend(db, graph)  # `graph` is your ArangoGraphConfig
+engine = OdinEngine(backend, cache_size=5000)   # LRU size for graph reads
 ```
 
-Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.
+Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this avoids repeated model evaluation after the first lookup; measure the effect on your own data and hardware.
 
 | Layer | What it caches | Controlled by |
 |-------|----------------|---------------|
@@ -1989,11 +2069,11 @@ Above that, the **NPLL confidence** layer caches `score_edge` results internally
 
 ## Why it matters for latency
 
-The payoff is concrete. On a warm cache Odin sees **&gt;80% hit rates** after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical **300-800 ms** range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
+A warm cache avoids repeated database reads and model evaluations, so latency is typically lower once the working set has filled; hit rates and latency depend on your graph and queries, so measure them. The first retrieval after startup is slower while the cache fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
 
 ## Sizing the cache
 
-`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly **500 MB-2 GB** of memory depending on cache size and graph density.
+`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Memory use grows with cache size and graph density; measure it on your own data.
 
 One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a **significant** data change, construct a fresh engine, and if the edge patterns themselves shifted, [retrain the NPLL model](../guides/npll-lifecycle.md), so stale structure does not linger.
 
@@ -2131,7 +2211,7 @@ Cache size is one dial among a few; [Tuning Retrieval](../guides/tuning.md) cove
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

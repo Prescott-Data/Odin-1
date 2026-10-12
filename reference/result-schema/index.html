@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -887,6 +906,8 @@
       
         
       
+        
+      
     
     
     
@@ -960,6 +981,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1554,7 +1605,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1839,6 +1890,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -2099,7 +2177,7 @@
 <tbody>
 <tr>
 <td><code>id</code></td>
-<td>Path identifier</td>
+<td>Path identifier. Currently <code>None</code>; the <code>"path_0"</code> in the example above is illustrative, so do not rely on it</td>
 </tr>
 <tr>
 <td><code>score</code></td>
@@ -2111,7 +2189,7 @@
 </tr>
 </tbody>
 </table>
-<p>A path has no separate <code>nodes</code> field; the node sequence is the first edge's <code>u</code> followed by every edge's <code>v</code>:</p>
+<p>The documented node sequence is the first edge's <code>u</code> followed by every edge's <code>v</code>. A path may also carry internal keys such as <code>nodes</code> and <code>decomp</code>; they are not part of the documented schema and may change, so do not depend on them:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s2">"paths"</span><span class="p">][:</span><span class="mi">5</span><span class="p">]:</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">edges</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">"edges"</span><span class="p">]</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"u"</span><span class="p">],</span> <span class="o">*</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">"v"</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">)]</span> <span class="k">if</span> <span class="n">edges</span> <span class="k">else</span> <span class="p">[]</span>
@@ -2162,7 +2240,9 @@
 <p>The scoring formula and guards are documented in <a href="../../concepts/scoring/">Triage &amp; Insight Scoring</a>.</p>
 <hr />
 <h2 id="trace"><code>trace</code><a class="headerlink" href="#trace" title="Permanent link">&para;</a></h2>
-<p>Observability data, safe to log or drop:</p>
+<p>Observability data. <code>params</code> is an <code>OrchestratorParams</code> dataclass, so convert it
+with <code>dataclasses.asdict</code> before passing the result to <code>json.dumps</code>; the rest is
+safe to log or drop:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="s2">"ppr"</span><span class="p">:</span>  <span class="p">{</span><span class="o">...</span><span class="p">},</span>                     <span class="c1"># PPR trace</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">"beam"</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span>                     <span class="c1"># beam-search trace</span>
@@ -2231,11 +2311,11 @@ Each path is best-first ranked and described by its **edges**:
 
 | Field | Meaning |
 |-------|---------|
-| `id` | Path identifier |
+| `id` | Path identifier. Currently `None`; the `"path_0"` in the example above is illustrative, so do not rely on it |
 | `score` | Combined path score (structural + semantic) |
 | `edges` | Ordered edges. Each carries `u`/`v` node IDs, the `relation`, optional `u_label`/`v_label`, a `confidence`, `created_at`, and `provenance` |
 
-A path has no separate `nodes` field; the node sequence is the first edge's `u` followed by every edge's `v`:
+The documented node sequence is the first edge's `u` followed by every edge's `v`. A path may also carry internal keys such as `nodes` and `decomp`; they are not part of the documented schema and may change, so do not depend on them:
 
 ```python
 for p in result["paths"][:5]:
@@ -2301,7 +2381,9 @@ The scoring formula and guards are documented in [Triage &amp; Insight Scoring](
 
 ## `trace`
 
-Observability data, safe to log or drop:
+Observability data. `params` is an `OrchestratorParams` dataclass, so convert it
+with `dataclasses.asdict` before passing the result to `json.dumps`; the rest is
+safe to log or drop:
 
 ```python
 {
@@ -2453,7 +2535,7 @@ When there is insufficient support (for example, seeds with no reachable neighbo
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

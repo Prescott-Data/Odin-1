@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -558,6 +577,17 @@
     <span class="md-ellipsis">
       
         Start ArangoDB
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-a-small-sample-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load a small sample graph
       
     </span>
   </a>
@@ -1024,6 +1054,8 @@
       
         
       
+        
+      
     
     
     
@@ -1097,6 +1129,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1686,7 +1748,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1856,6 +1918,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1909,6 +1998,17 @@
     <span class="md-ellipsis">
       
         Start ArangoDB
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-a-small-sample-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load a small sample graph
       
     </span>
   </a>
@@ -1999,10 +2099,17 @@
 
 
 <h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.</p>
+<div class="admonition note">
+<p class="admonition-title">Upgrading from 0.3.0</p>
+<p>The engine now takes an explicit backend. See the
+<a href="../guides/backend-migration/">migration guide</a> when updating existing code.</p>
+</div>
+<p>This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes.</p>
 <hr />
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
-<p>Odin needs <strong>Python 3.9+</strong> and a <strong>graph database</strong>; the reference backend is <a href="https://www.arangodb.com/">ArangoDB</a> 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.</p>
+<p>Odin needs <strong>Python 3.9+</strong> and a graph backend. This guide uses ArangoDB 3.10
+or later. NPLL training runs in your Python process; <code>ArangoBackend</code> reads the
+graph and persists the resulting model artifact in ArangoDB.</p>
 <table>
 <thead>
 <tr>
@@ -2025,25 +2132,20 @@
 </tr>
 </tbody>
 </table>
-<p>PyTorch, <code>python-arango</code>, NumPy, scikit-learn, and <code>gremlinpython</code> are pulled in automatically with the package.</p>
+<p>The core package includes PyTorch, NumPy, scikit-learn, and the retrieval
+dependencies. Install the <code>arango</code> extra to use the reference backend.</p>
 <hr />
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>odin-engine
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"odin-engine[arango]"</span>
 </span></code></pre></div>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">From PyPI</label><label for="__tabbed_1_2">From source</label><label for="__tabbed_1_3">With dev tools</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">From source</label><label for="__tabbed_1_2">With dev tools</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>odin-engine
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[arango]"</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Prescott-Data/Odin-1.git
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>Odin-1
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</span></code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span><span class="w">   </span><span class="c1"># pytest, flake8, bandit</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span><span class="w">   </span><span class="c1"># pytest, flake8, bandit</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -2051,35 +2153,72 @@
 <div class="admonition note">
 <p class="admonition-title">Import name</p>
 <p>The package is published as <code>odin-engine</code>, but you import it as <code>odin</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span><span class="p">,</span> <span class="n">SchemaInspector</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span><span class="p">,</span> <span class="n">inspect_schema</span>
 </span></code></pre></div>
 </div>
 <hr />
 <h2 id="start-arangodb">Start ArangoDB<a class="headerlink" href="#start-arangodb" title="Permanent link">&para;</a></h2>
 <p>If you do not already have a graph database, the fastest way to get one locally is Docker:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_NO_AUTH</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>arangodb:3.12
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>arango<span class="w"> </span>-p<span class="w"> </span><span class="m">8529</span>:8529<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ARANGO_NO_AUTH</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>arangodb:3.12
 </span></code></pre></div>
 <p>This exposes ArangoDB on <code>http://localhost:8529</code> with authentication disabled, which is fine for local development but never for production. See <a href="../guides/arangodb/">Connecting ArangoDB</a> for authenticated setups.</p>
+<hr />
+<h2 id="load-a-small-sample-graph">Load a small sample graph<a class="headerlink" href="#load-a-small-sample-graph" title="Permanent link">&para;</a></h2>
+<p>Odin reads a graph you already have; it does not create one. If you have none, this creates the <code>CaseRecords</code> / <code>EvidenceLinks</code> graph used in the rest of this guide:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">sys_db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"_system"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">sys_db</span><span class="o">.</span><span class="n">has_database</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">):</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">sys_db</span><span class="o">.</span><span class="n">create_database</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">nodes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span><span class="s2">"CaseRecords"</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">edges</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">create_collection</span><span class="p">(</span><span class="s2">"EvidenceLinks"</span><span class="p">,</span> <span class="n">edge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="n">nodes</span><span class="o">.</span><span class="n">import_bulk</span><span class="p">([</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="p">{</span><span class="s2">"_key"</span><span class="p">:</span> <span class="s2">"claim_123"</span><span class="p">,</span> <span class="s2">"record_type"</span><span class="p">:</span> <span class="s2">"claim"</span><span class="p">},</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="p">{</span><span class="s2">"_key"</span><span class="p">:</span> <span class="s2">"patient_001"</span><span class="p">,</span> <span class="s2">"record_type"</span><span class="p">:</span> <span class="s2">"person"</span><span class="p">},</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="p">{</span><span class="s2">"_key"</span><span class="p">:</span> <span class="s2">"doctor_smith"</span><span class="p">,</span> <span class="s2">"record_type"</span><span class="p">:</span> <span class="s2">"person"</span><span class="p">},</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="p">{</span><span class="s2">"_key"</span><span class="p">:</span> <span class="s2">"provider_456"</span><span class="p">,</span> <span class="s2">"record_type"</span><span class="p">:</span> <span class="s2">"provider"</span><span class="p">},</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="p">])</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="n">edges</span><span class="o">.</span><span class="n">import_bulk</span><span class="p">([</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>    <span class="p">{</span><span class="s2">"_from"</span><span class="p">:</span> <span class="s2">"CaseRecords/claim_123"</span><span class="p">,</span> <span class="s2">"_to"</span><span class="p">:</span> <span class="s2">"CaseRecords/patient_001"</span><span class="p">,</span> <span class="s2">"predicate"</span><span class="p">:</span> <span class="s2">"submitted_by"</span><span class="p">},</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="p">{</span><span class="s2">"_from"</span><span class="p">:</span> <span class="s2">"CaseRecords/claim_123"</span><span class="p">,</span> <span class="s2">"_to"</span><span class="p">:</span> <span class="s2">"CaseRecords/provider_456"</span><span class="p">,</span> <span class="s2">"predicate"</span><span class="p">:</span> <span class="s2">"billed_by"</span><span class="p">},</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    <span class="p">{</span><span class="s2">"_from"</span><span class="p">:</span> <span class="s2">"CaseRecords/patient_001"</span><span class="p">,</span> <span class="s2">"_to"</span><span class="p">:</span> <span class="s2">"CaseRecords/doctor_smith"</span><span class="p">,</span> <span class="s2">"predicate"</span><span class="p">:</span> <span class="s2">"treated_by"</span><span class="p">},</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="p">])</span>
+</span></code></pre></div>
+<p>This graph only illustrates the shape Odin expects and is too small to judge scores. Training can still fail or produce uninformative scores on a graph this size; use <code>OdinEngine(backend, auto_train=False)</code> for a quick structural check, or your own graph for real results. Only the mapping in the next section changes.</p>
 <hr />
 <h2 id="connect-and-initialize">Connect and initialize<a class="headerlink" href="#connect-and-initialize" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoClient</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin.backends.arango</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArangoBackend</span><span class="p">,</span> <span class="n">ArangoGraphConfig</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">client</span> <span class="o">=</span> <span class="n">ArangoClient</span><span class="p">(</span><span class="n">hosts</span><span class="o">=</span><span class="s2">"http://localhost:8529"</span><span class="p">)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s2">"my_graph"</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">"root"</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">ArangoGraphConfig</span><span class="p">(</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">node_collection</span><span class="o">=</span><span class="s2">"CaseRecords"</span><span class="p">,</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="n">edge_collection</span><span class="o">=</span><span class="s2">"EvidenceLinks"</span><span class="p">,</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">relation_field</span><span class="o">=</span><span class="s2">"predicate"</span><span class="p">,</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">entity_type_field</span><span class="o">=</span><span class="s2">"record_type"</span><span class="p">,</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">)</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="n">backend</span> <span class="o">=</span> <span class="n">ArangoBackend</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">)</span>
 </span></code></pre></div>
-<p>On the <strong>first</strong> initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See <a href="../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
+<p>On the <strong>first</strong> initialization against a graph, Odin extracts edge patterns and trains its NPLL model (cost depends on graph size and hardware). It then stores the learned weights in an ArangoDB collection, so subsequent runs load learned state without training. See <a href="../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <div class="admonition tip">
-<p class="admonition-title">No model? No problem</p>
-<p>If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check <code>engine.has_npll</code> to see which mode you are in.</p>
+<p class="admonition-title">Explicit retrieval-only operation</p>
+<p>Use <code>OdinEngine(backend, auto_train=False)</code> to retrieve with constant
+confidence without training. Requested training that fails, including on
+an empty graph, raises an error instead of changing scoring modes.</p>
 </div>
 <hr />
 <h2 id="run-your-first-retrieval">Run your first retrieval<a class="headerlink" href="#run-your-first-retrieval" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"entity/claim_123"</span><span class="p">],</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"CaseRecords/claim_123"</span><span class="p">],</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">max_paths</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">hop_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="p">)</span>
@@ -2096,15 +2235,15 @@
 <p>Whole-path retrieval is the main event, but the same engine gives you two more focused tools that are worth knowing from day one.</p>
 <hr />
 <h2 id="score-a-single-edge">Score a single edge<a class="headerlink" href="#score-a-single-edge" title="Permanent link">&para;</a></h2>
-<p>Sometimes you do not want a path, just a yes-or-no on one relationship. <code>score_edge()</code> answers exactly that:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span><span class="s2">"entity/patient_001"</span><span class="p">,</span> <span class="s2">"treated_by"</span><span class="p">,</span> <span class="s2">"entity/doctor_smith"</span><span class="p">)</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>   <span class="c1"># 0.0 (impossible) … 1.0 (highly plausible)</span>
+<p>Sometimes you do not want a path, just a plausibility score for one relationship. <code>score_edge()</code> answers exactly that:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span><span class="s2">"CaseRecords/patient_001"</span><span class="p">,</span> <span class="s2">"treated_by"</span><span class="p">,</span> <span class="s2">"CaseRecords/doctor_smith"</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>   <span class="c1"># 0.0 … 1.0: learned plausibility, not a calibrated probability</span>
 </span></code></pre></div>
 <p>It is the same NPLL signal Odin uses internally, exposed so you can drop it straight into an agent's decision logic. See <a href="../guides/edge-scoring/">Scoring Edges</a>.</p>
 <hr />
 <h2 id="find-the-important-nodes">Find the important nodes<a class="headerlink" href="#find-the-important-nodes" title="Permanent link">&para;</a></h2>
 <p>And when you are not sure <em>where</em> to start, ask which nodes matter most around a seed:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">anchors</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">find_anchors</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"community/insurance_claims"</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">anchors</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">find_anchors</span><span class="p">(</span><span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"CaseRecords/claim_123"</span><span class="p">],</span> <span class="n">topn</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">for</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">ppr_score</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ppr_score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">node_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
@@ -2137,13 +2276,19 @@
 </div>
 <script type="text/markdown" id="jc-page-source"># Getting Started
 
-This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
+!!! note "Upgrading from 0.3.0"
+    The engine now takes an explicit backend. See the
+    [migration guide](guides/backend-migration.md) when updating existing code.
+
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes.
 
 ---
 
 ## Requirements
 
-Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
+Odin needs **Python 3.9+** and a graph backend. This guide uses ArangoDB 3.10
+or later. NPLL training runs in your Python process; `ArangoBackend` reads the
+graph and persists the resulting model artifact in ArangoDB.
 
 | Dependency | Why |
 |------------|-----|
@@ -2151,26 +2296,20 @@ Odin needs **Python 3.9+** and a **graph database**; the reference backend is [A
 | ArangoDB ≥ 3.10 | Stores your knowledge graph and Odin's learned NPLL weights |
 | PyTorch ≥ 2.0 | Powers the NPLL edge-plausibility model |
 
-PyTorch, `python-arango`, NumPy, scikit-learn, and `gremlinpython` are pulled in automatically with the package.
+The core package includes PyTorch, NumPy, scikit-learn, and the retrieval
+dependencies. Install the `arango` extra to use the reference backend.
 
 ---
 
 ## Installation
 
 ```bash
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
-
-=== "From PyPI"
-    ```bash
-    pip install odin-engine
-    ```
 
 === "From source"
     ```bash
-    git clone https://github.com/Prescott-Data/Odin-1.git
-    cd Odin-1
-    pip install -e .
+    pip install -e ".[arango]"
     ```
 
 === "With dev tools"
@@ -2182,7 +2321,7 @@ pip install odin-engine
     The package is published as `odin-engine`, but you import it as `odin`:
 
     ```python
-    from odin import OdinEngine, SchemaInspector
+    from odin import OdinEngine, inspect_schema
     ```
 
 ---
@@ -2200,22 +2339,65 @@ This exposes ArangoDB on `http://localhost:8529` with authentication disabled, w
 
 ---
 
+## Load a small sample graph
+
+Odin reads a graph you already have; it does not create one. If you have none, this creates the `CaseRecords` / `EvidenceLinks` graph used in the rest of this guide:
+
+```python
+from arango import ArangoClient
+
+client = ArangoClient(hosts="http://localhost:8529")
+sys_db = client.db("_system", username="root", password="")
+if not sys_db.has_database("my_graph"):
+    sys_db.create_database("my_graph")
+db = client.db("my_graph", username="root", password="")
+
+nodes = db.create_collection("CaseRecords")
+edges = db.create_collection("EvidenceLinks", edge=True)
+
+nodes.import_bulk([
+    {"_key": "claim_123", "record_type": "claim"},
+    {"_key": "patient_001", "record_type": "person"},
+    {"_key": "doctor_smith", "record_type": "person"},
+    {"_key": "provider_456", "record_type": "provider"},
+])
+edges.import_bulk([
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/patient_001", "predicate": "submitted_by"},
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/provider_456", "predicate": "billed_by"},
+    {"_from": "CaseRecords/patient_001", "_to": "CaseRecords/doctor_smith", "predicate": "treated_by"},
+])
+```
+
+This graph only illustrates the shape Odin expects and is too small to judge scores. Training can still fail or produce uninformative scores on a graph this size; use `OdinEngine(backend, auto_train=False)` for a quick structural check, or your own graph for real results. Only the mapping in the next section changes.
+
+---
+
 ## Connect and initialize
 
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db, community_id="global")
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+    entity_type_field="record_type",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global")
 ```
 
-On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
+On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (cost depends on graph size and hardware). It then stores the learned weights in an ArangoDB collection, so subsequent runs load learned state without training. See [Model Lifecycle](guides/npll-lifecycle.md).
 
-!!! tip "No model? No problem"
-    If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check `engine.has_npll` to see which mode you are in.
+!!! tip "Explicit retrieval-only operation"
+    Use `OdinEngine(backend, auto_train=False)` to retrieve with constant
+    confidence without training. Requested training that fails, including on
+    an empty graph, raises an error instead of changing scoring modes.
 
 ---
 
@@ -2223,7 +2405,7 @@ On the **first** initialization against a graph, Odin extracts edge patterns and
 
 ```python
 result = engine.retrieve(
-    seeds=["entity/claim_123"],
+    seeds=["CaseRecords/claim_123"],
     max_paths=50,
     hop_limit=3,
 )
@@ -2245,11 +2427,11 @@ Whole-path retrieval is the main event, but the same engine gives you two more f
 
 ## Score a single edge
 
-Sometimes you do not want a path, just a yes-or-no on one relationship. `score_edge()` answers exactly that:
+Sometimes you do not want a path, just a plausibility score for one relationship. `score_edge()` answers exactly that:
 
 ```python
-score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
-print(score)   # 0.0 (impossible) … 1.0 (highly plausible)
+score = engine.score_edge("CaseRecords/patient_001", "treated_by", "CaseRecords/doctor_smith")
+print(score)   # 0.0 … 1.0: learned plausibility, not a calibrated probability
 ```
 
 It is the same NPLL signal Odin uses internally, exposed so you can drop it straight into an agent's decision logic. See [Scoring Edges](guides/edge-scoring.md).
@@ -2261,7 +2443,7 @@ It is the same NPLL signal Odin uses internally, exposed so you can drop it stra
 And when you are not sure *where* to start, ask which nodes matter most around a seed:
 
 ```python
-anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
+anchors = engine.find_anchors(seeds=["CaseRecords/claim_123"], topn=20)
 for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```
@@ -2430,7 +2612,7 @@ for node_id, ppr_score in anchors[:10]:
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>

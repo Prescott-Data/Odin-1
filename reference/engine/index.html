@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -887,6 +906,8 @@
       
         
       
+        
+      
     
     
     
@@ -960,6 +981,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1713,7 +1764,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1871,6 +1922,33 @@
     
   
     Enterprise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
   
 
     
@@ -2088,13 +2166,13 @@
 
 
 <h1 id="odinengine-api">OdinEngine API<a class="headerlink" href="#odinengine-api" title="Permanent link">&para;</a></h1>
-<p><code>OdinEngine</code> is the main entry point. Construct it with a connected ArangoDB database, then call its methods.</p>
+<p><code>OdinEngine</code> is the main entry point. Construct it with a graph backend, then call its methods.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
 </span></code></pre></div>
 <hr />
 <h2 id="constructor">Constructor<a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">OdinEngine</span><span class="p">(</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">db</span><span class="p">,</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">backend</span><span class="p">,</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">community_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"global"</span><span class="p">,</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">cache_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">auto_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -2112,10 +2190,10 @@
 </thead>
 <tbody>
 <tr>
-<td><code>db</code></td>
-<td><code>StandardDatabase</code></td>
+<td><code>backend</code></td>
+<td><code>GraphBackend</code></td>
 <td>required</td>
-<td>A connected <code>python-arango</code> database instance</td>
+<td>Graph access plus optional NPLL training and persistence capabilities</td>
 </tr>
 <tr>
 <td><code>community_id</code></td>
@@ -2143,7 +2221,13 @@
 </tr>
 </tbody>
 </table>
-<p>On first construction against a graph, NPLL trains (2-5 min) unless <code>auto_train=False</code>. See <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
+<p>For ArangoDB, construct <code>ArangoBackend(db, graph)</code> from a connected <code>python-arango</code>
+database. Arango shares globally trained artifacts across retrieval scopes. On first
+construction against a training-capable graph, NPLL trains unless <code>auto_train=False</code>. A
+retrieval-only backend must set <code>auto_train=False</code>; otherwise construction
+raises <code>BackendCapabilityError</code>. <code>graph</code> is a required <code>ArangoGraphConfig</code>.
+See <a href="../../guides/arangodb/#map-your-graph-data">Connecting ArangoDB</a> and
+<a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
 <hr />
 <h2 id="retrieve"><code>retrieve</code><a class="headerlink" href="#retrieve" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">retrieve</span><span class="p">(</span>
@@ -2199,7 +2283,7 @@
 <h2 id="score_edge"><code>score_edge</code><a class="headerlink" href="#score_edge" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">score_edge</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span>
 </span></code></pre></div>
-<p>Returns the NPLL plausibility of a single edge, from <code>0.0</code> (impossible) to <code>1.0</code> (highly plausible).</p>
+<p>Returns the learned NPLL plausibility of a single edge, from <code>0.0</code> to <code>1.0</code>. Higher means a better match to patterns learned from the graph; it is not a calibrated probability or a verification of truth.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">score_edge</span><span class="p">(</span><span class="s2">"entity/patient_001"</span><span class="p">,</span> <span class="s2">"treated_by"</span><span class="p">,</span> <span class="s2">"entity/doctor_smith"</span><span class="p">)</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># 0.91</span>
 </span></code></pre></div>
@@ -2228,6 +2312,10 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">retrain_model</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </span></code></pre></div>
 <p>Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns <code>True</code> on success. Use after <strong>structural</strong> graph changes; see <a href="../../guides/npll-lifecycle/">Model Lifecycle</a>.</p>
+<p>Failures raise and preserve the active model and serving components. Trainer
+exceptions and results without a model raise <code>npll.TrainingError</code>; backend
+errors retain their distinct types. This method does not return <code>False</code> or
+switch to constant confidence on failure.</p>
 <hr />
 <h2 id="has_npll"><code>has_npll</code><a class="headerlink" href="#has_npll" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">has_npll</span> <span class="o">-&gt;</span> <span class="nb">bool</span>     <span class="c1"># property</span>
@@ -2242,7 +2330,7 @@
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="s2">"community_id"</span><span class="p">:</span> <span class="s2">"global"</span><span class="p">,</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="s2">"npll_loaded"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
 </span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="s2">"intelligence_mode"</span><span class="p">:</span> <span class="s2">"NPLL"</span><span class="p">,</span>       <span class="c1"># or "Constant"</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">"npll_source"</span><span class="p">:</span> <span class="s2">"trained"</span><span class="p">,</span>          <span class="c1"># "trained" | "cached_weights" | "failed" | "disabled"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">"npll_source"</span><span class="p">:</span> <span class="s2">"trained"</span><span class="p">,</span>          <span class="c1"># "trained" | "cached_weights" | "disabled"</span>
 </span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="s2">"npll_converged"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>            <span class="c1"># None when no training report is available</span>
 </span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="s2">"npll_trained_at"</span><span class="p">:</span> <span class="s2">"2026-09-08T12:00:00Z"</span><span class="p">,</span>
 </span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="s2">"cache_size"</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span>
@@ -2254,8 +2342,8 @@
 </span></code></pre></div>
 <p>The audit record for the NPLL training run behind the active model — available
 both when the model was just trained and when it was rebuilt from cached
-weights. <code>None</code> when auto-train is disabled, training failed, or the weights
-were persisted before reports existed.</p>
+weights. <code>None</code> when auto-train is disabled. Failed retraining preserves the
+report associated with the active model; current artifacts require a report.</p>
 <p>Fields: <code>converged</code>, <code>convergence_epoch</code>, <code>final_elbo</code>, <code>best_elbo</code>,
 <code>total_epochs</code>, <code>total_em_iterations</code>, <code>elbo_history</code> (complete, per E-M
 iteration), <code>rule_weight_delta_history</code> (max-abs weight change per iteration),
@@ -2318,7 +2406,7 @@ initialization and after <code>retrain_model()</code>.</p>
 </table>
 <script type="text/markdown" id="jc-page-source"># OdinEngine API
 
-`OdinEngine` is the main entry point. Construct it with a connected ArangoDB database, then call its methods.
+`OdinEngine` is the main entry point. Construct it with a graph backend, then call its methods.
 
 ```python
 from odin import OdinEngine
@@ -2330,7 +2418,7 @@ from odin import OdinEngine
 
 ```python
 OdinEngine(
-    db,
+    backend,
     community_id: str = "global",
     cache_size: int = 5000,
     auto_train: bool = True,
@@ -2340,13 +2428,19 @@ OdinEngine(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `db` | `StandardDatabase` | required | A connected `python-arango` database instance |
+| `backend` | `GraphBackend` | required | Graph access plus optional NPLL training and persistence capabilities |
 | `community_id` | `str` | `"global"` | Scope to explore within |
 | `cache_size` | `int` | `5000` | LRU size for the graph accessor |
 | `auto_train` | `bool` | `True` | Train NPLL if no model exists |
 | `community_mode` | `str` | `"none"` | `"none"` = global, `"mapping"` = community-scoped |
 
-On first construction against a graph, NPLL trains (2-5 min) unless `auto_train=False`. See [Model Lifecycle](../guides/npll-lifecycle.md).
+For ArangoDB, construct `ArangoBackend(db, graph)` from a connected `python-arango`
+database. Arango shares globally trained artifacts across retrieval scopes. On first
+construction against a training-capable graph, NPLL trains unless `auto_train=False`. A
+retrieval-only backend must set `auto_train=False`; otherwise construction
+raises `BackendCapabilityError`. `graph` is a required `ArangoGraphConfig`.
+See [Connecting ArangoDB](../guides/arangodb.md#map-your-graph-data) and
+[Model Lifecycle](../guides/npll-lifecycle.md).
 
 ---
 
@@ -2386,7 +2480,7 @@ result["paths"]               # ranked paths
 score_edge(src: str, rel: str, dst: str) -&gt; float
 ```
 
-Returns the NPLL plausibility of a single edge, from `0.0` (impossible) to `1.0` (highly plausible).
+Returns the learned NPLL plausibility of a single edge, from `0.0` to `1.0`. Higher means a better match to patterns learned from the graph; it is not a calibrated probability or a verification of truth.
 
 ```python
 engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
@@ -2440,6 +2534,11 @@ retrain_model() -&gt; bool
 
 Forces a full NPLL retrain, persists the new weights, and rebuilds the engine's scoring. Returns `True` on success. Use after **structural** graph changes; see [Model Lifecycle](../guides/npll-lifecycle.md).
 
+Failures raise and preserve the active model and serving components. Trainer
+exceptions and results without a model raise `npll.TrainingError`; backend
+errors retain their distinct types. This method does not return `False` or
+switch to constant confidence on failure.
+
 ---
 
 ## `has_npll`
@@ -2465,7 +2564,7 @@ Returns a small status dictionary:
     "community_id": "global",
     "npll_loaded": True,
     "intelligence_mode": "NPLL",       # or "Constant"
-    "npll_source": "trained",          # "trained" | "cached_weights" | "failed" | "disabled"
+    "npll_source": "trained",          # "trained" | "cached_weights" | "disabled"
     "npll_converged": True,            # None when no training report is available
     "npll_trained_at": "2026-09-08T12:00:00Z",
     "cache_size": 5000,
@@ -2482,8 +2581,8 @@ training_report -&gt; TrainingReport | None    # attribute
 
 The audit record for the NPLL training run behind the active model — available
 both when the model was just trained and when it was rebuilt from cached
-weights. `None` when auto-train is disabled, training failed, or the weights
-were persisted before reports existed.
+weights. `None` when auto-train is disabled. Failed retraining preserves the
+report associated with the active model; current artifacts require a report.
 
 Fields: `converged`, `convergence_epoch`, `final_elbo`, `best_elbo`,
 `total_epochs`, `total_em_iterations`, `elbo_history` (complete, per E-M
@@ -2565,13 +2664,13 @@ initialization and after `retrain_model()`.
         
         
           
-          <a href="../schema/" class="md-footer__link md-footer__link--next" aria-label="Next: SchemaInspector API">
+          <a href="../schema/" class="md-footer__link md-footer__link--next" aria-label="Next: Schema Inspection API">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                SchemaInspector API
+                Schema Inspection API
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2639,7 +2738,7 @@ initialization and after `retrain_model()`.
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

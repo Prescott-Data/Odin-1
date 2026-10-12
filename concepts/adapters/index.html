@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -901,6 +920,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The accessor interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#edge-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edge records
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1007,6 +1043,8 @@
       
         
       
+        
+      
     
     
     
@@ -1080,6 +1118,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1669,7 +1737,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1839,6 +1907,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1873,6 +1968,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="The accessor interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#edge-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edge records
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2000,10 +2112,10 @@
 
 
 <h1 id="adapters">Adapters<a class="headerlink" href="#adapters" title="Permanent link">&para;</a></h1>
-<p>Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a <strong>graph accessor</strong>. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter and the one <code>OdinEngine</code> wires up for you, but the interface is small and deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.</p>
+<p>Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a <strong>graph accessor</strong>. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter, supplied to <code>OdinEngine</code> through <code>ArangoBackend</code>, but the interface is deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.</p>
 <h2 id="the-accessor-interface">The accessor interface<a class="headerlink" href="#the-accessor-interface" title="Permanent link">&para;</a></h2>
 <p>An adapter implements the <code>GraphAccessor</code> protocol from <code>retrieval.adapters</code>. It is only a handful of methods:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.adapters</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphAccessor</span><span class="p">,</span> <span class="n">NodeId</span><span class="p">,</span> <span class="n">RelId</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyAccessor</span><span class="p">(</span><span class="n">GraphAccessor</span><span class="p">):</span>
@@ -2012,19 +2124,64 @@
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="sd">"""Yield (neighbor, relation, weight) for each outgoing edge."""</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="o">...</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">community_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">NodeId</span><span class="p">]:</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="sd">"""All node IDs in this community."""</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">iter_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">NodeId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">NodeId</span><span class="p">,</span> <span class="n">RelId</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="sd">"""Yield (neighbor, relation, weight) for each incoming edge."""</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="o">...</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">degree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">NodeId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="sd">"""Out-degree of a node."""</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">iter_out_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">NodeId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="sd">"""Yield one edge record per outgoing edge (see below)."""</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="o">...</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">community_seed_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">community_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seeds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeId</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeId</span><span class="p">]:</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="sd">"""Optional: map external seed IDs to internal ones. Default: passthrough."""</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="k">return</span> <span class="n">seeds</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">community_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">NodeId</span><span class="p">]:</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">        </span><span class="sd">"""All node IDs in this community."""</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="o">...</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">degree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">NodeId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">        </span><span class="sd">"""Out-degree of a node."""</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>        <span class="o">...</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">community_seed_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">community_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seeds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeId</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">NodeId</span><span class="p">]:</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">        </span><span class="sd">"""Implement explicitly; return seeds unchanged if IDs need no mapping."""</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="k">return</span> <span class="n">seeds</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_id</span><span class="p">:</span> <span class="n">NodeId</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">        </span><span class="sd">"""Return node properties, or an empty dict when the node is absent."""</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="o">...</span>
 </span></code></pre></div>
-<p>If your backend can traverse outgoing edges and enumerate nodes, it can drive Odin. Everything the engine needs, PPR, beam search, and aggregation, is expressed in terms of these methods.</p>
+<p>If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. The engine validates all seven methods at construction and raises <code>BackendConfigurationError</code> if one is missing.</p>
+<h3 id="edge-records">Edge records<a class="headerlink" href="#edge-records" title="Permanent link">&para;</a></h3>
+<p><code>iter_out_edges(node)</code> yields one dictionary per outgoing edge, with the exact stored assertion. These keys are required:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_id</code></td>
+<td>Stable, unique identity of the edge</td>
+</tr>
+<tr>
+<td><code>u</code></td>
+<td>Source node ID (the <code>node</code> argument)</td>
+</tr>
+<tr>
+<td><code>rel</code></td>
+<td>Exact relation label</td>
+</tr>
+<tr>
+<td><code>v</code></td>
+<td>Target node ID</td>
+</tr>
+<tr>
+<td><code>weight</code></td>
+<td>Numeric structural weight (<code>1.0</code> if your backend has none)</td>
+</tr>
+</tbody>
+</table>
+<p>These keys are optional metadata, and may be <code>None</code> or omitted when your backend does not have them: <code>created_at</code>, <code>valid_from</code>, <code>valid_to</code>, <code>status</code>, and <code>provenance</code>. <code>ArangoCommunityAccessor</code> also returns <code>source_confidence</code>, <code>npll_posterior</code>, and <code>calibration</code>, and puts the raw stored document under <code>provenance["assertion"]</code>. <code>iter_out</code> and <code>iter_out_edges</code> must describe the same edges. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.</p>
 <h2 id="adapters-that-ship-with-odin">Adapters that ship with Odin<a class="headerlink" href="#adapters-that-ship-with-odin" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2043,7 +2200,7 @@
 <tr>
 <td><code>JanusGraphAccessor</code></td>
 <td>JanusGraph</td>
-<td>Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer.</td>
+<td>Retrieval only: no engine backend, training, or schema inspection. Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer.</td>
 </tr>
 <tr>
 <td><code>KGCommunityAccessor</code></td>
@@ -2059,53 +2216,78 @@
 </table>
 <p>Because JanusGraph speaks Gremlin, <code>JanusGraphAccessor</code> is also a starting point for other Gremlin-compatible stores such as Amazon Neptune — those targets are untested, so validate before relying on them.</p>
 <h2 id="using-a-non-arango-adapter">Using a non-Arango adapter<a class="headerlink" href="#using-a-non-arango-adapter" title="Permanent link">&para;</a></h2>
-<p><code>OdinEngine</code> is a convenience wrapper that constructs the ArangoDB adapter from a <code>db</code> handle. To drive Odin with a different backend, compose the retrieval orchestrator directly with your accessor:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.driver.driver_remote_connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">DriverRemoteConnection</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.driver.serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphSONSerializersV3d0</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.process.anonymous_traversal</span><span class="w"> </span><span class="kn">import</span> <span class="n">traversal</span>
+<p>An accessor handles graph reads; a backend supplies that accessor to the engine.
+Here is a complete retrieval-only example requiring no database driver:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">odin</span><span class="w"> </span><span class="kn">import</span> <span class="n">OdinEngine</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">npll.core.knowledge_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeGraph</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.adapters</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGCommunityAccessor</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">RetrievalOrchestrator</span><span class="p">,</span> <span class="n">OrchestratorParams</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.confidence</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstantConfidence</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.adapters</span><span class="w"> </span><span class="kn">import</span> <span class="n">JanusGraphAccessor</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># which JanusGraph 1.x (TinkerPop 3.7) servers reject.</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">conn</span> <span class="o">=</span> <span class="n">DriverRemoteConnection</span><span class="p">(</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="s2">"ws://localhost:8182/gremlin"</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">,</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">message_serializer</span><span class="o">=</span><span class="n">GraphSONSerializersV3d0</span><span class="p">(),</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">)</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">g</span> <span class="o">=</span> <span class="n">traversal</span><span class="p">()</span><span class="o">.</span><span class="n">with_remote</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="n">accessor</span> <span class="o">=</span> <span class="n">JanusGraphAccessor</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">RetrievalOrchestrator</span><span class="p">(</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">accessor</span><span class="o">=</span><span class="n">accessor</span><span class="p">,</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">edge_confidence</span><span class="o">=</span><span class="n">ConstantConfidence</span><span class="p">(</span><span class="mf">0.8</span><span class="p">),</span>  <span class="c1"># see note on NPLL below</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="p">)</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="n">result</span> <span class="o">=</span> <span class="n">orchestrator</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>    <span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"v_123"</span><span class="p">],</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    <span class="n">params</span><span class="o">=</span><span class="n">OrchestratorParams</span><span class="p">(</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>        <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>        <span class="n">max_paths</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>        <span class="n">hop_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>        <span class="n">beam_width</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>    <span class="p">),</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">KnowledgeGraph</span><span class="p">()</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">graph</span><span class="o">.</span><span class="n">add_known_fact</span><span class="p">(</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"linked_to"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">InMemoryBackend</span><span class="p">:</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">accessor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">community_id</span><span class="p">,</span> <span class="n">community_mode</span><span class="p">):</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="k">if</span> <span class="n">community_mode</span> <span class="o">!=</span> <span class="s2">"none"</span><span class="p">:</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"This example supports global retrieval only"</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>        <span class="k">return</span> <span class="n">KGCommunityAccessor</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">community_id</span><span class="p">)</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">OdinEngine</span><span class="p">(</span><span class="n">InMemoryBackend</span><span class="p">(),</span> <span class="n">auto_train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="nb">print</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="s2">"A"</span><span class="p">))</span>
+</span></code></pre></div>
+<p><code>OdinEngine</code> accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with <code>auto_train=False</code> or compose the retrieval orchestrator directly with your accessor:</p>
+<p>Install the Gremlin driver before importing its backend module:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[gremlin]"</span>
+</span></code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.driver.driver_remote_connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">DriverRemoteConnection</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.driver.serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphSONSerializersV3d0</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">gremlin_python.process.anonymous_traversal</span><span class="w"> </span><span class="kn">import</span> <span class="n">traversal</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">RetrievalOrchestrator</span><span class="p">,</span> <span class="n">OrchestratorParams</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.confidence</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstantConfidence</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.adapters_janus</span><span class="w"> </span><span class="kn">import</span> <span class="n">JanusGraphAccessor</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># which JanusGraph 1.x (TinkerPop 3.7) servers reject.</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">conn</span> <span class="o">=</span> <span class="n">DriverRemoteConnection</span><span class="p">(</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="s2">"ws://localhost:8182/gremlin"</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">,</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">message_serializer</span><span class="o">=</span><span class="n">GraphSONSerializersV3d0</span><span class="p">(),</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="p">)</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">g</span> <span class="o">=</span> <span class="n">traversal</span><span class="p">()</span><span class="o">.</span><span class="n">with_remote</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="n">accessor</span> <span class="o">=</span> <span class="n">JanusGraphAccessor</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">RetrievalOrchestrator</span><span class="p">(</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">accessor</span><span class="o">=</span><span class="n">accessor</span><span class="p">,</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">edge_confidence</span><span class="o">=</span><span class="n">ConstantConfidence</span><span class="p">(</span><span class="mf">0.8</span><span class="p">),</span>  <span class="c1"># see note on NPLL below</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="p">)</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="n">result</span> <span class="o">=</span> <span class="n">orchestrator</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="n">seeds</span><span class="o">=</span><span class="p">[</span><span class="s2">"v_123"</span><span class="p">],</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>    <span class="n">params</span><span class="o">=</span><span class="n">OrchestratorParams</span><span class="p">(</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>        <span class="n">community_id</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>        <span class="n">max_paths</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>        <span class="n">hop_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>        <span class="n">beam_width</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>    <span class="p">),</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>The result has the same shape documented in the <a href="../../reference/result-schema/">Result Schema</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">NPLL and non-Arango backends</p>
-<p>Odin's learned <a href="../npll/">NPLL</a> model is bootstrapped from an ArangoDB graph, so it is tied to the ArangoDB adapter today. On other backends, pass an edge-confidence function explicitly, <code>ConstantConfidence(...)</code> to treat all edges as equally plausible, or your own implementation of the confidence interface. You still get the full PPR and beam-search machinery; you supply the semantic signal.</p>
+<p>The training lifecycle is backend-neutral. ArangoBackend is currently the
+supplied implementation of both <code>TripleSource</code> and <code>ModelStore</code>. A custom
+backend can supply those capabilities to enable engine-managed training.
+Without them, use <code>auto_train=False</code>, or compose the orchestrator with your
+own confidence provider. See the <a href="../../development/backend-contracts/">backend contracts</a>.</p>
 </div>
 <h2 id="caching-your-adapter">Caching your adapter<a class="headerlink" href="#caching-your-adapter" title="Permanent link">&para;</a></h2>
 <p>Wrap any accessor in <code>CachedGraphAccessor</code> to get the same LRU caching <code>OdinEngine</code> uses (see <a href="../caching/">Caching</a>):</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">CachedGraphAccessor</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">accessor</span> <span class="o">=</span> <span class="n">CachedGraphAccessor</span><span class="p">(</span><span class="n">JanusGraphAccessor</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">retrieval.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">CachedGraphAccessor</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">accessor</span> <span class="o">=</span> <span class="n">CachedGraphAccessor</span><span class="p">(</span><span class="n">JanusGraphAccessor</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="writing-your-own">Writing your own<a class="headerlink" href="#writing-your-own" title="Permanent link">&para;</a></h2>
-<p>To add a backend, implement the four <code>GraphAccessor</code> methods for it. <code>iter_out</code> is the workhorse: given a node, return its outgoing <code>(neighbor, relation, weight)</code> tuples. The shipped <code>JanusGraphAccessor</code> and <code>ArangoCommunityAccessor</code> are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as <a href="https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md">contributions</a>.</p>
+<p>To add a backend, implement all seven <code>GraphAccessor</code> methods. <code>iter_out</code> and <code>iter_out_edges</code> are the workhorses: given a node, return its outgoing edges as <code>(neighbor, relation, weight)</code> tuples and as full edge records. The shipped <code>JanusGraphAccessor</code> and <code>ArangoCommunityAccessor</code> are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as <a href="https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md">contributions</a>.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../data-model/">Data Model</a> covers what Odin expects from the graph itself.</li>
@@ -2113,20 +2295,28 @@
 </ul>
 <script type="text/markdown" id="jc-page-source"># Adapters
 
-Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter and the one `OdinEngine` wires up for you, but the interface is small and deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
+Everything above the graph, PPR, beam search, aggregation, works against an abstract view of your data called a **graph accessor**. An adapter is a concrete implementation of that view for a particular backend. ArangoDB is the reference adapter, supplied to `OdinEngine` through `ArangoBackend`, but the interface is deliberately backend-agnostic, so the community can connect Odin to other knowledge graphs.
 
 ## The accessor interface
 
 An adapter implements the `GraphAccessor` protocol from `retrieval.adapters`. It is only a handful of methods:
 
 ```python
-from typing import Iterable, Tuple, List
+from typing import Dict, Iterable, Optional, Tuple, List
 from retrieval.adapters import GraphAccessor, NodeId, RelId
 
 class MyAccessor(GraphAccessor):
 
     def iter_out(self, node: NodeId) -&gt; Iterable[Tuple[NodeId, RelId, float]]:
         """Yield (neighbor, relation, weight) for each outgoing edge."""
+        ...
+
+    def iter_in(self, node: NodeId) -&gt; Iterable[Tuple[NodeId, RelId, float]]:
+        """Yield (neighbor, relation, weight) for each incoming edge."""
+        ...
+
+    def iter_out_edges(self, node: NodeId) -&gt; Iterable[Dict[str, object]]:
+        """Yield one edge record per outgoing edge (see below)."""
         ...
 
     def nodes(self, community_id: str) -&gt; Iterable[NodeId]:
@@ -2138,18 +2328,36 @@ class MyAccessor(GraphAccessor):
         ...
 
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -&gt; List[NodeId]:
-        """Optional: map external seed IDs to internal ones. Default: passthrough."""
+        """Implement explicitly; return seeds unchanged if IDs need no mapping."""
         return seeds
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -&gt; Dict[str, object]:
+        """Return node properties, or an empty dict when the node is absent."""
+        ...
 ```
 
-If your backend can traverse outgoing edges and enumerate nodes, it can drive Odin. Everything the engine needs, PPR, beam search, and aggregation, is expressed in terms of these methods.
+If your backend can traverse both directions, enumerate nodes, and read node properties, it can drive Odin. The engine validates all seven methods at construction and raises `BackendConfigurationError` if one is missing.
+
+### Edge records
+
+`iter_out_edges(node)` yields one dictionary per outgoing edge, with the exact stored assertion. These keys are required:
+
+| Key | Meaning |
+|-----|---------|
+| `_id` | Stable, unique identity of the edge |
+| `u` | Source node ID (the `node` argument) |
+| `rel` | Exact relation label |
+| `v` | Target node ID |
+| `weight` | Numeric structural weight (`1.0` if your backend has none) |
+
+These keys are optional metadata, and may be `None` or omitted when your backend does not have them: `created_at`, `valid_from`, `valid_to`, `status`, and `provenance`. `ArangoCommunityAccessor` also returns `source_confidence`, `npll_posterior`, and `calibration`, and puts the raw stored document under `provenance["assertion"]`. `iter_out` and `iter_out_edges` must describe the same edges. Everything the engine needs, PPR, beam search, aggregation, and neighbor inspection, is expressed in terms of these methods.
 
 ## Adapters that ship with Odin
 
 | Adapter | Backend | Notes |
 |---------|---------|-------|
 | `ArangoCommunityAccessor` | ArangoDB | The reference adapter. Rich edges (weights, timestamps, provenance), community mapping, and the backend `OdinEngine` uses. |
-| `JanusGraphAccessor` | JanusGraph | Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
+| `JanusGraphAccessor` | JanusGraph | Retrieval only: no engine backend, training, or schema inspection. Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
 | `KGCommunityAccessor` | In-memory `KnowledgeGraph` | For a pre-sliced community held in memory. |
 | `OverlayAccessor` | Any accessor | Wraps a base accessor and adds soft overlay edges on top. |
 
@@ -2157,7 +2365,34 @@ Because JanusGraph speaks Gremlin, `JanusGraphAccessor` is also a starting point
 
 ## Using a non-Arango adapter
 
-`OdinEngine` is a convenience wrapper that constructs the ArangoDB adapter from a `db` handle. To drive Odin with a different backend, compose the retrieval orchestrator directly with your accessor:
+An accessor handles graph reads; a backend supplies that accessor to the engine.
+Here is a complete retrieval-only example requiring no database driver:
+
+```python
+from odin import OdinEngine
+from npll.core.knowledge_graph import KnowledgeGraph
+from retrieval.adapters import KGCommunityAccessor
+
+graph = KnowledgeGraph()
+graph.add_known_fact("A", "linked_to", "B")
+
+class InMemoryBackend:
+    def accessor(self, community_id, community_mode):
+        if community_mode != "none":
+            raise ValueError("This example supports global retrieval only")
+        return KGCommunityAccessor(graph, community_id)
+
+engine = OdinEngine(InMemoryBackend(), auto_train=False)
+print(engine.get_neighbors("A"))
+```
+
+`OdinEngine` accepts a backend instead of a raw database handle. To drive Odin with a retrieval-only backend, either pass it with `auto_train=False` or compose the retrieval orchestrator directly with your accessor:
+
+Install the Gremlin driver before importing its backend module:
+
+```bash
+pip install -e ".[gremlin]"
+```
 
 ```python
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
@@ -2166,7 +2401,7 @@ from gremlin_python.process.anonymous_traversal import traversal
 
 from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.confidence import ConstantConfidence
-from retrieval.adapters import JanusGraphAccessor
+from retrieval.adapters_janus import JanusGraphAccessor
 
 # GraphSON v3 serializer: newer gremlinpython clients default to GraphBinary,
 # which JanusGraph 1.x (TinkerPop 3.7) servers reject.
@@ -2197,7 +2432,11 @@ result = orchestrator.retrieve(
 The result has the same shape documented in the [Result Schema](../reference/result-schema.md).
 
 !!! note "NPLL and non-Arango backends"
-    Odin's learned [NPLL](npll.md) model is bootstrapped from an ArangoDB graph, so it is tied to the ArangoDB adapter today. On other backends, pass an edge-confidence function explicitly, `ConstantConfidence(...)` to treat all edges as equally plausible, or your own implementation of the confidence interface. You still get the full PPR and beam-search machinery; you supply the semantic signal.
+    The training lifecycle is backend-neutral. ArangoBackend is currently the
+    supplied implementation of both `TripleSource` and `ModelStore`. A custom
+    backend can supply those capabilities to enable engine-managed training.
+    Without them, use `auto_train=False`, or compose the orchestrator with your
+    own confidence provider. See the [backend contracts](../development/backend-contracts.md).
 
 ## Caching your adapter
 
@@ -2211,7 +2450,7 @@ accessor = CachedGraphAccessor(JanusGraphAccessor(g), cache_size=5000)
 
 ## Writing your own
 
-To add a backend, implement the four `GraphAccessor` methods for it. `iter_out` is the workhorse: given a node, return its outgoing `(neighbor, relation, weight)` tuples. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
+To add a backend, implement all seven `GraphAccessor` methods. `iter_out` and `iter_out_edges` are the workhorses: given a node, return its outgoing edges as `(neighbor, relation, weight)` tuples and as full edge records. The shipped `JanusGraphAccessor` and `ArangoCommunityAccessor` are the best worked references. New adapters, Neo4j, Neptune, or anything else, are welcome as [contributions](https://github.com/Prescott-Data/Odin-1/blob/main/CONTRIBUTING.md).
 
 ## Next
 
@@ -2348,7 +2587,7 @@ To add a backend, implement the four `GraphAccessor` methods for it. `iter_out` 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

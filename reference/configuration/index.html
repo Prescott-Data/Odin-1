@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -887,6 +906,8 @@
       
         
       
+        
+      
     
     
     
@@ -960,6 +981,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1554,7 +1605,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1704,6 +1755,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#npll-dataset-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NPLL dataset configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1839,6 +1901,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1931,6 +2020,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#npll-dataset-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NPLL dataset configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2000,7 +2100,9 @@
 
 
 <h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h1>
-<p>All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.</p>
+<p>Most configuration is passed as arguments. The one environment variable Odin
+reads itself is <code>ODIN_REQUIRE_NPLL</code>: when it is <code>true</code>, an engine that would
+run without a learned model raises instead. This page collects every parameter in one place.</p>
 <hr />
 <h2 id="engine-construction">Engine construction<a class="headerlink" href="#engine-construction" title="Permanent link">&para;</a></h2>
 <p><code>OdinEngine(...)</code>. See the <a href="../engine/#constructor">OdinEngine API</a>.</p>
@@ -2015,10 +2117,10 @@
 </thead>
 <tbody>
 <tr>
-<td><code>db</code></td>
-<td><code>StandardDatabase</code></td>
+<td><code>backend</code></td>
+<td><code>GraphBackend</code></td>
 <td>required</td>
-<td>Connected <code>python-arango</code> handle</td>
+<td>Retrieval backend; NPLL training needs source and store capabilities</td>
 </tr>
 <tr>
 <td><code>community_id</code></td>
@@ -2111,7 +2213,7 @@
 </table>
 <hr />
 <h2 id="schema-inspection">Schema inspection<a class="headerlink" href="#schema-inspection" title="Permanent link">&para;</a></h2>
-<p><code>SchemaInspector(...)</code></p>
+<p><code>inspect_schema(backend, ...)</code></p>
 <table>
 <thead>
 <tr>
@@ -2122,21 +2224,23 @@
 </thead>
 <tbody>
 <tr>
-<td><code>db</code></td>
-<td><code>StandardDatabase</code></td>
+<td><code>backend</code></td>
+<td><code>GraphBackend</code></td>
 <td>required</td>
 </tr>
 <tr>
-<td><code>max_sample_docs</code></td>
-<td><code>int</code></td>
-<td><code>5</code></td>
+<td><code>refresh</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
 </tr>
 </tbody>
 </table>
-<p><code>inspect_arango_schema(db, output_file="schema.json")</code>.</p>
+<p><code>inspect_schema(backend, output_file="schema.json")</code>.</p>
 <hr />
 <h2 id="database-connection-yours">Database connection (yours)<a class="headerlink" href="#database-connection-yours" title="Permanent link">&para;</a></h2>
-<p>Odin does not manage the connection; you construct it with <code>python-arango</code>. In production, source these from the environment:</p>
+<p>Odin does not manage connections. For ArangoDB, construct the connection with
+<code>python-arango</code> and wrap it in <code>ArangoBackend</code>. Other backends use their own
+connection mechanisms. In production, source these Arango settings from the environment:</p>
 <table>
 <thead>
 <tr>
@@ -2188,7 +2292,7 @@
 <td>≥ 3.9</td>
 </tr>
 <tr>
-<td>ArangoDB</td>
+<td>ArangoDB (Arango backend only)</td>
 <td>≥ 3.10</td>
 </tr>
 <tr>
@@ -2197,10 +2301,23 @@
 </tr>
 </tbody>
 </table>
-<p>Runtime dependencies (<code>torch</code>, <code>python-arango</code>, <code>numpy</code>, <code>scipy</code>, <code>networkx</code>, <code>scikit-learn</code>, <code>gremlinpython</code>) install automatically with <code>pip install odin-engine</code>.</p>
+<p>Install core dependencies with <code>pip install odin-engine</code>. Use
+<code>pip install "odin-engine[arango]"</code> or <code>pip install "odin-engine[gremlin]"</code> for the
+corresponding driver.
+See <a href="../../guides/backend-migration/">Backend migration</a>.</p>
+<h2 id="npll-dataset-configuration">NPLL dataset configuration<a class="headerlink" href="#npll-dataset-configuration" title="Permanent link">&para;</a></h2>
+<p><code>get_config("OdinTriples")</code> in <code>npll.utils.config</code> selects the explicit
+production graph configuration. Its 32-dimensional entity/relation embeddings,
+64-dimensional rules, and 64-unit scorer are sized for production graph
+lifecycle operation. Bootstrap uses its <code>max_epochs</code> (200) and <code>em_iterations</code> (10)
+as safety limits, not targets: training stops when the E-M convergence criteria
+hold, and exhausting the limits raises <code>TrainingConvergenceError</code>.
+Unknown names, including the retired <code>ArangoDB_Triples</code>, raise <code>ValueError</code>.</p>
 <script type="text/markdown" id="jc-page-source"># Configuration
 
-All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.
+Most configuration is passed as arguments. The one environment variable Odin
+reads itself is `ODIN_REQUIRE_NPLL`: when it is `true`, an engine that would
+run without a learned model raises instead. This page collects every parameter in one place.
 
 ---
 
@@ -2210,7 +2327,7 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `db` | `StandardDatabase` | required | Connected `python-arango` handle |
+| `backend` | `GraphBackend` | required | Retrieval backend; NPLL training needs source and store capabilities |
 | `community_id` | `str` | `"global"` | Exploration scope |
 | `cache_size` | `int` | `5000` | Graph-accessor LRU size (see [Caching](../concepts/caching.md)) |
 | `auto_train` | `bool` | `True` | Train NPLL on first run if no model exists |
@@ -2244,20 +2361,22 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 ## Schema inspection
 
-`SchemaInspector(...)`
+`inspect_schema(backend, ...)`
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `db` | `StandardDatabase` | required |
-| `max_sample_docs` | `int` | `5` |
+| `backend` | `GraphBackend` | required |
+| `refresh` | `bool` | `False` |
 
-`inspect_arango_schema(db, output_file="schema.json")`.
+`inspect_schema(backend, output_file="schema.json")`.
 
 ---
 
 ## Database connection (yours)
 
-Odin does not manage the connection; you construct it with `python-arango`. In production, source these from the environment:
+Odin does not manage connections. For ArangoDB, construct the connection with
+`python-arango` and wrap it in `ArangoBackend`. Other backends use their own
+connection mechanisms. In production, source these Arango settings from the environment:
 
 | Variable (suggested) | Used for |
 |----------------------|----------|
@@ -2286,10 +2405,23 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 | Requirement | Version |
 |-------------|---------|
 | Python | ≥ 3.9 |
-| ArangoDB | ≥ 3.10 |
+| ArangoDB (Arango backend only) | ≥ 3.10 |
 | PyTorch | ≥ 2.0 |
 
-Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `scikit-learn`, `gremlinpython`) install automatically with `pip install odin-engine`.
+Install core dependencies with `pip install odin-engine`. Use
+`pip install "odin-engine[arango]"` or `pip install "odin-engine[gremlin]"` for the
+corresponding driver.
+See [Backend migration](../guides/backend-migration.md).
+
+## NPLL dataset configuration
+
+`get_config("OdinTriples")` in `npll.utils.config` selects the explicit
+production graph configuration. Its 32-dimensional entity/relation embeddings,
+64-dimensional rules, and 64-unit scorer are sized for production graph
+lifecycle operation. Bootstrap uses its `max_epochs` (200) and `em_iterations` (10)
+as safety limits, not targets: training stops when the E-M convergence criteria
+hold, and exhausting the limits raises `TrainingConvergenceError`.
+Unknown names, including the retired `ArangoDB_Triples`, raise `ValueError`.
 </script>
 
 
@@ -2330,7 +2462,7 @@ Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `s
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../schema/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SchemaInspector API">
+          <a href="../schema/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Schema Inspection API">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2340,7 +2472,7 @@ Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `s
                 Previous
               </span>
               <div class="md-ellipsis">
-                SchemaInspector API
+                Schema Inspection API
               </div>
             </div>
           </a>
@@ -2421,7 +2553,7 @@ Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `s
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>

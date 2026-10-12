@@ -382,6 +382,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../development/backend-contracts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -889,6 +908,8 @@
       
         
       
+        
+      
     
     
     
@@ -962,6 +983,36 @@
     
   
     Connecting ArangoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/backend-migration/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Migration
   
 
     
@@ -1556,7 +1607,7 @@
   <span class="md-ellipsis">
     
   
-    SchemaInspector API
+    Schema Inspection API
   
 
     
@@ -1731,6 +1782,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#040-2026-10-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0 2026-10-12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#030-2026-08-10" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1808,6 +1870,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/backend-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1835,6 +1924,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#040-2026-10-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0 2026-10-12
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#030-2026-08-10" class="md-nav__link">
@@ -1945,6 +2045,34 @@
 <p>All notable changes to <strong>Odin</strong> (<code>odin-engine</code>) are documented here. This project follows <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>: patch releases carry backward-compatible fixes, minor releases add backward-compatible features, and major releases may break the public API.</p>
 <hr />
 <div class="changelog-release">
+<h2 id="040-2026-10-12">0.4.0 <span class="changelog-date">2026-10-12</span><a class="headerlink" href="#040-2026-10-12" title="Permanent link">&para;</a></h2>
+<p>The engine now accepts <code>OdinEngine(backend)</code>. ArangoDB operations are provided
+by <code>ArangoBackend(db, graph)</code>, with a required explicit Arango graph mapping,
+public <code>odin.backends</code> modules, optional driver extras, and generic
+<code>inspect_schema(backend)</code> inspection. Raw handles and former public adapter
+exports require migration.</p>
+<p>Training fingerprints cover the exact extracted triples. Model artifacts are
+shared by global training scope, complete, and replaced only when their stored revision matches.
+Scorers train on known facts and uniform corruptions of both endpoints, excluding
+the E-M holdout. Artifact version <code>7.0</code> loads learned tensor state without training
+and keeps complete loss histories. Older artifact versions and stale config schemas
+retrain; newer artifact versions raise without being replaced. Damaged blobs raise.
+Device and Torch version differences do not invalidate learned state.
+Rule mining and grounding use bounded observed joins and confidence thresholds.
+Global accessor traversal bonuses and the unused engine global accessor are removed.
+Signal helpers return every record; their limit argument is removed. Membership
+ambiguity raises and lookup results are cached. Writers preserve user metadata.
+Odin returns complete application documents and vectors without exclusion markers;
+model-input filtering belongs to consuming applications.
+Training failures raise; constant confidence requires explicit
+<code>auto_train=False</code>. Failed retraining preserves the active serving state.</p>
+<p>See <a href="../guides/backend-migration/">Backend migration</a> before upgrading.</p>
+<p>Odin now ships two agent skills, <code>odin</code> and <code>odin-custom-backend</code>, inside the
+package. <code>odin init --skill</code> installs them for Claude Code, GitHub Copilot, Cursor
+and Codex, records what it installed, and never overwrites files you edited unless
+you pass <code>--force</code>. See <a href="../guides/ai-editors/">AI editor setup</a>.</p>
+</div>
+<div class="changelog-release">
 <h2 id="030-2026-08-10">0.3.0 <span class="changelog-date">2026-08-10</span><a class="headerlink" href="#030-2026-08-10" title="Permanent link">&para;</a></h2>
 <div class="changelog-meta">
 <div class="changelog-contributors">
@@ -2004,6 +2132,41 @@
 All notable changes to **Odin** (`odin-engine`) are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html): patch releases carry backward-compatible fixes, minor releases add backward-compatible features, and major releases may break the public API.
 
 ---
+
+&lt;div class="changelog-release" markdown&gt;
+
+## 0.4.0 &lt;span class="changelog-date"&gt;2026-10-12&lt;/span&gt;
+
+The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
+by `ArangoBackend(db, graph)`, with a required explicit Arango graph mapping,
+public `odin.backends` modules, optional driver extras, and generic
+`inspect_schema(backend)` inspection. Raw handles and former public adapter
+exports require migration.
+
+Training fingerprints cover the exact extracted triples. Model artifacts are
+shared by global training scope, complete, and replaced only when their stored revision matches.
+Scorers train on known facts and uniform corruptions of both endpoints, excluding
+the E-M holdout. Artifact version `7.0` loads learned tensor state without training
+and keeps complete loss histories. Older artifact versions and stale config schemas
+retrain; newer artifact versions raise without being replaced. Damaged blobs raise.
+Device and Torch version differences do not invalidate learned state.
+Rule mining and grounding use bounded observed joins and confidence thresholds.
+Global accessor traversal bonuses and the unused engine global accessor are removed.
+Signal helpers return every record; their limit argument is removed. Membership
+ambiguity raises and lookup results are cached. Writers preserve user metadata.
+Odin returns complete application documents and vectors without exclusion markers;
+model-input filtering belongs to consuming applications.
+Training failures raise; constant confidence requires explicit
+`auto_train=False`. Failed retraining preserves the active serving state.
+
+See [Backend migration](guides/backend-migration.md) before upgrading.
+
+Odin now ships two agent skills, `odin` and `odin-custom-backend`, inside the
+package. `odin init --skill` installs them for Claude Code, GitHub Copilot, Cursor
+and Codex, records what it installed, and never overwrites files you edited unless
+you pass `--force`. See [AI editor setup](guides/ai-editors.md).
+
+&lt;/div&gt;
 
 &lt;div class="changelog-release" markdown&gt;
 
@@ -2209,7 +2372,7 @@ The baseline public release of the Odin engine on PyPI.
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.3.0"}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.indexes", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.4.0"}</script>
     
     
       <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
