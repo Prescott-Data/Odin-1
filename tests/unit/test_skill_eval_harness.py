@@ -70,6 +70,18 @@ def test_runner_scores_good_and_bad_providers_differently():
     assert not bad["passed"] and bad["mode"] == "baseline" and bad["activation_ok"] is None
 
 
+def test_empty_check_accepts_a_negated_failure_but_rejects_a_claimed_one():
+    from tests.skills.checks import empty_not_error
+
+    def run(text):
+        return empty_not_error({"result": {"exception": None, "returned": text, "stdout": ""}})[0]
+
+    assert run("No reachable evidence. This is an empty result, not a retrieval failure.")
+    assert run("Odin found no evidence; nothing went wrong, no error occurred.")
+    assert not run("Error: retrieval failed.")
+    assert not run("The lookup failed, so there is no evidence.")
+
+
 def test_skill_context_loads_skill_and_references():
     text = runner.skill_context(["odin"])
     assert "=== odin/SKILL.md ===" in text and "=== odin/references/errors.md ===" in text

@@ -53,7 +53,9 @@ def empty_not_error(ctx):
         return False, "raised on an empty result"
     if not text.strip():
         return False, "no message returned"
-    bad = [w for w in ("error", "exception", "failed", "failure") if w in text]
+    claims = re.sub(r"\b(not|no|isn't|is not|rather than|instead of)\b[^.;\n]{0,40}"
+                    r"\b(error|exception|failed|failure)\b", "", text)
+    bad = [w for w in ("error", "exception", "failed", "failure") if w in claims]
     return _ok(not bad, f"empty result described as a failure: {bad}")
 
 
