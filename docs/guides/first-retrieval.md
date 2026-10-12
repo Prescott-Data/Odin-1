@@ -54,7 +54,7 @@ result.keys()
 #            'triage', 'ics', 'used_budget', 'trace'])
 ```
 
-**The paths** are the primary output, returned best-first. Each carries a combined `score` and a list of `edges`; there is no separate `nodes` field, so the node sequence is derived from the edges:
+**The paths** are the primary output, returned best-first. Each carries a combined `score` and a list of `edges`. The documented way to get the node sequence is to derive it from the edges (a path may also carry internal keys such as `nodes`, which are not part of the documented schema):
 
 ```python
 for p in result["paths"][:5]:

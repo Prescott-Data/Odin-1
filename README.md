@@ -73,7 +73,7 @@ The engine ranks connected evidence. The agent decides what that evidence means.
 
 ---
 
-## How Odin Works — COMPASS
+## How Odin Works: COMPASS
 
 At the center of Odin is **COMPASS (Composite Oriented Multi-signal Path
 Assessment)**, the scoring framework introduced in the
@@ -250,9 +250,9 @@ for the full shape):
 }
 ```
 
-Beyond `retrieve()`, the engine exposes companion capabilities — edge
+Beyond `retrieve()`, the engine exposes companion capabilities: edge
 plausibility scoring, anchor discovery, motif aggregates, and runtime schema
-introspection — summarized in [API at a Glance](#api-at-a-glance) and fully
+introspection, summarized in [API at a Glance](#api-at-a-glance) and fully
 documented on the [docs site](https://odin.developers.prescottdata.io).
 
 ---

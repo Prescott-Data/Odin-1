@@ -14,8 +14,9 @@ When writing or reviewing code that uses the engine, follow the Odin skill at
 [`odin/skills/odin/SKILL.md`](odin/skills/odin/SKILL.md). It has the exact API signatures,
 the real `retrieve()` result shape, and the mistakes to avoid. In particular:
 
-- Paths have no `nodes` field. Read `path["edges"]` (each edge has `u`, `v`,
-  `relation`) and derive nodes from them.
+- Paths may carry internal keys such as `nodes` and `decomp` that are not part of the
+  documented schema. Read `path["edges"]` (each edge has `u`, `v`, `relation`) and derive
+  nodes from them.
 - Motif fields are `edge_count` / `path_count`, not `count`. `relation_share[rel]`
   is `{"count", "share"}`.
 - `score_edge(src, rel, dst)`; `retrieve(seeds, max_paths=50, hop_limit=3, beam_width=64)`.

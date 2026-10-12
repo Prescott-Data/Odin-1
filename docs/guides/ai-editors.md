@@ -71,7 +71,7 @@ The documentation site serves [llms.txt](https://odin.developers.prescottdata.io
 
 ## What good looks like
 
-With the skill loaded, your agent should construct `OdinEngine(backend, ...)` with a backend such as `ArangoBackend(db, graph)` and an explicit `ArangoGraphConfig`, call `retrieve(seeds, ...)`, derive nodes from `path["edges"]`, keep relation labels and provenance when it formats evidence, and treat an exception differently from an empty result. If you see it reach for `OdinEngine(db)` or `path["nodes"]`, the skill is not loaded.
+With the skill loaded, your agent should construct `OdinEngine(backend, ...)` with a backend such as `ArangoBackend(db, graph)` and an explicit `ArangoGraphConfig`, call `retrieve(seeds, ...)`, derive nodes from `path["edges"]`, keep relation labels and provenance when it formats evidence, and treat an exception differently from an empty result. If you see it reach for `OdinEngine(db)` or depend on undocumented fields such as `path["nodes"]`, the skill is not loaded.
 
 ## Next
 
