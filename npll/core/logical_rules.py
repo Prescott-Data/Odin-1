@@ -5,7 +5,8 @@ Logical Rules and Ground Rules for NPLL
 from typing import List, Set, Dict, Tuple, Optional, Iterator, Any
 from dataclasses import dataclass, field
 from enum import Enum
-import itertools
+import random
+import hashlib
 import logging
 from collections import defaultdict
 
@@ -84,6 +85,7 @@ class RuleType(Enum):
     EQUALITY = "equality"  # Equality rules
     TRANSITIVITY = "transitivity"  # Transitive rules
     SYMMETRY = "symmetry"  # Symmetric rules
+    PRIOR = "prior"  # Unconditional relation prior
     GENERAL = "general"  # General first-order rules
 
 
@@ -99,11 +101,12 @@ class LogicalRule:
     rule_type: RuleType = RuleType.GENERAL
     confidence: float = 0.5  # Initial confidence score
     support: int = 0  # Number of supporting instances
+    grounding_instances: Optional[List[Dict[str, str]]] = field(default=None, repr=False)
     
     def __post_init__(self):
         """Validate rule structure"""
-        if not self.body:
-            raise ValueError("Rule body cannot be empty")
+        if not self.body and self.rule_type != RuleType.PRIOR:
+            raise ValueError("Only relation prior rules may have an empty body")
         
         if not isinstance(self.head, Atom):
             raise ValueError("Rule head must be an Atom")
@@ -116,7 +119,7 @@ class LogicalRule:
         head_vars = self.head.get_variables()
         
         # All head variables should appear in body
-        if not head_vars.issubset(body_vars):
+        if self.rule_type != RuleType.PRIOR and not head_vars.issubset(body_vars):
             logger.warning(f"Rule {self.rule_id}: Head variables not in body")
     
     def get_all_variables(self) -> Set[Variable]:
@@ -139,13 +142,13 @@ class LogicalRule:
         Generate ground rules by substituting variables with entities
         """
         ground_rules = []
-        entities = list(kg.entities)
+        entities = sorted(kg.entities, key=lambda entity: entity.name)
         
         if not entities:
             return ground_rules
         
         # Get all variables that need to be substituted
-        variables = list(self.get_all_variables())
+        variables = sorted(self.get_all_variables(), key=lambda variable: variable.name)
         
         if not variables:
             # Already ground rule
@@ -161,49 +164,83 @@ class LogicalRule:
                 ))
             return ground_rules
         
-        # Generate all possible variable substitutions
-        # Limit combinations to prevent explosion
-        max_entities_per_var = min(len(entities), max_groundings // len(variables) + 1)
-        
-        substitution_count = 0
-        for substitution_values in itertools.product(entities[:max_entities_per_var], 
-                                                   repeat=len(variables)):
-            if substitution_count >= max_groundings:
-                break
-            
-            substitution = dict(zip(variables, substitution_values))
-            
-            # Generate ground atoms
-            try:
-                ground_body_atoms = [atom.ground_with_substitution(substitution) 
-                                   for atom in self.body]
-                ground_head_atom = self.head.ground_with_substitution(substitution)
-                
-                # Convert to triples
-                ground_body_triples = [atom.to_triple() for atom in ground_body_atoms 
-                                     if atom.is_ground()]
-                ground_head_triple = ground_head_atom.to_triple()
-                
-                # Check if all conversions successful
-                if (ground_head_triple and 
-                    len(ground_body_triples) == len(ground_body_atoms) and
-                    all(t is not None for t in ground_body_triples)):
-                    
-                    ground_rule = GroundRule(
-                        rule_id=f"{self.rule_id}_ground_{substitution_count}",
-                        body_facts=ground_body_triples,
-                        head_fact=ground_head_triple,
-                        parent_rule=self,
-                        substitution=substitution.copy()
-                    )
-                    
-                    ground_rules.append(ground_rule)
-                    substitution_count += 1
-                    
-            except Exception as e:
-                logger.debug(f"Failed to ground rule {self.rule_id}: {e}")
+        # Join observed facts with the rule body, then sample negatives across
+        # the entire entity vocabulary. Never take an alphabetical Cartesian prefix.
+        rng = random.Random(int(hashlib.sha256(self.rule_id.encode()).hexdigest()[:16], 16))
+        facts = sorted(kg.known_facts | kg.unknown_facts,
+                       key=lambda f: (f.head.name, f.relation.name, f.tail.name))
+        by_relation = defaultdict(list)
+        for fact in facts:
+            by_relation[fact.relation].append(fact)
+
+        def matches(atom, fact, substitution):
+            updated = dict(substitution)
+            for arg, value in zip(atom.arguments, (fact.head, fact.tail)):
+                if isinstance(arg, Entity):
+                    if arg != value:
+                        return None
+                elif arg in updated and updated[arg] != value:
+                    return None
+                else:
+                    updated[arg] = value
+            return updated
+
+        def joins(index, substitution):
+            if index == len(self.body):
+                if self.body:
+                    yield substitution
+                else:
+                    for fact in by_relation[self.head.predicate]:
+                        bound = matches(self.head, fact, substitution)
+                        if bound is not None:
+                            yield bound
+                return
+            atom = self.body[index]
+            for fact in by_relation[atom.predicate]:
+                bound = matches(atom, fact, substitution)
+                if bound is not None:
+                    yield from joins(index + 1, bound)
+
+        supported_budget = max(1, max_groundings // 2)
+        chosen = []
+        seen = 0
+        entity_by_name = {e.name: e for e in entities}
+        bindings = joins(0, {}) if self.grounding_instances is None else (
+            {Variable(name): entity_by_name[value] for name, value in instance.items()}
+            for instance in self.grounding_instances)
+        for bound in bindings:
+            seen += 1
+            if len(chosen) < supported_budget:
+                chosen.append(bound)
+            else:
+                slot = rng.randrange(seen)
+                if slot < supported_budget:
+                    chosen[slot] = bound
+        identities = {tuple(bound.get(v) for v in variables) for bound in chosen}
+        attempts = 0
+        observed = set(facts)
+        while len(chosen) < max_groundings and attempts < max_groundings * 20:
+            attempts += 1
+            bound = {v: rng.choice(entities) for v in variables}
+            identity = tuple(bound[v] for v in variables)
+            if identity in identities:
                 continue
-        
+            body = [atom.ground_with_substitution(bound).to_triple() for atom in self.body]
+            head = self.head.ground_with_substitution(bound).to_triple()
+            # Priors contrast observed heads with absent heads. Other rules
+            # contrast observed-body joins with false-body substitutions.
+            if (not self.body and head in observed) or (self.body and all(f in observed for f in body)):
+                continue
+            identities.add(identity)
+            chosen.append(bound)
+        for index, substitution in enumerate(chosen):
+            body = [atom.ground_with_substitution(substitution).to_triple() for atom in self.body]
+            head = self.head.ground_with_substitution(substitution).to_triple()
+            if head is not None and all(f is not None for f in body):
+                ground_rules.append(GroundRule(
+                    rule_id=f"{self.rule_id}_ground_{index}", body_facts=body,
+                    head_fact=head, parent_rule=self, substitution=substitution))
+
         logger.info(f"Generated {len(ground_rules)} ground rules for {self.rule_id}")
         return ground_rules
     
@@ -294,8 +331,8 @@ class GroundRule:
     
     def __post_init__(self):
         """Validate ground rule"""
-        if not self.body_facts:
-            raise ValueError("Ground rule body cannot be empty")
+        if not self.body_facts and self.parent_rule.rule_type != RuleType.PRIOR:
+            raise ValueError("Only relation prior ground rules may have an empty body")
         
         if not isinstance(self.head_fact, Triple):
             raise ValueError("Ground rule head must be a Triple")
@@ -353,82 +390,97 @@ class GroundRule:
 
 
 class RuleGenerator:
-    """Generate logical rules from knowledge graph patterns"""
-    
+    """Mine rules from observed facts, never from vacuously true implications."""
+
     def __init__(self, kg: KnowledgeGraph):
         self.kg = kg
-    
-    def generate_simple_rules(self, min_support: int = 2, 
-                            max_rule_length: int = 3) -> List[LogicalRule]:
-        """
-        Generate simple logical rules from knowledge graph patterns
-        """
+        self.facts = {(f.head.name, f.relation.name, f.tail.name)
+                      for f in kg.known_facts | kg.unknown_facts}
+        self.relations = {r.name: r for r in kg.relations}
+
+    @staticmethod
+    def _id(kind, names):
+        import hashlib
+        import json
+        return kind + "_" + hashlib.sha256(json.dumps(names, ensure_ascii=False).encode()).hexdigest()
+
+    def generate_relation_priors(self):
+        """Every relation gets a non-tautological prior, independent of mined motifs."""
+        x, y = Variable("x"), Variable("y")
+        possible = max(1, len(self.kg.entities) ** 2)
         rules = []
-        
-        # Generate  transitivity rules: R1(x,y) ∧ R2(y,z) ⇒ R3(x,z)
-        relations = list(self.kg.relations)
-        
-        for r1, r2, r3 in itertools.combinations_with_replacement(relations, 3):
-            if r1 == r2 == r3:  # Skip trivial cases
-                continue
-            
-            # Create variables
-            x, y, z = Variable('x'), Variable('y'), Variable('z')
-            
-            # Create atoms
-            atom1 = Atom(predicate=r1, arguments=(x, y))
-            atom2 = Atom(predicate=r2, arguments=(y, z))
-            head_atom = Atom(predicate=r3, arguments=(x, z))
-            
-            rule = LogicalRule(
-                rule_id=f"trans_{r1.name}_{r2.name}_{r3.name}",
-                body=[atom1, atom2],
-                head=head_atom,
-                rule_type=RuleType.TRANSITIVITY,
-                confidence=0.5  # Will be learned
-            )
-            
-            # Check support by grounding rule
-            ground_rules = rule.generate_ground_rules(self.kg, max_groundings=100)
-            
-            # Count supporting instances
-            support_count = sum(1 for gr in ground_rules 
-                              if gr.evaluate_truth_value(self.kg))
-            
-            if support_count >= min_support:
-                rule.support = support_count
-                rules.append(rule)
-        
-        logger.info(f"Generated {len(rules)} rules with min support {min_support}")
+        for name, relation in sorted(self.relations.items()):
+            support = sum(1 for _, r, _ in self.facts if r == name)
+            rules.append(LogicalRule(
+                self._id("prior", [name]), [], Atom(relation, (x, y)),
+                rule_type=RuleType.PRIOR, confidence=support / possible, support=support))
         return rules
-    
-    def generate_symmetry_rules(self, min_support: int = 2) -> List[LogicalRule]:
-        """Generate symmetry rules: R(x,y) ⇒ R(y,x)"""
+
+    def generate_simple_rules(self, min_support=2, min_confidence=0.2, max_paths_per_node=1000):
+        """Stream sampled two-hop joins; bound hub work and retain no path sets.
+
+        Support and confidence describe the sampled join population. Sampling is
+        deterministic and uniform per middle node, not an alphabetical prefix.
+        """
+        if min_support < 1 or not 0 <= min_confidence <= 1 or max_paths_per_node < 1:
+            raise ValueError("Invalid rule mining thresholds")
+        incoming, outgoing, conclusions = defaultdict(list), defaultdict(list), defaultdict(set)
+        for u, r, v in sorted(self.facts):
+            incoming[v].append((u, r))
+            outgoing[u].append((r, v))
+            conclusions[(u, v)].add(r)
+        bodies, supports = defaultdict(int), defaultdict(int)
+        reservoirs = defaultdict(list)
+        reservoir_rng = random.Random(8173)
+        self.mining_report = {"possible_paths": 0, "sampled_paths": 0,
+                              "max_paths_per_node": max_paths_per_node,
+                              "min_support": min_support, "min_confidence": min_confidence}
+        for middle in sorted(set(incoming) & set(outgoing)):
+            left, right = incoming[middle], outgoing[middle]
+            possible = len(left) * len(right)
+            self.mining_report["possible_paths"] += possible
+            rng = random.Random(int(hashlib.sha256(middle.encode()).hexdigest()[:16], 16))
+            indices = sorted(rng.sample(range(possible), min(possible, max_paths_per_node)))
+            self.mining_report["sampled_paths"] += len(indices)
+            for index in indices:
+                u, r1 = left[index // len(right)]
+                r2, w = right[index % len(right)]
+                pair = (r1, r2)
+                bodies[pair] += 1
+                bound = {"x": u, "y": middle, "z": w}
+                if len(reservoirs[pair]) < max_paths_per_node:
+                    reservoirs[pair].append(bound)
+                else:
+                    slot = reservoir_rng.randrange(bodies[pair])
+                    if slot < max_paths_per_node:
+                        reservoirs[pair][slot] = bound
+                for r3 in conclusions.get((u, w), ()):
+                    supports[(r1, r2, r3)] += 1
+        x, y, z = Variable("x"), Variable("y"), Variable("z")
         rules = []
-        
-        for relation in self.kg.relations:
-            x, y = Variable('x'), Variable('y')
-            
-            body_atom = Atom(predicate=relation, arguments=(x, y))
-            head_atom = Atom(predicate=relation, arguments=(y, x))
-            
-            rule = LogicalRule(
-                rule_id=f"sym_{relation.name}",
-                body=[body_atom],
-                head=head_atom,
-                rule_type=RuleType.SYMMETRY,
-                confidence=0.5
-            )
-            
-            # Check support
-            ground_rules = rule.generate_ground_rules(self.kg, max_groundings=100)
-            support_count = sum(1 for gr in ground_rules 
-                              if gr.evaluate_truth_value(self.kg))
-            
-            if support_count >= min_support:
-                rule.support = support_count
-                rules.append(rule)
-        
+        for names, support in sorted(supports.items()):
+            confidence = support / bodies[names[:2]]
+            if support < min_support or confidence < min_confidence:
+                continue
+            r1, r2, r3 = (self.relations[name] for name in names)
+            rules.append(LogicalRule(
+                self._id("chain", names), [Atom(r1, (x, y)), Atom(r2, (y, z))],
+                Atom(r3, (x, z)), rule_type=RuleType.TRANSITIVITY,
+                confidence=confidence, support=support,
+                grounding_instances=list(reservoirs[names[:2]])))
+        return rules
+
+    def generate_symmetry_rules(self, min_support=2, min_confidence=0.2):
+        x, y = Variable("x"), Variable("y")
+        rules = []
+        for name, relation in sorted(self.relations.items()):
+            pairs = {(u, v) for u, r, v in self.facts if r == name and u != v}
+            support = sum(1 for u, v in pairs if (v, u) in pairs)
+            if support >= min_support and support / max(1, len(pairs)) >= min_confidence:
+                rules.append(LogicalRule(
+                    self._id("symmetry", [name]), [Atom(relation, (x, y))],
+                    Atom(relation, (y, x)), rule_type=RuleType.SYMMETRY,
+                    confidence=support / len(pairs), support=support))
         return rules
 
 

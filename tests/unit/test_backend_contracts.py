@@ -1,0 +1,732 @@
+from npll.utils.config import NPLLConfig
+"""Regression tests for snapshot identity and complete, atomic persistence."""
+
+from dataclasses import FrozenInstanceError, replace
+from copy import deepcopy
+from unittest.mock import patch
+
+import pytest
+import torch
+
+from npll.bootstrap import KnowledgeBootstrapper, TrainingReport
+from odin.backends.arango import (
+    ArangoBackend,
+    ArangoGraphConfig,
+    ArangoModelStore,
+    ArangoTripleSource,
+)
+from odin.backends.base import (
+    MODEL_KEY,
+    BackendConfigurationError,
+    BackendError,
+    BackendIOError,
+    CorruptModelError,
+    ModelConflictError,
+    StoredModel,
+    TrainingSnapshot,
+    validate_model_artifact,
+)
+from tests.unit.test_training_telemetry import make_training_result
+from tests.utils.backend_fakes import (
+    FakeArango, MemorySource, MemoryStore, model_artifact,
+)
+
+
+ARANGO_GRAPH = ArangoGraphConfig(
+    node_collection="Entities",
+    edge_collection="Relationships",
+    relation_field="relation",
+    entity_type_field="type",
+)
+ARANGO_GRAPH_WITH_MEMBERSHIP = replace(
+    ARANGO_GRAPH,
+    membership_collection="Memberships",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+
+
+def test_snapshot_canonicalizes_order_but_preserves_all_triples():
+    triples = [["Entity/é", "Works At", "Entity/B"], ["Entity/B", "has_type", "Person"]]
+    snapshot = TrainingSnapshot(triples)
+    assert snapshot == TrainingSnapshot(list(reversed(triples)))
+    triples[0][1] = "changed"
+    assert ("Entity/é", "Works At", "Entity/B") in snapshot.triples
+    with pytest.raises(FrozenInstanceError):
+        snapshot.triples = ()
+    assert len(TrainingSnapshot(snapshot.triples * 2).triples) == 4
+    assert TrainingSnapshot(snapshot.triples * 2).data_hash != snapshot.data_hash
+
+
+@pytest.mark.parametrize("mutated", [
+    [("A", "r", "C"), ("A", "has_type", "Person")],
+    [("A", "r", "B"), ("A", "has_type", "Organization")],
+    [("A", "R", "B"), ("A", "has_type", "Person")],
+])
+def test_same_count_endpoint_relation_and_type_changes_invalidate(mutated):
+    original = TrainingSnapshot((("A", "r", "B"), ("A", "has_type", "Person")))
+    assert TrainingSnapshot(mutated).data_hash != original.data_hash
+
+
+def test_arango_materializes_one_snapshot_and_retains_tail_evidence():
+    triples = [("Entities/A", "Relation %03d" % i, "Entities/B") for i in range(101)]
+    triples.append(("Entities/A", "has_type", "Person"))
+    db = FakeArango(triples)
+    snapshot = ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
+    assert len(db.queries) == 1
+    assert "source._id" in db.queries[0] and '"has_type"' in db.queries[0]
+    assert snapshot == TrainingSnapshot(triples)
+    db.triples[-1] = ("Entities/A", "has_type", "Organization")
+    assert ("Entities/A", "Relation 100", "Entities/B") in snapshot.triples
+    assert snapshot.data_hash != ArangoTripleSource(db, ARANGO_GRAPH).snapshot().data_hash
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {"node_collection": "", "edge_collection": "Edges", "relation_field": "predicate"},
+        {"node_collection": "Nodes", "edge_collection": "", "relation_field": "predicate"},
+        {"node_collection": "Nodes", "edge_collection": "Edges", "relation_field": ""},
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "entity_type_field": "",
+        },
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "membership_collection": "Memberships",
+        },
+        {
+            "node_collection": "Nodes",
+            "edge_collection": "Edges",
+            "relation_field": "predicate",
+            "bridge_collection": "BridgeRecords",
+        },
+    ),
+)
+def test_arango_graph_config_rejects_incomplete_mapping(kwargs):
+    with pytest.raises(ValueError):
+        ArangoGraphConfig(**kwargs)
+
+
+def test_extraction_errors_do_not_return_empty_or_partial_snapshots():
+    db = FakeArango()
+
+    def interrupted(query, **kwargs):
+        yield ("A", "r", "B")
+        raise OSError("cursor interrupted")
+
+    db.aql.execute = interrupted
+    with pytest.raises(BackendIOError, match="complete"):
+        ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
+    db.aql.execute = lambda query, **kwargs: [("A", None, "B")]
+    # Invalid identities are a data-validity failure, distinct from transport I/O.
+    with pytest.raises(BackendError, match="invalid triple identities"):
+        ArangoTripleSource(db, ARANGO_GRAPH).snapshot()
+
+
+def test_arango_lossless_large_artifact_and_atomic_replacement():
+    db = FakeArango()
+    store = ArangoModelStore(db, namespace="graph/community")
+    artifact = model_artifact(relation_count=101, history_length=120)
+    first = store.save(MODEL_KEY, artifact, expected_revision=None)
+    loaded = store.load(MODEL_KEY)
+    assert loaded.document == artifact
+    assert loaded.revision == first
+    assert loaded.document["schema_snapshot"]["relation_names"][-1] == "relation_100"
+    assert loaded.document["training_report"]["elbo_history"][-1] == -119
+    assert TrainingReport.from_dict(loaded.document["training_report"]).to_dict() == artifact["training_report"]
+    del artifact["evidence"]
+    second = store.save(MODEL_KEY, artifact, expected_revision=first)
+    assert second != first
+    assert store.load(MODEL_KEY).document == artifact
+    assert "evidence" not in store.load(MODEL_KEY).document
+
+
+def test_concurrent_creation_and_replacement_reject_stale_writers():
+    db = FakeArango()
+    first = ArangoModelStore(db, namespace="graph/community")
+    second = ArangoModelStore(db, namespace="graph/community")
+    artifact = model_artifact()
+    assert first.load(MODEL_KEY) is None
+    assert second.load(MODEL_KEY) is None
+    revision = first.save(MODEL_KEY, artifact, expected_revision=None)
+    with pytest.raises(ModelConflictError):
+        second.save(MODEL_KEY, artifact, expected_revision=None)
+    read_by_second = second.load(MODEL_KEY)
+    replacement = model_artifact()
+    replacement["rule_weights"] = [0.75]
+    first.save(MODEL_KEY, replacement, expected_revision=revision)
+    with pytest.raises(ModelConflictError):
+        second.save(MODEL_KEY, artifact, expected_revision=read_by_second.revision)
+    assert first.load(MODEL_KEY).document == replacement
+
+
+def test_global_training_namespace_is_shared_across_retrieval_scopes():
+    db = FakeArango()
+    backend = ArangoBackend(db, ARANGO_GRAPH)
+    a = backend.model_store()
+    b = backend.model_store()
+    unscoped = backend.model_store()
+    a.save(MODEL_KEY, model_artifact(), expected_revision=None)
+    assert b.load(MODEL_KEY).document == model_artifact()
+    assert unscoped.load(MODEL_KEY).document == model_artifact()
+    other = FakeArango()
+    other.name = "other_graph"
+    assert (ArangoBackend(other, ARANGO_GRAPH).model_store().namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store().namespace)
+    alternate_graph = replace(ARANGO_GRAPH, relation_field="predicate")
+    assert (ArangoBackend(db, alternate_graph).model_store().namespace !=
+            ArangoBackend(db, ARANGO_GRAPH).model_store().namespace)
+
+
+def test_backend_requires_configured_provenance_collection():
+    db = FakeArango()
+    assert ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none").prov_edges_col is None
+
+    db.create_collection("Provenance")
+    graph_with_provenance = replace(
+        ARANGO_GRAPH,
+        provenance_edge_collection="Provenance",
+    )
+    assert (
+        ArangoBackend(db, graph_with_provenance).accessor("global", "none").prov_edges_col
+        == "Provenance"
+    )
+
+    missing = replace(ARANGO_GRAPH, provenance_edge_collection="Missing")
+    with pytest.raises(BackendConfigurationError, match="Missing"):
+        ArangoBackend(db, missing).accessor("global", "none")
+
+
+def test_global_access_requires_explicit_bridge_collections():
+    db = FakeArango()
+    assert ArangoBackend(db, ARANGO_GRAPH_WITH_MEMBERSHIP).global_accessor() is None
+
+    graph_with_global_access = replace(
+        ARANGO_GRAPH_WITH_MEMBERSHIP,
+        bridge_collection="BridgeRecords",
+        affinity_collection="CommunityAffinity",
+        community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
+    )
+    accessor = ArangoBackend(db, graph_with_global_access).global_accessor()
+    assert accessor.nodes_col == ARANGO_GRAPH.node_collection
+    assert accessor.edges_col == ARANGO_GRAPH.edge_collection
+    assert accessor.rel_prop == ARANGO_GRAPH.relation_field
+    assert accessor.membership_col == "Memberships"
+    assert accessor.bridge_col == "BridgeRecords"
+    assert accessor.affinity_col == "CommunityAffinity"
+    assert accessor.memb_ent_field == "entity_id"
+    assert accessor.memb_com_field == "community_id"
+    assert accessor.algorithm == "leiden"
+
+
+def test_main_accessor_does_not_probe_bridge_defaults_without_configuration():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+
+    assert accessor.is_bridge("Entities/A") is None
+    assert accessor.get_affinity("left", "right") == 0.0
+    assert db.queries == []
+
+
+def test_main_accessor_uses_uniform_weight_without_an_explicit_mapping():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH).accessor("global", "none")
+
+    assert list(accessor.iter_out("Entities/A")) == []
+    query = db.queries[0]
+    bind_vars = db.query_arguments[0]["bind_vars"]
+    assert "w_prop" not in bind_vars
+    assert "@w_prop" not in query
+
+
+def test_main_accessor_uses_configured_edge_weight_field():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, edge_weight_field="importance")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+
+    assert list(accessor.iter_out("Entities/A")) == []
+    assert db.query_arguments[0]["bind_vars"]["w_prop"] == "importance"
+
+
+def test_property_community_mode_requires_and_uses_an_explicit_field_mapping():
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
+    with pytest.raises(BackendConfigurationError, match="community_property_field"):
+        backend.accessor("tenant-a", "property")
+
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, community_property_field="tenant_code")
+    accessor = ArangoBackend(db, graph).accessor("tenant-a", "property")
+    assert list(accessor.nodes()) == []
+    assert db.query_arguments[0]["bind_vars"]["community_field"] == "tenant_code"
+    assert "community_id" not in db.queries[0]
+
+
+def test_main_accessor_uses_configured_bridge_and_affinity_collections():
+    db = FakeArango()
+    graph = replace(
+        ARANGO_GRAPH,
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
+    )
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+
+    assert accessor.is_bridge("Entities/A") is None
+    assert accessor.get_affinity("left", "right") == 0.0
+    bridge_bind = db.query_arguments[0]["bind_vars"]
+    affinity_bind = db.query_arguments[1]["bind_vars"]
+    assert bridge_bind["@bridge_col"] == "BridgeRecords"
+    assert bridge_bind["algorithm"] == "leiden"
+    assert affinity_bind["@affinity_col"] == "AffinityRecords"
+    assert affinity_bind["algorithm"] == "leiden"
+
+
+def test_global_accessor_uses_configured_membership_fields_for_scoring():
+    db = FakeArango()
+    graph = replace(
+        ARANGO_GRAPH_WITH_MEMBERSHIP,
+        membership_entity_field="record_id",
+        membership_community_field="group_id",
+        bridge_collection="BridgeRecords",
+        affinity_collection="AffinityRecords",
+        community_algorithm="leiden",
+        bridge_entity_field="entity_key",
+        bridge_strength_field="bridge_strength",
+        bridge_community_field="home_community",
+        bridge_algorithm_field="algorithm",
+        affinity_from_field="community_a",
+        affinity_to_field="community_b",
+        affinity_score_field="affinity_score",
+        affinity_algorithm_field="algorithm",
+    )
+    accessor = ArangoBackend(db, graph).global_accessor()
+
+    assert accessor.get_entity_community("Entities/A") is None
+    query = db.queries[0]
+    bind_vars = db.query_arguments[0]["bind_vars"]
+    assert "m[@membership_entity_field]" in query
+    assert "m[@membership_community_field]" in query
+    assert bind_vars["membership_entity_field"] == "record_id"
+    assert bind_vars["membership_community_field"] == "group_id"
+    assert "algorithm" not in bind_vars
+
+
+def test_engine_retrieval_scope_does_not_duplicate_global_models():
+    from odin.engine import OdinEngine
+
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH_WITH_MEMBERSHIP)
+    engine = OdinEngine(
+        backend,
+        community_id="tenant-a",
+        community_mode="mapping",
+        auto_train=False,
+    )
+    _, store = engine._training_capabilities()
+
+    assert store.namespace == backend.model_store().namespace
+    changed_retrieval = replace(ARANGO_GRAPH_WITH_MEMBERSHIP, edge_timestamp_field="observed_at")
+    assert store.namespace == ArangoBackend(backend.db, changed_retrieval).model_store().namespace
+
+
+def test_absence_corruption_and_backend_failure_are_distinct():
+    db = FakeArango()
+    store = ArangoModelStore(db, namespace="graph")
+    assert store.load(MODEL_KEY) is None
+    store.save(MODEL_KEY, model_artifact(), expected_revision=None)
+    collection = next(iter(db.collections.values()))
+    envelope = next(iter(collection.docs.values()))
+    del envelope["artifact"]["training_report"]
+    with pytest.raises(CorruptModelError, match="report"):
+        store.load(MODEL_KEY)
+    with patch.object(db, "has_collection", side_effect=OSError("unavailable")):
+        with pytest.raises(BackendIOError):
+            store.load(MODEL_KEY)
+        with pytest.raises(BackendIOError):
+            store.save(MODEL_KEY, model_artifact(), expected_revision=None)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda d: d.update(rule_weights=[float("nan")]),
+    lambda d: d["schema_snapshot"]["relation_names"].pop(),
+    lambda d: d["training_report"]["elbo_history"].pop(),
+    lambda d: d.update(evidence={"unsupported_tuple": (1, 2)}),
+    lambda d: d.update(rules=[]),
+])
+def test_corrupt_artifacts_are_rejected_before_writing(mutation):
+    document = model_artifact()
+    mutation(document)
+    with pytest.raises(CorruptModelError):
+        validate_model_artifact(document)
+
+
+def test_rule_generation_change_is_staleness_not_corruption():
+    """A code change to rule generation retrains instead of crashing startup."""
+    source = MemorySource([("A", "r", "B")])
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(source, store)
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        assert bootstrap.ensure_model_ready().source == "trained"
+        assert bootstrap.ensure_model_ready().source == "cached_weights"
+
+        original = bootstrap._generate_smart_rules
+
+        def changed_generation(kg):
+            rules = original(kg)
+            for rule in rules:
+                rule.confidence = 0.99  # simulate a rule-generation code change
+            return rules
+
+        with patch.object(bootstrap, "_generate_smart_rules", side_effect=changed_generation):
+            result = bootstrap.ensure_model_ready()
+    assert result.source == "trained"
+    assert store.saves == 2
+
+
+def test_bootstrap_uses_one_snapshot_even_if_graph_changes_during_load():
+    source = MemorySource([("A", "r", "B"), ("B", "r", "C")])
+    expected = TrainingSnapshot(source.triples)
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(source, store)
+
+    def change_graph(key):
+        source.triples[:] = [("A", "r", "C"), ("C", "r", "B")]
+        return None
+
+    with patch.object(store, "load", side_effect=change_graph), \
+         patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        result = bootstrap.ensure_model_ready()
+        kg = create.call_args.args[1]
+    assert source.calls == 1
+    assert result.data_hash == expected.data_hash
+    assert {(t.head.name, t.relation.name, t.tail.name) for t in kg.known_facts | kg.unknown_facts} == set(expected.triples)
+    assert store.load(MODEL_KEY).document["data_hash"] == expected.data_hash
+
+
+def test_bootstrap_preserves_more_than_50_relations_and_retrains_on_mutation():
+    source = MemorySource([("A", "r%03d" % i, "B") for i in range(101)])
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(source, store)
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        first = bootstrap.ensure_model_ready()
+        assert bootstrap.ensure_model_ready().source == "cached_weights"
+        source.triples[0] = ("B", "r000", "A")
+        second = bootstrap.ensure_model_ready()
+    assert second.source == "trained"
+    assert first.data_hash != second.data_hash
+    artifact = store.load(MODEL_KEY).document
+    assert artifact["schema_snapshot"]["relation_names"] == ["r%03d" % i for i in range(101)]
+    assert artifact["schema_snapshot"]["fact_count"] == 101
+    assert store.saves == 2
+
+
+@pytest.mark.parametrize("error", [BackendIOError, CorruptModelError, ModelConflictError])
+@pytest.mark.parametrize("operation", ["load", "save"])
+def test_bootstrap_propagates_store_errors(error, operation):
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(MemorySource([("A", "r", "B")]), store)
+    with patch.object(store, operation, side_effect=error("failure")), \
+         patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        with pytest.raises(error):
+            bootstrap.ensure_model_ready(force_retrain=True)
+
+
+def test_force_retrain_uses_revision_read_before_training():
+    store = MemoryStore()
+    source = MemorySource([("A", "r", "B")])
+    bootstrap = KnowledgeBootstrapper(source, store)
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        bootstrap.ensure_model_ready()
+
+        def competing_training():
+            current = store.load(MODEL_KEY)
+            store.save(MODEL_KEY, current.document, expected_revision=current.revision)
+            return make_training_result()
+
+        trainer.return_value.train.side_effect = competing_training
+        with pytest.raises(ModelConflictError):
+            bootstrap.ensure_model_ready(force_retrain=True)
+
+
+@pytest.mark.parametrize("method", ["_initialize_intelligence", "retrain_model"])
+def test_engine_does_not_hide_backend_failure(method):
+    from odin.engine import OdinEngine
+
+    engine = OdinEngine.__new__(OdinEngine)
+    engine.backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
+    engine.community_id = "global"
+    engine.community_mode = "none"
+    with patch("odin.engine.KnowledgeBootstrapper") as bootstrap:
+        bootstrap.return_value.ensure_model_ready.side_effect = BackendIOError("unavailable")
+        with pytest.raises(BackendIOError):
+            if method == "_initialize_intelligence":
+                engine._initialize_intelligence(True)
+            else:
+                engine.retrain_model()
+
+
+def test_signal_fields_are_explicit_and_entity_ids_remain_complete():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH_WITH_MEMBERSHIP,
+                    bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="power", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="strength")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    accessor.is_bridge("First/same")
+    accessor.is_bridge("Second/same")
+    accessor.get_affinity("a_b", "c")
+    accessor.get_affinity("a", "b_c")
+    accessor.get_entity_community("First/same")
+    assert db.query_arguments[0]["bind_vars"]["entity_id"] == "First/same"
+    assert db.query_arguments[1]["bind_vars"]["entity_id"] == "Second/same"
+    assert db.query_arguments[0]["bind_vars"]["entity_field"] == "record"
+    assert db.query_arguments[2]["bind_vars"]["score_field"] == "strength"
+    assert len(db.queries) == 5
+    assert all("algorithm" not in args["bind_vars"] for args in db.query_arguments)
+
+
+def test_signal_errors_are_not_cached_as_absence():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH_WITH_MEMBERSHIP,
+                    bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="power", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="strength")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    def fail(*args, **kwargs):
+        raise RuntimeError("permissions")
+    db.aql.execute = fail
+    for operation in (lambda: accessor.is_bridge("Records/a"),
+                      lambda: accessor.get_affinity("a", "b"),
+                      lambda: accessor.get_entity_community("Records/a")):
+        with pytest.raises(BackendIOError):
+            operation()
+    db.aql.execute = db.execute
+    assert accessor.is_bridge("Records/a") is None
+    assert accessor.get_affinity("a", "b") == 0.0
+    assert len(db.queries) == 2
+
+
+def test_first_boot_conflict_reloads_only_a_matching_winner():
+    source = MemorySource([("A", "r", "B")])
+    store = MemoryStore()
+    bootstrap = KnowledgeBootstrapper(source, store)
+    with patch("npll.bootstrap.create_snapshot_trained_model") as create, \
+         patch("npll.bootstrap.create_trainer") as trainer:
+        def initialize(snapshot, kg, rules, config):
+            from npll.scoring.scoring_module import create_scoring_module
+            create.return_value.scoring_module = create_scoring_module(config, kg)
+            create.return_value.scorer_training = {"recipe": "uniform-endpoint-corruptions-v2",
+                "torch_version": str(torch.__version__), "loss_history": [0.5] * config.scorer_epochs,
+                "example_count": 2}
+            create.return_value.config = config
+            create.return_value.mln.rule_weights = torch.nn.Parameter(torch.full((len(rules),), 0.5))
+            return create.return_value
+        create.side_effect = initialize
+        create.return_value.config = NPLLConfig(device="cpu")
+        create.return_value.mln.rule_weights = torch.nn.Parameter(torch.tensor([0.5]))
+        trainer.return_value.train.return_value = make_training_result()
+        winner = bootstrap.ensure_model_ready()
+        saved = store.load(MODEL_KEY)
+        with patch.object(store, "load", side_effect=[None, saved]), \
+             patch.object(store, "save", side_effect=ModelConflictError("raced")):
+            result = bootstrap.ensure_model_ready()
+        assert result.source == "cached_weights"
+        assert result.data_hash == winner.data_hash
+        stale = deepcopy(saved.document)
+        stale["data_hash"] = "b" * 64
+        with patch.object(store, "load", side_effect=[None, StoredModel(stale, "2")]), \
+             patch.object(store, "save", side_effect=ModelConflictError("raced")):
+            with pytest.raises(ModelConflictError, match="training contract"):
+                bootstrap.ensure_model_ready()
+
+
+def test_status_and_provenance_filters_are_explicitly_mapped():
+    db = FakeArango()
+    db.create_collection("SourceLinks")
+    graph = replace(ARANGO_GRAPH, edge_status_field="state", allowed_edge_statuses=("active",),
+                    provenance_edge_collection="SourceLinks",
+                    provenance_target_collections=("Reports",))
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    list(accessor.iter_out_edges("Entities/a"))
+    bind = db.query_arguments[-1]["bind_vars"]
+    assert bind["status_field"] == "state"
+    assert bind["allowed_statuses"] == ("active",)
+    assert bind["provenance_targets"] == ["Reports"]
+    accessor.get_edge_provenance("Relationships/a")
+    assert db.query_arguments[-1]["bind_vars"]["provenance_targets"] == ["Reports"]
+    with pytest.raises(ValueError, match="status field"):
+        replace(ARANGO_GRAPH, allowed_edge_statuses=("active",))
+
+
+def test_global_accessor_retains_mapped_signal_utilities():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection="BridgeRecords",
+                    bridge_entity_field="record", bridge_strength_field="strength",
+                    bridge_community_field="home")
+    accessor = ArangoBackend(db, graph).global_accessor()
+    assert accessor.get_bridges_from_community("tenant") == []
+    assert accessor.get_top_bridges() == []
+    assert db.query_arguments[0]["bind_vars"]["community_field"] == "home"
+    assert db.query_arguments[1]["bind_vars"]["strength_field"] == "strength"
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda state: state["scorer_training"]["loss_history"].pop(),
+    lambda state: state["config"].update(batch_size=0),
+])
+def test_incomplete_scorer_state_fails_before_storage_or_retraining(mutation):
+    artifact = model_artifact()
+    mutation(artifact["inference_state"])
+    with pytest.raises(CorruptModelError):
+        validate_model_artifact(artifact)
+
+
+def test_malformed_mapped_signal_rows_raise_without_poisoning_cache():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection="Bridges", bridge_entity_field="record",
+                    bridge_strength_field="strength", bridge_community_field="home",
+                    affinity_collection="Affinities", affinity_from_field="left",
+                    affinity_to_field="right", affinity_score_field="score")
+    accessor = ArangoBackend(db, graph).accessor("global", "none")
+    db.aql.execute = lambda *args, **kwargs: iter([{"record": "Entities/a"}])
+    with pytest.raises(BackendConfigurationError, match="bridge strength"):
+        accessor.is_bridge("Entities/a")
+    db.aql.execute = lambda *args, **kwargs: iter([None])
+    with pytest.raises(BackendConfigurationError, match="affinity score"):
+        accessor.get_affinity("a", "b")
+    assert accessor._bridge_cache == {}
+    assert accessor._affinity_cache == {}
+
+
+def test_membership_rejects_ambiguity_and_caches_only_successful_lookups():
+    db = FakeArango()
+    accessor = ArangoBackend(db, ARANGO_GRAPH_WITH_MEMBERSHIP).accessor('global', 'none')
+    calls = []
+    def execute(*args, **kwargs):
+        calls.append(kwargs)
+        return iter(['second', 'first'])
+    db.aql.execute = execute
+    with pytest.raises(BackendConfigurationError, match='Ambiguous'):
+        accessor.get_entity_community('Entities/a')
+    with pytest.raises(BackendConfigurationError, match='Ambiguous'):
+        accessor.get_entity_community('Entities/a')
+    assert len(calls) == 2
+    db.aql.execute = lambda *args, **kwargs: iter(['only', 'only'])
+    assert accessor.get_entity_community('Entities/a') == 'only'
+    db.aql.execute = lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError('cached query'))
+    assert accessor.get_entity_community('Entities/a') == 'only'
+    accessor.clear_cache()
+    db.aql.execute = lambda *args, **kwargs: iter(['changed'])
+    assert accessor.get_entity_community('Entities/a') == 'changed'
+
+
+def test_global_signal_helpers_return_tail_evidence_without_default_limits():
+    db = FakeArango()
+    graph = replace(ARANGO_GRAPH, bridge_collection='Bridges', bridge_entity_field='record',
+                    bridge_strength_field='strength', bridge_community_field='home',
+                    affinity_collection='Affinities', affinity_from_field='left',
+                    affinity_to_field='right', affinity_score_field='score')
+    accessor = ArangoBackend(db, graph).global_accessor()
+    rows = [{'_id': f'Signals/{i}', 'strength': i, 'score': i / 100} for i in range(151)]
+    db.aql.execute = lambda query, **kwargs: iter(rows)
+    assert accessor.get_top_bridges() == rows
+    assert accessor.get_strongest_affinities() == rows
+
+
+def test_model_store_has_no_retrieval_scope_arguments():
+    backend = ArangoBackend(FakeArango(), ARANGO_GRAPH)
+    assert backend.model_store().namespace
+    with pytest.raises(TypeError):
+        backend.model_store('tenant', 'mapping')

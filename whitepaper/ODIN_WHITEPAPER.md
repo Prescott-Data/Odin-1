@@ -364,7 +364,7 @@ Odin manages the complete NPLL lifecycle automatically:
 
 3. **Domain-Aware Rule Generation**: Odin automatically analyzes the relations present in the knowledge graph and generates appropriate logical rules. Healthcare graphs receive rules about diagnoses, treatments, and patient journeys. Insurance graphs receive rules about claims, policies, and provider patterns. Generic graphs receive universal patterns that apply across domains.
 
-4. **Graceful Fallback**: If NPLL training fails for any reason (insufficient data, corrupted graph, timeout), Odin falls back to constant-confidence scoring rather than failing entirely. The system continues to provide structural and temporal guidance while the semantic layer is unavailable.
+4. **Explicit Failure Policy**: Requested NPLL training fails loudly when it cannot produce a model. Callers can explicitly choose `auto_train=False` for constant-confidence retrieval. Failed retraining preserves the active model and serving components.
 
 This self-managing approach ensures that Odin's intelligence always reflects the current state of the knowledge graph, eliminating model staleness and reducing operational overhead.
 
@@ -394,17 +394,24 @@ Odin is designed as a **library** that agents import, not a standalone service:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to knowledge graph database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("knowledge_graph", username="user", password="pass")
 
-# Initialize Odin - NPLL auto-trains if needed
-odin = OdinEngine(db=db, community_id="healthcare")
+# Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
+odin = OdinEngine(backend)
 
 # Use during agent exploration
 result = odin.retrieve(
-    seeds=["entity/patient_12345"],
+    seeds=["entities/patient_12345"],
     max_paths=50,
     hop_limit=3,
 )
@@ -427,7 +434,7 @@ Enterprise deployment requires careful attention to:
 
 **Memory Management.** Unbounded caches have caused production incidents in many systems—memory grows until the process is killed. All caches in Odin are bounded with configurable limits, ensuring predictable memory consumption regardless of exploration patterns.
 
-**Graceful Degradation.** If the plausibility model fails—whether due to missing embeddings, model corruption, or infrastructure issues—Odin falls back to structural-only scoring rather than failing entirely. Agents continue to receive guidance, albeit without semantic filtering. This robustness is essential for production systems that cannot afford downtime.
+**Explicit Scoring Mode.** Training and backend errors propagate to the caller. Constant-confidence retrieval requires `auto_train=False`; errors do not silently change the scoring mode. Failed retraining leaves the active serving state intact.
 
 ### 5.3 Database Abstraction
 
@@ -616,7 +623,7 @@ While Odin provides significant advances in graph-guided exploration, we acknowl
 
 ### 9.1 Cold Start
 
-When Odin connects to a new knowledge graph with no prior model weights, it must train the NPLL model before semantic scoring becomes available. This initial training takes 10-30 seconds depending on graph size. During this period, exploration falls back to structural-only scoring (PageRank + recency), which still provides useful guidance but lacks semantic filtering.
+When Odin connects to a new knowledge graph with no prior model weights, it must train the NPLL model before semantic scoring becomes available. Initialization waits for training and persistence to complete. Callers that need structural retrieval without training must explicitly choose `auto_train=False`.
 
 **Mitigation:** For latency-critical first-time connections, applications can trigger training asynchronously and notify users when semantic scoring becomes available.
 
@@ -692,20 +699,28 @@ Odin is designed for organizations that:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_knowledge_graph", username="user", password="pass")
 
 # Initialize Odin - auto-trains NPLL on first run
-odin = OdinEngine(db=db)
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+odin = OdinEngine(ArangoBackend(db, graph))
 
 # Explore from seed entities
 result = odin.retrieve(seeds=["entity/interesting_node"])
 
 # Access scored paths
 for path in result["paths"][:5]:
-    print(f"Path: {path['nodes']} | Score: {path['score']:.3f}")
+    edges = path["edges"]
+    nodes = [edges[0]["u"], *(edge["v"] for edge in edges)] if edges else []
+    print(f"Path: {nodes} | Score: {path['score']:.3f}")
 
 # Get aggregated insights
 print(f"Top motifs: {result['aggregates']['top_motifs']}")

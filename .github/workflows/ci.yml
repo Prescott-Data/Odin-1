@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging, dev]
   pull_request:
-    branches: [main]
+    branches: [main, staging, dev]
 
 jobs:
   test:
@@ -36,6 +36,32 @@ jobs:
 
       - name: Run unit tests
         run: pytest tests/unit -v
+
+  skills:
+    name: Skills (validate, wheel install)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest build setuptools wheel "skills-ref==0.1.1"
+
+      - name: Validate skills
+        run: |
+          for dir in odin/skills/*/; do
+            agentskills validate "$dir"
+          done
+
+      - name: Build wheel, install in a clean venv, run the installer
+        run: pytest tests/packaging -v
 
   build:
     name: Build distribution

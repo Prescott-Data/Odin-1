@@ -4,7 +4,8 @@ Hyperparameters and settings based on the paper specifications
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from copy import deepcopy
+from typing import List, Optional, get_type_hints
 import torch
 
 
@@ -28,6 +29,9 @@ class NPLLConfig:
     temperature: float = 1.0  # Temperature scaling for calibration
     
     # Training Hyperparameters (Paper Section 5)
+    scorer_negatives_per_side: int = 4
+    scorer_epochs: int = 100
+    scorer_learning_rate: float = 0.003
     learning_rate: float = 0.0005  # Initial learning rate from paper
     batch_size: int = 128  # Batch size for ground rule sampling
     max_epochs: int = 100  # Maximum training epochs
@@ -68,7 +72,7 @@ class NPLLConfig:
     filtered_evaluation: bool = True  # Filtered setting from paper
     
     # Dataset-specific Settings (Paper datasets)
-    dataset_name: str = "ArangoDB_Triples"  # Default dataset
+    dataset_name: str = "OdinTriples"  # Default dataset
     train_ratio: float = 1.0  # Training data ratio (for data efficiency experiments)
     
     # Logging and Checkpointing
@@ -125,21 +129,39 @@ KINSHIP_CONFIG = NPLLConfig(
 )
 
 
+# Explicit compact production profile. Scorer parameters learn from snapshot
+# evidence and are persisted as learned scorer state. The E-M loop
+# independently optimizes logical rule weights.
+ODIN_TRIPLES_CONFIG = NPLLConfig(
+    dataset_name="OdinTriples", entity_embedding_dim=32,
+    relation_embedding_dim=32, rule_embedding_dim=64, scoring_hidden_dim=64,
+    max_epochs=200,
+)
+
+
 def get_config(dataset_name: str) -> NPLLConfig:
     """Get dataset-specific configuration"""
     configs = {
+        "OdinTriples": ODIN_TRIPLES_CONFIG,
         "FB15k-237": FB15K_237_CONFIG,
         "WN18RR": WN18RR_CONFIG,
         "UMLS": UMLS_CONFIG,
         "Kinship": KINSHIP_CONFIG
     }
     
-    if dataset_name in configs:
-        return configs[dataset_name]
-    else:
-        print(f"Warning: Unknown dataset {dataset_name}, using default ArangoDB_Triples config")
-        return FB15K_237_CONFIG
+    if dataset_name not in configs:
+        raise ValueError(f"Unknown NPLL dataset configuration: {dataset_name}")
+    return deepcopy(configs[dataset_name])
+
+
+def config_from_json(data: dict) -> NPLLConfig:
+    """Rebuild a stored config; JSON stores return whole-number floats as ints."""
+    hints = get_type_hints(NPLLConfig)
+    return NPLLConfig(**{
+        key: float(value) if hints.get(key) is float and type(value) is int else value
+        for key, value in data.items()
+    })
 
 
 # Export default config
-default_config = FB15K_237_CONFIG
+default_config = ODIN_TRIPLES_CONFIG

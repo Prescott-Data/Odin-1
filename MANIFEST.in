@@ -5,8 +5,8 @@ include CHANGELOG.md
 include whitepaper/ARCHITECTURE.md
 include whitepaper/AGENT_INTEGRATION_GUIDE.md
 
-# Include the packaged AI-editor skill
-recursive-include odin/skills *.md
+# Include the packaged AI-editor skills and their references
+recursive-include odin/skills *
 
 # Exclude build artifacts
 global-exclude *.pyc

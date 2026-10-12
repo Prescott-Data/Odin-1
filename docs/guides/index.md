@@ -8,6 +8,12 @@ Practical, task-focused walkthroughs. Each guide assumes you have installed `odi
 
 <div class="grid cards" markdown>
 
+-   :material-swap-horizontal: **Backend Migration**
+
+    Update installations, imports, and training behavior for explicit backends.
+
+    [Read more →](backend-migration.md)
+
 -   :material-database: **Connecting ArangoDB**
 
     Authenticated connections, databases, and communities.

@@ -632,7 +632,7 @@ def create_initialized_npll_model(knowledge_graph: KnowledgeGraph,
         Initialized NPLL model ready for training
     """
     if config is None:
-        config = get_config("ArangoDB_Triples")  # Default configuration
+        config = get_config("OdinTriples")  # Default configuration
     
     model = NPLLModel(config)
     model.initialize(knowledge_graph, logical_rules)

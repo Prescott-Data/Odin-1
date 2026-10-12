@@ -12,7 +12,7 @@ body:
     attributes:
       label: Odin version
       description: Run `python -c "import odin; print(odin.__version__)"`.
-      placeholder: 0.3.0
+      placeholder: 0.4.0
     validations:
       required: true
   - type: input

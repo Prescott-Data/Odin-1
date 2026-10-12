@@ -6,7 +6,7 @@ from retrieval.orchestrator import RetrievalOrchestrator, OrchestratorParams
 from retrieval.adapters import KGCommunityAccessor, OverlayAccessor
 from retrieval.confidence import NPLLConfidence, ConstantConfidence
 from retrieval.linker import CoherenceLinker, LinkerConfig, Mention
-from retrieval.writers import ArangoWriter
+from retrieval.writers.arango_writer import ArangoWriter
 from retrieval.metrics import MetricsLogger, JSONLSink
 from retrieval.beam import BeamParams
 

@@ -7,17 +7,24 @@ The simplest way to integrate Odin with your agents:
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # Connect to database
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("KG-test", username="lisa", password="...")
 
-# Initialize Odin (auto-trains NPLL if needed, stores weights in DB)
-engine = OdinEngine(db, community_id="healthcare")
+# Map the application's Arango graph, then initialize Odin.
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend)
 
 # Use in your agent
-result = engine.retrieve(seeds=["Patient_123"], max_paths=100)
-score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
+result = engine.retrieve(seeds=["entities/Patient_123"], max_paths=100)
+score = engine.score_edge("entities/Patient_A", "treated_by", "entities/Dr_Smith")
 ```
 
 **That's it.** No manual NPLL training, no .pt files, no complex wiring.
@@ -45,10 +52,16 @@ The simplest approach using the high-level `OdinEngine` class:
 
 ```python
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
-engine = OdinEngine(db)
-result = engine.retrieve(seeds=["Patient_123"])
-score = engine.score_edge("Patient_A", "treated_by", "Dr_Smith")
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+)
+engine = OdinEngine(ArangoBackend(db, graph))
+result = engine.retrieve(seeds=["entities/Patient_123"])
+score = engine.score_edge("entities/Patient_A", "treated_by", "entities/Dr_Smith")
 ```
 
 ### Option B: RetrievalOrchestrator (Advanced)

@@ -50,11 +50,11 @@ Behind `OdinEngine`, the `RetrievalOrchestrator` runs that pipeline and assemble
 
 ## What happens when you build an engine
 
-Constructing an `OdinEngine` wires those parts together in one shot. It opens an `ArangoCommunityAccessor` for your `community_id` and wraps it in a `CachedGraphAccessor`; it initializes intelligence by loading or training the NPLL model (unless `auto_train=False`), yielding either `NPLLConfidence` or the `ConstantConfidence` fallback; and it hands both to a fresh `RetrievalOrchestrator` and `APPRAnchors` engine. From then on the engine is ready to serve retrievals.
+Constructing an `OdinEngine` wires those parts together in one shot. The supplied backend opens an accessor for your `community_id`, which Odin wraps in a `CachedGraphAccessor`; a training-capable backend loads or trains the NPLL model unless `auto_train=False`; and Odin hands both to a fresh `RetrievalOrchestrator` and `APPRAnchors` engine. Retrieval-only backends must disable auto-training. From then on the engine is ready to serve retrievals.
 
 ```python
 engine = OdinEngine(
-    db=db,
+    backend=backend,
     community_id="global",   # scope of exploration
     cache_size=5000,          # graph-accessor LRU size
     auto_train=True,          # train NPLL if no model exists
