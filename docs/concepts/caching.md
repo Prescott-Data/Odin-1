@@ -11,10 +11,11 @@ Graph exploration is repetitive by nature: PPR and beam search revisit the same 
 There are actually two caches working together. The **graph accessor** cache sits over ArangoDB: when you build an engine, the raw accessor is wrapped in a `CachedGraphAccessor`, and every node fetch and neighbor lookup during a walk goes through it.
 
 ```python
-engine = OdinEngine(db, cache_size=5000)   # LRU size for graph reads
+backend = ArangoBackend(db, graph)  # `graph` is your ArangoGraphConfig
+engine = OdinEngine(backend, cache_size=5000)   # LRU size for graph reads
 ```
 
-Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this makes edge scoring effectively free after the first lookup, roughly 5 ms per edge cached.
+Above that, the **NPLL confidence** layer caches `score_edge` results internally. Because a beam search evaluates the same `(head, relation, tail)` triples over and over, this avoids repeated model evaluation after the first lookup; measure the effect on your own data and hardware.
 
 | Layer | What it caches | Controlled by |
 |-------|----------------|---------------|
@@ -23,11 +24,11 @@ Above that, the **NPLL confidence** layer caches `score_edge` results internally
 
 ## Why it matters for latency
 
-The payoff is concrete. On a warm cache Odin sees **>80% hit rates** after a short warm-up, which is a large part of why a 50-path, 3-hop retrieval lands in the typical **300-800 ms** range. The exception is the first retrieval after startup: a cold cache is slower while the working set fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
+A warm cache avoids repeated database reads and model evaluations, so latency is typically lower once the working set has filled; hit rates and latency depend on your graph and queries, so measure them. The first retrieval after startup is slower while the cache fills, which is why warming an engine before it serves traffic matters in [production](../guides/production.md).
 
 ## Sizing the cache
 
-`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Plan for roughly **500 MB-2 GB** of memory depending on cache size and graph density.
+`cache_size` is the main lever, and the right value depends on your graph and host. On a large, dense graph, raise it to keep more of the working set resident. On a memory-constrained host, lower it and accept more round-trips. For many short, unrelated queries, a small cache is fine because there is little locality to exploit anyway. Memory use grows with cache size and graph density; measure it on your own data.
 
 One caveat on freshness: the cache holds reads for the lifetime of the engine's working set. After a **significant** data change, construct a fresh engine, and if the edge patterns themselves shifted, [retrain the NPLL model](../guides/npll-lifecycle.md), so stale structure does not linger.
 

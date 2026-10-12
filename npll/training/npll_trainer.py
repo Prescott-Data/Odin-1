@@ -464,7 +464,7 @@ def train_npll_from_scratch(knowledge_graph: KnowledgeGraph,
     
     # Create model
     if npll_config is None:
-        npll_config = get_config("ArangoDB_Triples")
+        npll_config = get_config("OdinTriples")
     
     model = create_npll_model(npll_config)
     model.initialize(knowledge_graph, logical_rules)
@@ -506,7 +506,7 @@ def example_training_pipeline():
     rules.extend(rule_generator.generate_symmetry_rules(min_support=1))
     
     # 2. Configure training
-    npll_config = get_config("ArangoDB_Triples")
+    npll_config = get_config("OdinTriples")
     training_config = TrainingConfig(
         num_epochs=10,
         max_em_iterations_per_epoch=5,

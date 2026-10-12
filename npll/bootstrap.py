@@ -1,40 +1,152 @@
 """
 Bootstrap module for NPLL.
 Handles the end-to-end lifecycle of the NPLL model:
-1. Extracting data from ArangoDB
+1. Reading a backend-neutral training snapshot
 2. Generating domain-appropriate logical rules
 3. Training the model
-4. Storing ONLY WEIGHTS in database (not full model)
+4. Persisting learned scorer state, rule weights, schema, and complete reports
 
 Architecture:
-- Weights stored in OdinModels collection (~1 KB)
-- Model rebuilt from KG on each load (~30 sec)
+- The injected ModelStore owns persistence
+- Model architecture rebuilt from its vocabulary, then learned tensors loaded
 - No external files needed
 """
 
-import os
+import base64
 import hashlib
-import json
+import io
 import logging
 import random
-import time
 import torch
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import List, Tuple, Dict, Optional, Any
-from arango.database import StandardDatabase
+from odin.backends.base import (
+    ARTIFACT_VERSION, MODEL_KEY, CorruptModelError, ModelConflictError, ModelStore, StoredModel,
+    TrainingSnapshot, TripleSource, validate_model_artifact, is_older_artifact_version,
+)
 
 from .core.knowledge_graph import KnowledgeGraph, load_knowledge_graph_from_triples
-from .core.logical_rules import LogicalRule, Atom, Variable, RuleType
+from .core.logical_rules import LogicalRule, RuleGenerator
 from .npll_model import create_initialized_npll_model, NPLLModel
 from .training.npll_trainer import TrainingConfig, TrainingResult, create_trainer
 from .utils.config import get_config
+from .utils.config import NPLLConfig, config_from_json
 
 logger = logging.getLogger(__name__)
 
-# Collection name for storing model weights
-ODIN_MODELS_COLLECTION = "OdinModels"
-NPLL_MODEL_KEY = "npll_current"
+
+def scoring_initialization_seed(snapshot: TrainingSnapshot) -> int:
+    """Derive a stable scorer initialization from the exact graph snapshot."""
+    return int(snapshot.data_hash[:16], 16) % (2 ** 63 - 1)
+
+
+def create_snapshot_initialized_model(snapshot: TrainingSnapshot, kg: KnowledgeGraph,
+                                      rules: List[LogicalRule], config: NPLLConfig) -> NPLLModel:
+    """Create the untrained scorer deterministically without mutating caller RNG state."""
+    cuda_devices = list(range(torch.cuda.device_count())) if config.device.startswith("cuda") else []
+    with torch.random.fork_rng(devices=cuda_devices):
+        torch.manual_seed(scoring_initialization_seed(snapshot))
+        if cuda_devices:
+            torch.cuda.manual_seed_all(scoring_initialization_seed(snapshot))
+        return create_initialized_npll_model(kg, rules, config)
+
+
+SCORER_RECIPE = "uniform-endpoint-corruptions-v2"
+# Device and loader/runtime settings do not change learned semantics.
+RUNTIME_CONFIG_FIELDS = frozenset({"device", "num_workers", "pin_memory", "eval_batch_size",
+                                   "log_interval", "save_interval", "checkpoint_dir"})
+
+
+def create_snapshot_trained_model(snapshot, kg, rules, config):
+    """Learn a scorer from supervised known facts and uniform endpoint corruptions.
+
+    Negative examples are unobserved corruptions, not assertions of source falsity.
+    Latent E-M holdout facts are excluded from supervision and negative examples.
+    """
+    if config.scorer_epochs <= 0 or config.scorer_learning_rate <= 0:
+        raise TrainingError("Scorer training requires positive epochs and learning rate")
+    devices = list(range(torch.cuda.device_count())) if config.device.startswith("cuda") else []
+    with torch.random.fork_rng(devices=devices):
+        torch.manual_seed(scoring_initialization_seed(snapshot))
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        facts = set(snapshot.triples)
+        entities = sorted({v for h, _, t in facts for v in (h, t)})
+        rng = random.Random(scoring_initialization_seed(snapshot))
+        positives = sorted((f.head.name, f.relation.name, f.tail.name) for f in kg.known_facts)
+        examples = []
+        labels = []
+        for h, r, t in positives:
+            examples.append((h, r, t))
+            labels.append(1.0)
+            for axis in (0, 2):
+                selected = set()
+                for _ in range(config.scorer_negatives_per_side * 20):
+                    candidate = (rng.choice(entities), r, t) if axis == 0 else (h, r, rng.choice(entities))
+                    if candidate not in facts:
+                        selected.add(candidate)
+                    if len(selected) == config.scorer_negatives_per_side:
+                        break
+                if len(selected) < config.scorer_negatives_per_side:
+                    shuffled = list(entities)
+                    rng.shuffle(shuffled)
+                    for other in shuffled:
+                        candidate = (other, r, t) if axis == 0 else (h, r, other)
+                        if candidate not in facts:
+                            selected.add(candidate)
+                        if len(selected) == config.scorer_negatives_per_side:
+                            break
+                for candidate in sorted(selected):
+                    examples.append(candidate)
+                    labels.append(0.0)
+        if not any(label == 0.0 for label in labels):
+            raise TrainingError("Snapshot has no unobserved corruptions for scorer training")
+        scorer = model.scoring_module
+        scorer.train()
+        optimizer = torch.optim.Adam(scorer.parameters(), lr=config.scorer_learning_rate)
+        device = next(scorer.parameters()).device
+        losses = []
+        for _ in range(config.scorer_epochs):
+            order = list(range(len(examples)))
+            rng.shuffle(order)
+            total = 0.0
+            for start in range(0, len(examples), config.batch_size):
+                indices = order[start:start + config.batch_size]
+                batch = [examples[i] for i in indices]
+                targets = torch.tensor([labels[i] for i in indices], device=device)
+                optimizer.zero_grad()
+                logits = scorer.forward_with_names([h for h, _, _ in batch],
+                                                   [r for _, r, _ in batch],
+                                                   [t for _, _, t in batch])
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                    logits, targets, pos_weight=torch.tensor(labels.count(0.0) / labels.count(1.0), device=device))
+                if not torch.isfinite(loss):
+                    raise TrainingError("Scorer training produced a non-finite loss")
+                loss.backward()
+                optimizer.step()
+                total += float(loss.detach()) * len(batch)
+            losses.append(total / len(examples))
+        scorer.eval()
+        scorer.requires_grad_(False)
+        model.scorer_training = {"recipe": SCORER_RECIPE, "torch_version": str(torch.__version__),
+                                 "loss_history": losses, "example_count": len(examples)}
+        return model
+
+
+class TrainingError(RuntimeError):
+    """Requested NPLL training failed; callers must not serve substitute scores."""
+
+
+class TrainingConvergenceError(TrainingError):
+    """Training exhausted its safety budget; the previous artifact is preserved."""
+
+    def __init__(self, report: "TrainingReport"):
+        self.report = report
+        super().__init__(
+            f"NPLL did not converge within the safety budget "
+            f"({report.total_epochs} epochs, {report.total_em_iterations} E-M iterations). "
+            "No replacement model was saved. Inspect error.report for the complete training history."
+        )
 
 
 @dataclass
@@ -61,7 +173,7 @@ class TrainingReport:
 
     @classmethod
     def from_training_result(cls, result: TrainingResult, trained_at: str) -> "TrainingReport":
-        config = get_config("ArangoDB_Triples")
+        config = get_config("OdinTriples")
         return cls(
             converged=result.converged,
             convergence_epoch=result.convergence_epoch,
@@ -103,54 +215,45 @@ class KnowledgeBootstrapper:
     Manages the lifecycle of the NPLL model.
     
     Storage Strategy:
-    - Only rule weights are saved to database (~1 KB)
-    - Model is rebuilt from KG data on each load (~30 sec)
+    - Learned scorer tensors, rule weights and audit metadata are saved through ModelStore
+    - Model parameters are loaded without training on worker startup
     - No external .pt files needed
     """
     
-    def __init__(self, db: StandardDatabase):
-        """
-        Initialize the bootstrapper.
-        
-        Args:
-            db: An already-connected ArangoDB database instance
-        """
-        self.db = db
-        self._ensure_collection_exists()
-
-    def _ensure_collection_exists(self):
-        """Ensure OdinModels collection exists."""
-        try:
-            if not self.db.has_collection(ODIN_MODELS_COLLECTION):
-                self.db.create_collection(ODIN_MODELS_COLLECTION)
-                logger.info(f"Created {ODIN_MODELS_COLLECTION} collection")
-        except Exception as e:
-            # Suppress permission errors (common in read-only environments)
-            logger.warning(f"Could not verify/create {ODIN_MODELS_COLLECTION} (Permission Error?): {e}")
+    def __init__(self, triple_source: TripleSource, model_store: ModelStore):
+        self.triple_source = triple_source
+        self.model_store = model_store
 
     def ensure_model_ready(self, force_retrain: bool = False) -> BootstrapResult:
         """
-        Ensures a trained NPLL model is available.
+        Ensure a trained NPLL model is available.
         
         Flow:
-        1. Compute current data hash
-        2. Check OdinModels for saved weights with matching hash
-        3. If found: rebuild model from KG, apply saved weights
+        1. Extract a snapshot with its content fingerprint
+        2. Read the model artifact and its revision from ModelStore
+        3. If compatible: initialize architecture, load learned tensors and rule weights
         4. If not found: train new model, save weights to DB
         
         Args:
-            force_retrain: If True, ignores cached weights and retrains
+            force_retrain: If True, retrains using the current store revision.
+                Corrupt artifacts and store failures still raise.
             
         Returns:
-            BootstrapResult with the model (or None on failure), the source
-            of the weights, and the TrainingReport audit record when available
+            BootstrapResult with the model (or None for an empty snapshot),
+            its source, and the complete rule TrainingReport. Errors raise.
+            Backend errors propagate without converting them into cache misses.
         """
-        current_hash = self._compute_data_hash()
-        logger.info(f"Current data hash: {current_hash[:16]}...")
+        snapshot = self.triple_source.snapshot()
+        current_hash = snapshot.data_hash
+        logger.info("Current data hash: %s", current_hash)
+        # Read the revision before training, including forced retraining.
+        stored = self.model_store.load(MODEL_KEY)
+        if stored is not None:
+            validate_model_artifact(stored.document)
         
         if not force_retrain:
             # Try to load existing weights and rebuild model
-            model, report = self._load_model_with_weights(current_hash)
+            model, report = self._load_model_with_weights(snapshot, stored)
             if model:
                 return BootstrapResult(
                     model=model, source="cached_weights",
@@ -159,140 +262,108 @@ class KnowledgeBootstrapper:
         
         # Train new model
         logger.info("Training new NPLL model...")
-        model, report = self._train_and_save_weights(current_hash)
+        try:
+            model, report = self._train_and_save_weights(
+                snapshot, stored.revision if stored is not None else None,
+            )
+        except ModelConflictError:
+            if force_retrain:
+                raise
+            winner = self.model_store.load(MODEL_KEY)
+            if winner is not None:
+                validate_model_artifact(winner.document)
+            model, report = self._load_model_with_weights(snapshot, winner)
+            if model is None:
+                raise ModelConflictError("Concurrent model does not match the training contract")
+            return BootstrapResult(model=model, source="cached_weights",
+                                   data_hash=current_hash, report=report)
         source = "trained" if model else "failed"
         return BootstrapResult(model=model, source=source, data_hash=current_hash, report=report)
 
-    def _compute_data_hash(self) -> str:
-        """
-        Compute a hash of the current schema to detect when retraining is needed.
-        """
-        try:
-            # Get relation names
-            rel_query = """
-            FOR e IN ExtractedRelationships
-              COLLECT rel = e.relationship WITH COUNT INTO cnt
-              SORT rel
-              RETURN {rel: rel, count: cnt}
-            """
-            relations = list(self.db.aql.execute(rel_query))
-            relation_names = sorted([r['rel'] for r in relations if r['rel']])
-            
-            # Get counts
-            entity_count = self.db.collection("ExtractedEntities").count()
-            fact_count = self.db.collection("ExtractedRelationships").count()
-            
-            hash_input = {
-                "relations": relation_names,
-                "entity_count": entity_count,
-                "fact_count": fact_count,
-            }
-            
-            hash_str = json.dumps(hash_input, sort_keys=True)
-            return hashlib.sha256(hash_str.encode()).hexdigest()
-            
-        except Exception as e:
-            logger.warning(f"Could not compute data hash: {e}")
-            return hashlib.sha256(str(time.time()).encode()).hexdigest()
-
-    def _load_model_with_weights(self, expected_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
-        """
-        Load saved weights from DB and rebuild the model.
-        
-        Flow:
-        1. Check if saved weights exist with matching hash
-        2. Extract triples from DB → build KG
-        3. Generate rules (same code = same rules)
-        4. Initialize fresh model
-        5. Apply saved weights
-        
-        Returns (model, rehydrated training report) — report is None for
-        documents written before reports were persisted.
-        """
-        try:
-            collection = self.db.collection(ODIN_MODELS_COLLECTION)
-            doc = collection.get(NPLL_MODEL_KEY)
-            
-            if not doc:
-                logger.info("No saved weights found in database")
-                return None, None
-            
-            stored_hash = doc.get("data_hash", "")
-            if stored_hash != expected_hash:
-                logger.info(f"Data has changed. Stored: {stored_hash[:16]}..., Current: {expected_hash[:16]}...")
-                return None, None
-            
-            # Get saved weights
-            saved_weights = doc.get("rule_weights")
-            if not saved_weights:
-                logger.warning("No rule_weights in saved document")
-                return None, None
-            
-            logger.info("Rebuilding model from KG and applying saved weights...")
-            
-            # 1. Extract triples
-            triples = self._extract_triples()
-            if not triples:
-                return None, None
-            
-            # 2. Build KG
-            kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
-            
-            # 3. Generate rules (same code = same rules)
-            rules = self._generate_smart_rules(kg)
-            
-            if len(rules) != len(saved_weights):
-                logger.warning(f"Rule count mismatch: {len(rules)} rules, {len(saved_weights)} weights. Retraining.")
-                return None, None
-            
-            # 4. Initialize model
-            config = get_config("ArangoDB_Triples")
-            model = create_initialized_npll_model(kg, rules, config)
-            
-            # 5. Apply saved weights
-            with torch.no_grad():
-                model.mln.rule_weights.copy_(torch.tensor(saved_weights, dtype=torch.float32))
-            
-            report = None
-            report_data = doc.get("training_report")
-            if report_data:
-                try:
-                    report = TrainingReport.from_dict(report_data)
-                except TypeError as e:
-                    logger.warning(f"Could not rehydrate training report: {e}")
-            
-            trained_at = doc.get("trained_at", "unknown")
-            logger.info(f"✓ Model rebuilt with saved weights (trained: {trained_at})")
-            
-            return model, report
-            
-        except Exception as e:
-            logger.warning(f"Failed to load model: {e}")
+    def _load_model_with_weights(
+        self, snapshot: TrainingSnapshot, stored: Optional[StoredModel],
+    ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
+        if stored is None or is_older_artifact_version(stored.document.get("version")):
             return None, None
+        if stored.document.get("data_hash") != snapshot.data_hash:
+            return None, None
+        doc = stored.document
+        if not snapshot.triples:
+            return None, None
+        kg = load_knowledge_graph_from_triples(snapshot.triples, "Odin_KG")
+        rules = self._generate_smart_rules(kg)
+        expected_rules = [(r.rule_id, str(r), r.confidence) for r in rules]
+        saved_rules = [(r["rule_id"], r["rule_text"], r["confidence"]) for r in doc["rules"]]
+        if expected_rules != saved_rules:
+            # Rules are code-generated: a mismatch means the generation code
+            # changed since training — staleness, not corruption. Retrain.
+            logger.info("Saved rules do not match current rule generation; retraining")
+            return None, None
+        try:
+            report = TrainingReport.from_dict(doc["training_report"])
+        except (TypeError, ValueError) as exc:
+            raise CorruptModelError("Invalid training report") from exc
+        inference_state = doc["inference_state"]
+        if inference_state["initialization_seed"] != scoring_initialization_seed(snapshot):
+            raise CorruptModelError("Model initialization seed does not match the graph snapshot")
+        config_data = dict(inference_state["config"])
+        current = asdict(get_config("OdinTriples"))
+        if {k: v for k, v in config_data.items() if k not in RUNTIME_CONFIG_FIELDS} != {
+                k: v for k, v in current.items() if k not in RUNTIME_CONFIG_FIELDS}:
+            return None, None
+        config = config_from_json({**config_data, "device": current["device"]})
+        recipe = inference_state["scorer_training"]
+        if recipe["recipe"] != SCORER_RECIPE:
+            return None, None
+        model = create_snapshot_initialized_model(snapshot, kg, rules, config)
+        blob = inference_state["scorer_state"]
+        try:
+            payload = base64.b64decode(blob["data"], validate=True)
+            if hashlib.sha256(payload).hexdigest() != blob["sha256"]:
+                raise ValueError("Scorer state checksum differs")
+            tensors = torch.load(io.BytesIO(payload), map_location=config.device, weights_only=True)
+            expected = model.scoring_module.state_dict()
+            if set(tensors) != set(expected) or any(
+                    not isinstance(tensors[k], torch.Tensor) or tensors[k].shape != expected[k].shape or
+                    not torch.isfinite(tensors[k]).all() for k in expected):
+                raise ValueError("Invalid scorer tensors")
+            model.scoring_module.load_state_dict(tensors, strict=True)
+        except Exception as exc:
+            raise CorruptModelError("Invalid persisted scorer state") from exc
+        model.scorer_training = recipe
+        model.scoring_module.eval()
+        model.scoring_module.requires_grad_(False)
+        with torch.no_grad():
+            model.mln.rule_weights.copy_(torch.tensor(doc["rule_weights"], dtype=torch.float32))
+        logger.info("Model rebuilt with saved weights (trained: %s)", doc["trained_at"])
+        return model, report
 
-    def _train_and_save_weights(self, data_hash: str) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
+    def _train_and_save_weights(
+        self, snapshot: TrainingSnapshot, expected_revision: Optional[str],
+    ) -> Tuple[Optional[NPLLModel], Optional[TrainingReport]]:
         """
-        Train a new NPLL model and save ONLY the weights to database.
+        Train a new NPLL model and save its complete learned state to the store.
         """
         # 1. Extract Triples
-        triples = self._extract_triples()
+        triples = snapshot.triples
         if not triples:
             logger.error("No triples extracted. Cannot train.")
             return None, None
         
         # 2. Build KG
-        kg = load_knowledge_graph_from_triples(triples, "ArangoDB_KG")
+        kg = load_knowledge_graph_from_triples(triples, "Odin_KG")
         logger.info(f"Built KG: {len(kg.entities)} entities, {len(kg.relations)} relations, {len(kg.known_facts)} facts")
         
         # Create unknown facts for training (10%)
-        known_facts_list = list(kg.known_facts)
-        random.seed(42)
-        num_unknown = max(1, len(known_facts_list) // 10)
-        unknown_facts = random.sample(known_facts_list, num_unknown)
+        known_facts_list = sorted(kg.known_facts, key=lambda fact: (
+            fact.head.name, fact.relation.name, fact.tail.name,
+        ))
+        sampling_rng = random.Random(42)
+        num_unknown = min(len(known_facts_list) - 1, max(1, len(known_facts_list) // 10))
+        unknown_facts = sampling_rng.sample(known_facts_list, num_unknown)
         
         for fact in unknown_facts:
-            kg.known_facts.remove(fact)
-            kg.add_unknown_fact(fact.head.name, fact.relation.name, fact.tail.name)
+            kg.hold_out_fact(fact)
         
         # 3. Generate Rules
         rules = self._generate_smart_rules(kg)
@@ -303,14 +374,13 @@ class KnowledgeBootstrapper:
             return None, None
         
         # 4. Initialize Model
-        config = get_config("ArangoDB_Triples")
-        model = create_initialized_npll_model(kg, rules, config)
+        config = get_config("OdinTriples")
+        model = create_snapshot_trained_model(snapshot, kg, rules, config)
         
         # 5. Train
         train_config = TrainingConfig(
-            num_epochs=10,
-            max_em_iterations_per_epoch=5,
-            early_stopping_patience=3,
+            num_epochs=config.max_epochs,
+            max_em_iterations_per_epoch=config.em_iterations,
             save_checkpoints=False
         )
         trainer = create_trainer(model, train_config)
@@ -321,237 +391,62 @@ class KnowledgeBootstrapper:
             training_result = trainer.train()
             logger.info(f"Training completed. Final ELBO: {training_result.final_elbo}")
         except Exception as e:
-            logger.error(f"Training failed: {e}", exc_info=True)
-            return None, None
+            raise TrainingError("NPLL trainer failed") from e
         
         trained_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         report = TrainingReport.from_training_result(training_result, trained_at)
         if not report.converged:
-            logger.warning(
-                "NPLL training finished WITHOUT convergence "
-                f"(epochs={report.total_epochs}, em_iterations={report.total_em_iterations}, "
-                f"final_elbo={report.final_elbo:.6f}). Edge confidences may be poorly calibrated."
-            )
+            raise TrainingConvergenceError(report)
         
-        # 6. Save ONLY weights to database
-        self._save_weights_to_db(model, kg, rules, data_hash, report)
+        # 6. Save complete learned state and training evidence.
+        self._save_weights(model, kg, rules, snapshot, report, expected_revision)
         
         return model, report
 
-    def _save_weights_to_db(self, model: NPLLModel, kg: KnowledgeGraph, 
-                            rules: List[LogicalRule], data_hash: str,
-                            report: Optional[TrainingReport]):
-        """
-        Save ONLY the learned weights to OdinModels collection.
-        This is tiny (~1 KB) compared to the full model (280 MB).
-        """
-        try:
-            # Extract just the rule weights
-            rule_weights = model.mln.rule_weights.detach().cpu().tolist()
-            
-            doc = {
-                "_key": NPLL_MODEL_KEY,
-                "model_type": "npll",
-                "storage_type": "weights_only",  # Mark this as weights-only storage
-                "trained_at": report.trained_at if report else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                "data_hash": data_hash,
-                "rule_weights": rule_weights,  # The learned weights - this is all we need!
-                "schema_snapshot": {
-                    "entity_count": len(kg.entities),
-                    "relation_count": len(kg.relations),
-                    "fact_count": len(kg.known_facts),
-                    "relation_names": sorted([r.name for r in kg.relations])[:50],
-                },
-                "training_report": report.to_dict() if report else None,
-                "rules": [
-                    {
-                        "rule_id": r.rule_id,
-                        "rule_text": str(r),
-                        "confidence": r.confidence,
-                    }
-                    for r in rules
-                ],
-                "version": "2.1",  # Version 2.1 = weights-only storage + full training report
-            }
-            
-            # Upsert
-            collection = self.db.collection(ODIN_MODELS_COLLECTION)
-            if collection.has(NPLL_MODEL_KEY):
-                collection.update(doc)
-            else:
-                collection.insert(doc)
-            
-            weights_size = len(json.dumps(rule_weights))
-            logger.info(f"✓ Saved rule weights to database ({weights_size} bytes)")
-            
-        except Exception as e:
-            logger.error(f"Failed to save weights: {e}", exc_info=True)
-
-    def _extract_triples(self) -> List[Tuple[str, str, str]]:
-        """Extracts S-P-O triples from ArangoDB."""
-        logger.info("Extracting triples from database...")
-        triples = []
-        
-        # Extract Relationships
-        query = """
-        FOR rel IN ExtractedRelationships
-          LET source = DOCUMENT(rel._from)
-          LET target = DOCUMENT(rel._to)
-          FILTER source != null AND target != null 
-          FILTER source._key != null AND target._key != null
-          RETURN {
-            source: source._key,
-            target: target._key,
-            relation: rel.relationship || "related_to"
-          }
-        """
-        try:
-            cursor = self.db.aql.execute(query)
-            for doc in cursor:
-                s, t = doc['source'], doc['target']
-                r = str(doc['relation']).replace(' ', '_').lower()
-                triples.append((s, r, t))
-            logger.info(f"Extracted {len(triples)} relationship triples")
-        except Exception as e:
-            logger.error(f"Extraction error: {e}")
-            return []
-        
-        # Extract Entity Types
-        query_types = """
-        FOR entity IN ExtractedEntities
-          FILTER entity._key != null AND entity.type != null
-          RETURN { key: entity._key, type: entity.type }
-        """
-        try:
-            cursor = self.db.aql.execute(query_types)
-            type_count = 0
-            for doc in cursor:
-                triples.append((doc['key'], 'has_type', doc['type']))
-                type_count += 1
-            logger.info(f"Extracted {type_count} entity type triples")
-        except Exception as e:
-            logger.error(f"Type extraction error: {e}")
-        
-        logger.info(f"Total triples: {len(triples)}")
-        return triples
+    def _save_weights(self, model: NPLLModel, kg: KnowledgeGraph,
+                      rules: List[LogicalRule], snapshot: TrainingSnapshot,
+                      report: TrainingReport, expected_revision: Optional[str]):
+        buffer = io.BytesIO()
+        torch.save({k: v.detach().cpu() for k, v in model.scoring_module.state_dict().items()}, buffer)
+        payload = buffer.getvalue()
+        doc = {
+            "model_type": "npll",
+            "storage_type": "learned_scorer",
+            "inference_state": {
+                "config": {**asdict(model.config), "temperature": float(model.config.temperature)},
+                "initialization_seed": scoring_initialization_seed(snapshot),
+                "scorer_training": model.scorer_training,
+                "scorer_state": {"format": "torch-state-dict-v1",
+                                 "data": base64.b64encode(payload).decode("ascii"),
+                                 "sha256": hashlib.sha256(payload).hexdigest()},
+            },
+            "trained_at": report.trained_at,
+            "data_hash": snapshot.data_hash,
+            "rule_weights": model.mln.rule_weights.detach().cpu().tolist(),
+            "schema_snapshot": {
+                "entity_count": len(kg.entities),
+                "relation_count": len(kg.relations),
+                "fact_count": len(kg.known_facts | kg.unknown_facts),
+                "relation_names": sorted(r.name for r in kg.relations),
+            },
+            "training_report": report.to_dict(),
+            "rules": [
+                {"rule_id": r.rule_id, "rule_text": str(r), "confidence": r.confidence}
+                for r in rules
+            ],
+            "version": ARTIFACT_VERSION,
+        }
+        validate_model_artifact(doc)
+        self.model_store.save(MODEL_KEY, doc, expected_revision=expected_revision)
 
     def _generate_smart_rules(self, kg: KnowledgeGraph) -> List[LogicalRule]:
-        """
-        Generates domain-appropriate rules based on available relations.
-        """
-        rules = []
-        relations = {r.name: r for r in kg.relations}
-        x, y, z = Variable("?x"), Variable("?y"), Variable("?z")
-        
-        logger.info(f"Generating rules for {len(relations)} relation types...")
-        
-        # --- HEALTHCARE DOMAIN ---
-        if 'has_claim' in relations and 'submitted_by_provider' in relations and 'treated_by' in relations:
-            rules.append(LogicalRule(
-                rule_id="hc_claim_provider_link",
-                body=[
-                    Atom(relations['has_claim'], (x, y)),
-                    Atom(relations['submitted_by_provider'], (y, z))
-                ],
-                head=Atom(relations['treated_by'], (x, z)),
-                confidence=0.7
-            ))
-            logger.info("  + Added: hc_claim_provider_link")
-        
-        if 'diagnosed_with' in relations and 'indicates' in relations:
-            target_rel = relations.get('recommended_procedure') or relations.get('related_to')
-            if target_rel:
-                rules.append(LogicalRule(
-                    rule_id="hc_diagnosis_procedure",
-                    body=[
-                        Atom(relations['diagnosed_with'], (x, y)),
-                        Atom(relations['indicates'], (y, z))
-                    ],
-                    head=Atom(target_rel, (x, z)),
-                    confidence=0.6
-                ))
-                logger.info("  + Added: hc_diagnosis_procedure")
-
-        if 'works_at' in relations and 'located_at' in relations:
-            target_rel = relations.get('affiliated_with') or relations.get('related_to')
-            if target_rel:
-                rules.append(LogicalRule(
-                    rule_id="hc_provider_facility",
-                    body=[
-                        Atom(relations['works_at'], (x, y)),
-                        Atom(relations['located_at'], (y, z))
-                    ],
-                    head=Atom(target_rel, (x, z)),
-                    confidence=0.6
-                ))
-                logger.info("  + Added: hc_provider_facility")
-
-        # --- INSURANCE DOMAIN ---
-        if 'policyholder' in relations and 'claim_number' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="ins_policy_claim",
-                body=[
-                    Atom(relations['policyholder'], (x, y)),
-                    Atom(relations['claim_number'], (x, z))
-                ],
-                head=Atom(relations['related_to'], (y, z)),
-                confidence=0.8
-            ))
-            logger.info("  + Added: ins_policy_claim")
-
-        if 'assessor' in relations and 'insurer' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="ins_assessor_insurer",
-                body=[
-                    Atom(relations['assessor'], (x, y)),
-                    Atom(relations['insurer'], (z, y))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                confidence=0.7
-            ))
-            logger.info("  + Added: ins_assessor_insurer")
-
-        # --- GENERIC RULES ---
-        if 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="gen_transitivity",
-                body=[
-                    Atom(relations['related_to'], (x, y)),
-                    Atom(relations['related_to'], (y, z))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                rule_type=RuleType.TRANSITIVITY,
-                confidence=0.5
-            ))
-            logger.info("  + Added: gen_transitivity")
-
-        if 'has_type' in relations and 'related_to' in relations:
-            rules.append(LogicalRule(
-                rule_id="gen_type_cooccurrence",
-                body=[
-                    Atom(relations['has_type'], (x, y)),
-                    Atom(relations['has_type'], (z, y))
-                ],
-                head=Atom(relations['related_to'], (x, z)),
-                confidence=0.3
-            ))
-            logger.info("  + Added: gen_type_cooccurrence")
-
-        # Fallback
-        if not rules:
-            logger.warning("No domain rules matched. Creating fallback.")
-            rel = next(iter(kg.relations))
-            rules.append(LogicalRule(
-                rule_id="fallback_self",
-                body=[Atom(rel, (x, y))],
-                head=Atom(rel, (x, y)),
-                confidence=0.5
-            ))
-        
-        logger.info(f"Total rules: {len(rules)}")
-        return rules
+        """Generate unconditional priors and supported motifs for the exact vocabulary."""
+        generator = RuleGenerator(kg)
+        return (generator.generate_relation_priors() +
+                generator.generate_simple_rules(min_support=2, min_confidence=0.2) +
+                generator.generate_symmetry_rules(min_support=2, min_confidence=0.2))
 
 
-def create_bootstrapper(db: StandardDatabase) -> KnowledgeBootstrapper:
+def create_bootstrapper(triple_source: TripleSource, model_store: ModelStore) -> KnowledgeBootstrapper:
     """Factory function to create a KnowledgeBootstrapper."""
-    return KnowledgeBootstrapper(db)
+    return KnowledgeBootstrapper(triple_source, model_store)

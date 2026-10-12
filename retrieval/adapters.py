@@ -1,6 +1,7 @@
 from __future__ import annotations
+import hashlib
+import json
 from typing import Iterable, Tuple, Protocol, List, Dict, Optional
-from gremlin_python.process.graph_traversal import __
 
 NodeId = str
 RelId = str
@@ -9,16 +10,24 @@ RelId = str
 class GraphAccessor(Protocol):
     """
     Minimal graph view inside a single community/subgraph.
-    Implement these methods for your KG.
+    Implement every method for your KG.
     """
 
     def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
         """Yield (neighbor, relation, weight)."""
         ...
 
+    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
+        """Yield (neighbor, relation, weight) for incoming edges."""
+        ...
+
     def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
         """Optional mapping from external IDs to internal; default passthrough."""
         return seeds
+
+    def iter_out_edges(self, node: NodeId) -> Iterable[Dict[str, object]]:
+        """Yield exact assertions with _id, u, rel, v, weight and provenance."""
+        ...
 
     def nodes(self, community_id: str) -> Iterable[NodeId]:
         """All node IDs in this community."""
@@ -26,6 +35,10 @@ class GraphAccessor(Protocol):
 
     def degree(self, node: NodeId) -> int:
         """Fast out-degree if available; else len(list(iter_out(node)))."""
+        ...
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
+        """Return node properties, or an empty dict when the node is absent."""
         ...
 
 
@@ -49,14 +62,42 @@ class KGCommunityAccessor:
             if v in self.allowed:
                 yield v, triple.relation.name, 1.0
 
+    def iter_in(self, node: NodeId):
+        ent = self.kg.get_entity(node)
+        if ent is None:
+            return
+        for triple in self.kg.get_facts_by_tail(ent):
+            u = triple.head.name
+            if u in self.allowed:
+                yield u, triple.relation.name, 1.0
+
     def nodes(self, community_id: str):
         return list(self.allowed)
+
+    def iter_out_edges(self, node: NodeId):
+        for neighbor, relation, weight in self.iter_out(node):
+            identity = json.dumps([node, relation, neighbor], ensure_ascii=False)
+            yield {"_id": "kg/" + hashlib.sha256(identity.encode()).hexdigest(),
+                   "u": node, "rel": relation, "v": neighbor, "weight": weight,
+                   "provenance": None, "assertion_origin": "knowledge_graph_fact"}
+
+    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
+        return seeds
 
     def degree(self, node: NodeId) -> int:
         ent = self.kg.get_entity(node)
         if ent is None:
             return 0
         return sum(1 for t in self.kg.get_facts_by_head(ent) if t.tail.name in self.allowed)
+
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
+        ent = self.kg.get_entity(node_id)
+        if ent is None or ent.name not in self.allowed:
+            return {}
+        properties: Dict[str, object] = {"id": ent.name}
+        if fields is not None:
+            return {key: value for key, value in properties.items() if key in fields}
+        return properties
 
 
 class OverlayAccessor:
@@ -81,8 +122,24 @@ class OverlayAccessor:
         for v, r, w in self._overlay.get(node, []):
             yield v, r, w
 
+    def iter_in(self, node: NodeId):
+        for u, relation, weight in self.base.iter_in(node):
+            yield u, relation, weight
+        for u, edges in self._overlay.items():
+            for v, relation, weight in edges:
+                if v == node:
+                    yield u, relation, weight
+
     def community_seed_norm(self, community_id: str, seeds: list[NodeId]) -> list[NodeId]:
         return getattr(self.base, 'community_seed_norm', lambda cid, s: s)(community_id, seeds)
+
+    def iter_out_edges(self, node: NodeId):
+        yield from self.base.iter_out_edges(node)
+        for index, (neighbor, relation, weight) in enumerate(self._overlay.get(node, [])):
+            identity = json.dumps([self.cid, node, index], ensure_ascii=False)
+            yield {"_id": "overlay/" + hashlib.sha256(identity.encode()).hexdigest(),
+                   "u": node, "rel": relation, "v": neighbor, "weight": weight,
+                   "provenance": None, "assertion_origin": "overlay"}
 
     def nodes(self, community_id: str):
         return getattr(self.base, 'nodes', lambda cid: [])(community_id)
@@ -91,84 +148,5 @@ class OverlayAccessor:
         base_deg = getattr(self.base, 'degree', lambda n: 0)(node)
         return base_deg + len(self._overlay.get(node, []))
 
-
-class JanusGraphAccessor(GraphAccessor):
-    """
-    GraphAccessor implementation for JanusGraph (experimental).
-
-    Takes a Gremlin GraphTraversalSource, e.g.:
-
-        from gremlin_python.process.anonymous_traversal import traversal
-        from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-        g = traversal().with_remote(DriverRemoteConnection("ws://localhost:8182/gremlin", "g"))
-        accessor = JanusGraphAccessor(g)
-
-    Uses project() so results arrive as plain value dicts rather than
-    driver element objects. Edge weight is read from a configurable edge
-    property (default: "weight", falling back to 1.0).
-    """
-
-    def __init__(self, g, community_id_property: str = "communityId",
-                 weight_property: str = "weight"):
-        self.g = g
-        self.community_id_property = community_id_property
-        self.weight_property = weight_property
-
-    def iter_out(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """Yield (neighbor, relation, weight) for outgoing edges."""
-        rows = (
-            self.g.V(node).outE()
-            .project('neighbor', 'rel', 'weight')
-            .by(__.inV().id_())
-            .by(__.label())
-            .by(__.coalesce(__.values(self.weight_property), __.constant(1.0)))
-            .toList()
-        )
-        for row in rows:
-            yield row['neighbor'], row['rel'], float(row['weight'])
-
-    def iter_in(self, node: NodeId) -> Iterable[Tuple[NodeId, RelId, float]]:
-        """Yield (neighbor, relation, weight) for incoming edges."""
-        rows = (
-            self.g.V(node).inE()
-            .project('neighbor', 'rel', 'weight')
-            .by(__.outV().id_())
-            .by(__.label())
-            .by(__.coalesce(__.values(self.weight_property), __.constant(1.0)))
-            .toList()
-        )
-        for row in rows:
-            yield row['neighbor'], row['rel'], float(row['weight'])
-
-    def nodes(self, community_id: Optional[str] = None) -> Iterable[NodeId]:
-        """Yield node IDs, scoped to a community when one is given."""
-        if community_id:
-            rows = self.g.V().has(self.community_id_property, community_id).id_().toList()
-        else:
-            rows = self.g.V().id_().toList()
-        for node_id in rows:
-            yield node_id
-
-    def degree(self, node: NodeId) -> int:
-        """Out-degree of a node."""
-        return int(self.g.V(node).outE().count().next())
-
-    def in_degree(self, node: NodeId) -> int:
-        """In-degree of a node."""
-        return int(self.g.V(node).inE().count().next())
-
-    def community_seed_norm(self, community_id: str, seeds: List[NodeId]) -> List[NodeId]:
-        """Passthrough: Gremlin vertex IDs are used as-is."""
-        return seeds
-
-    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, str]:
-        """Return a node's properties as plain values (first value per key)."""
-        rows = self.g.V(node_id).value_map().toList()
-        if not rows:
-            return {}
-        props = {}
-        for key, value in rows[0].items():
-            props[key] = value[0] if isinstance(value, list) and value else value
-        if fields:
-            props = {k: v for k, v in props.items() if k in fields}
-        return props
+    def get_node(self, node_id: NodeId, fields: Optional[List[str]] = None) -> Dict[str, object]:
+        return self.base.get_node(node_id, fields)

@@ -84,20 +84,30 @@ Odin trains its NPLL model from your graph on first run and persists the weights
 
 ## Quickstart
 
+Odin 0.4.0 takes an explicit backend. See [Backend migration](guides/backend-migration.md)
+if you are upgrading an existing application.
+
 ```bash title="Install"
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
 
 ```python title="explore.py"
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 # 1. Connect to your knowledge graph
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-# 2. Initialize Odin (auto-trains NPLL from your graph on first run)
-engine = OdinEngine(db=db, community_id="global")
+# 2. Map your graph, then initialize Odin (auto-trains NPLL on first run)
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global")
 
 # 3. Explore from seed entities
 result = engine.retrieve(

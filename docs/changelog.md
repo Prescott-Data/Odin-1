@@ -12,6 +12,41 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 
 <div class="changelog-release" markdown>
 
+## 0.4.0 <span class="changelog-date">2026-10-12</span>
+
+The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
+by `ArangoBackend(db, graph)`, with a required explicit Arango graph mapping,
+public `odin.backends` modules, optional driver extras, and generic
+`inspect_schema(backend)` inspection. Raw handles and former public adapter
+exports require migration.
+
+Training fingerprints cover the exact extracted triples. Model artifacts are
+shared by global training scope, complete, and replaced only when their stored revision matches.
+Scorers train on known facts and uniform corruptions of both endpoints, excluding
+the E-M holdout. Artifact version `7.0` loads learned tensor state without training
+and keeps complete loss histories. Older artifact versions and stale config schemas
+retrain; newer artifact versions raise without being replaced. Damaged blobs raise.
+Device and Torch version differences do not invalidate learned state.
+Rule mining and grounding use bounded observed joins and confidence thresholds.
+Global accessor traversal bonuses and the unused engine global accessor are removed.
+Signal helpers return every record; their limit argument is removed. Membership
+ambiguity raises and lookup results are cached. Writers preserve user metadata.
+Odin returns complete application documents and vectors without exclusion markers;
+model-input filtering belongs to consuming applications.
+Training failures raise; constant confidence requires explicit
+`auto_train=False`. Failed retraining preserves the active serving state.
+
+See [Backend migration](guides/backend-migration.md) before upgrading.
+
+Odin now ships two agent skills, `odin` and `odin-custom-backend`, inside the
+package. `odin init --skill` installs them for Claude Code, GitHub Copilot, Cursor
+and Codex, records what it installed, and never overwrites files you edited unless
+you pass `--force`. See [AI editor setup](guides/ai-editors.md).
+
+</div>
+
+<div class="changelog-release" markdown>
+
 ## 0.3.0 <span class="changelog-date">2026-08-10</span>
 
 <div class="changelog-meta" markdown>

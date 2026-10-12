@@ -27,7 +27,7 @@ The open base and the managed generations reinforce each other rather than compe
 |---|---|---|
 | **License** | MIT, free forever | Commercial agreement |
 | **Graph scope** | Single knowledge graph | Federated, many graphs at once |
-| **Backends** | ArangoDB, JanusGraph, custom adapters | Managed multi-graph accessor |
+| **Backends** | ArangoDB (full), JanusGraph (retrieval accessor only), custom backends | Managed multi-graph accessor |
 | **Security** | You configure it | Zero-trust Nexus sessions, tenant isolation, clearance levels |
 | **Access governance** | None | Odin Registry, credential-free scoped access |
 | **Domain accuracy** | General-purpose | Domain Intelligence Service (DIS) |

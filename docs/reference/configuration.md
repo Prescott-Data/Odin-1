@@ -4,7 +4,9 @@ icon: material/cog
 
 # Configuration
 
-All configuration is passed as arguments; Odin reads no global settings or environment variables of its own. This page collects every parameter in one place.
+Most configuration is passed as arguments. The one environment variable Odin
+reads itself is `ODIN_REQUIRE_NPLL`: when it is `true`, an engine that would
+run without a learned model raises instead. This page collects every parameter in one place.
 
 ---
 
@@ -14,7 +16,7 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `db` | `StandardDatabase` | required | Connected `python-arango` handle |
+| `backend` | `GraphBackend` | required | Retrieval backend; NPLL training needs source and store capabilities |
 | `community_id` | `str` | `"global"` | Exploration scope |
 | `cache_size` | `int` | `5000` | Graph-accessor LRU size (see [Caching](../concepts/caching.md)) |
 | `auto_train` | `bool` | `True` | Train NPLL on first run if no model exists |
@@ -48,20 +50,22 @@ All configuration is passed as arguments; Odin reads no global settings or envir
 
 ## Schema inspection
 
-`SchemaInspector(...)`
+`inspect_schema(backend, ...)`
 
 | Parameter | Type | Default |
 |-----------|------|---------|
-| `db` | `StandardDatabase` | required |
-| `max_sample_docs` | `int` | `5` |
+| `backend` | `GraphBackend` | required |
+| `refresh` | `bool` | `False` |
 
-`inspect_arango_schema(db, output_file="schema.json")`.
+`inspect_schema(backend, output_file="schema.json")`.
 
 ---
 
 ## Database connection (yours)
 
-Odin does not manage the connection; you construct it with `python-arango`. In production, source these from the environment:
+Odin does not manage connections. For ArangoDB, construct the connection with
+`python-arango` and wrap it in `ArangoBackend`. Other backends use their own
+connection mechanisms. In production, source these Arango settings from the environment:
 
 | Variable (suggested) | Used for |
 |----------------------|----------|
@@ -90,7 +94,20 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 | Requirement | Version |
 |-------------|---------|
 | Python | ≥ 3.9 |
-| ArangoDB | ≥ 3.10 |
+| ArangoDB (Arango backend only) | ≥ 3.10 |
 | PyTorch | ≥ 2.0 |
 
-Runtime dependencies (`torch`, `python-arango`, `numpy`, `scipy`, `networkx`, `scikit-learn`, `gremlinpython`) install automatically with `pip install odin-engine`.
+Install core dependencies with `pip install odin-engine`. Use
+`pip install "odin-engine[arango]"` or `pip install "odin-engine[gremlin]"` for the
+corresponding driver.
+See [Backend migration](../guides/backend-migration.md).
+
+## NPLL dataset configuration
+
+`get_config("OdinTriples")` in `npll.utils.config` selects the explicit
+production graph configuration. Its 32-dimensional entity/relation embeddings,
+64-dimensional rules, and 64-unit scorer are sized for production graph
+lifecycle operation. Bootstrap uses its `max_epochs` (200) and `em_iterations` (10)
+as safety limits, not targets: training stops when the E-M convergence criteria
+hold, and exhausting the limits raises `TrainingConvergenceError`.
+Unknown names, including the retired `ArangoDB_Triples`, raise `ValueError`.

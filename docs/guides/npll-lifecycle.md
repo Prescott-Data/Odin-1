@@ -8,21 +8,28 @@ The [NPLL](../concepts/npll.md) model is self-managing: it trains itself from yo
 
 ## The three phases
 
-```
-first run ──▶ train (2-5 min) ──▶ persist weights ──▶ ArangoDB
-                                                          │
-later runs ◀── rebuild (~30 s) ◀── load weights ◀────────┘
-```
+The first startup trains the neural scorer on known facts against several seeded
+uniform corruptions of each endpoint, then trains rule weights through E-M.
+Held-out latent facts are excluded from scorer supervision and negative examples.
+It persists learned scorer tensors in a checked binary blob, rule weights and
+complete training reports. Later startups load those tensors without training.
+Startup still reads and fingerprints the graph and builds the vocabulary and rules;
+its cost depends on graph size and hardware. No fixed startup time is guaranteed.
 
-The **first run** does the heavy lifting. When you construct an `OdinEngine` and no model exists yet, `KnowledgeBootstrapper` extracts the graph's edge patterns and trains the model, usually in two to five minutes. Those learned weights are then **persisted** into an ArangoDB collection, so there are no `.pt` files to ship or mount. On every **subsequent run**, Odin loads the weights and rebuilds the model in about thirty seconds.
+Artifacts with older numeric versions or stale configuration schemas retrain
+through a revision-checked replacement. Newer artifact versions raise
+`NewerModelVersionError`, including during forced retraining, so older workers
+cannot replace them during a rolling deployment or downgrade. Upgrade Odin to
+read a newer artifact. Damaged current artifacts raise. Device and Torch
+version differences are recorded provenance and do not trigger retraining.
 
 ## Controlling training at startup
 
 By default the engine trains automatically when it finds no model. You can turn that off:
 
 ```python
-engine = OdinEngine(db, auto_train=True)    # default: train if none exists
-engine = OdinEngine(db, auto_train=False)   # skip NPLL, use constant confidence
+engine = OdinEngine(backend, auto_train=True)    # default: train if none exists
+engine = OdinEngine(backend, auto_train=False)   # skip NPLL, use constant confidence
 ```
 
 With `auto_train=False` Odin skips NPLL entirely and falls back to a constant edge-confidence. You keep PPR-driven structural exploration, but you lose semantic pruning until a model is available.
@@ -38,7 +45,8 @@ engine.get_status()
 #  'cache_size': 5000}
 ```
 
-An `intelligence_mode` of `Constant` means training was either disabled or could not complete, which most often happens on an empty graph.
+An `intelligence_mode` of `Constant` means training was explicitly disabled with
+`auto_train=False`. Requested training that fails or produces no model raises.
 
 ## Trusting the model: convergence diagnostics
 
@@ -68,9 +76,59 @@ The report carries the complete evidence for the convergence decision:
 
 Convergence is declared when the relative ELBO change **and** the rule-weight change stay under their tolerances for `convergence_patience` consecutive iterations.
 
-If the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
+The M-step maximizes pseudo-log-likelihood with the configured L2 penalty
+(`weight_decay / 2` times the squared rule-weight norm). It retains Adam's
+optimization state across E-M iterations and checks objective change, weight
+change, and gradient norm before stopping an M-step. ELBO world samples and
+partition estimates use fixed local random streams so changing random draws
+cannot conceal or manufacture convergence. This is convergence of the sampled
+approximation, not proof that the exact objective has reached a global optimum.
 
-`engine.training_report` is `None` when auto-train is disabled, training failed, or the weights were saved by a version that predates reports.
+Training optimizations belong to NPLL's in-memory graph representation, so they
+apply to every backend supplying the training contracts. Compiled fact indices
+batch rule satisfaction across worlds; fixed sampled rule counts are reused when
+weights change. Changing known facts, adding rules, or replacing the graph
+invalidates the affected caches. Explicit caller-supplied worlds use their own
+counts. Each weighted computation builds a fresh autograd graph. Batches bound
+temporary workspace and process every world, without reducing the sample count
+or changing convergence tolerances. Floating-point reductions may differ slightly
+from scalar evaluation; count and gradient equivalence are regression-tested.
+
+New training runs stop as soon as the E-M convergence criteria hold. The
+`OdinTriples` configuration supplies `max_epochs` (200) and `em_iterations` (10);
+these are safety limits, not successful completion targets. There is no separate
+10-epoch bootstrap cutoff. Exhausting the budget raises
+`npll.TrainingConvergenceError`, whose `report` preserves both full iteration
+histories. The unconverged replacement is not saved, and failed retraining
+preserves the active serving model and stored artifact. Convergence of the rule
+weights does not establish calibration of the separately trained neural scorer.
+
+For artifacts saved by earlier code, if the active model did not converge, the engine logs a warning at initialization — including when the weights were loaded from cache, since the cache remembers how its training run went. The usual fix is `engine.retrain_model()`, or a look at whether the graph has enough facts to learn from.
+
+`engine.training_report` is `None` when auto-train is disabled.
+Current artifacts require a complete report. Older unscoped artifacts are not
+reused by the new backend store; the first run creates a new namespaced model.
+
+## Local lifecycle validation
+
+On October 8, 2026, a fresh default training run against a local ArangoDB
+3.12.9 graph with 171 nodes, 173 edges, and 344 extracted triples completed
+initialization in 97.91 seconds. The E-M report recorded convergence after
+12 epochs and 113 iterations. Reload took 0.159 seconds, reproduced all
+344 triple scores exactly, and did not change the stored revision.
+
+Retrieval checks across 32 seeds returned 292 paths. Every returned edge
+confidence matched `score_edge()`, and raw Arango assertions were preserved.
+Across 173 observed edges, mean confidence was 0.945; across 1,730 seeded
+unobserved endpoint corruptions it was 0.080. The pairwise ranking statistic
+was 0.9669. These checks include training facts and unobserved contrasts,
+not verified negatives; they do not establish held-out accuracy or calibration.
+Some observed edges scored low and need source-level inspection.
+
+These timings describe this small local graph, not a performance guarantee
+or a scaling projection. No community mappings were needed for training,
+storage, or these retrieval checks. The backend-neutral implementation was
+also validated with 258 unit tests and six live Arango contract tests.
 
 ## Retraining
 
@@ -83,21 +141,56 @@ ok = engine.retrain_model()   # returns True on success
 `retrain_model()` trains from scratch, persists the new weights, and rebuilds the engine's confidence and orchestrator to use them.
 
 !!! tip "When to retrain"
-    Ordinary incremental writes do not need a retrain. Retrain when the *shape* of the graph changes, meaning new kinds of entities or relationships, not merely a few new documents.
+    Startup fingerprints the actual extracted training triples, including entity
+    types. Changes to endpoints, relation labels, or types invalidate cached
+    weights even if graph counts stay the same. A running engine does not watch
+    for graph changes; call `retrain_model()` when it should learn a new snapshot.
 
-## Per-community models
+## Global training, scoped retrieval
 
-Because NPLL learns the patterns of the community it trains on, each model is tied to its `community_id`. If you serve several communities, each one gets its own model, trained the first time you initialize an engine for it:
+Arango reads the global configured graph for training. Retrieval communities share
+its model artifact. Node/edge collections, relation and type fields, database, and
+snapshot evidence determine model identity. Retrieval metadata mappings do not
+create additional copies:
 
 ```python
-claims = OdinEngine(db, community_id="claims", community_mode="mapping")
-supply = OdinEngine(db, community_id="supply", community_mode="mapping")
-# Each trains or loads its own NPLL model on first use.
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
+
+graph = ArangoGraphConfig(
+    node_collection="entities",
+    edge_collection="relationships",
+    relation_field="relation",
+    membership_collection="entity_communities",
+    membership_entity_field="entity_id",
+    membership_community_field="community_id",
+)
+claims_backend = ArangoBackend(db, graph)
+supply_backend = ArangoBackend(db, graph)
+claims = OdinEngine(claims_backend, community_id="claims", community_mode="mapping")
+supply = OdinEngine(supply_backend, community_id="supply", community_mode="mapping")
+# Both reuse the globally trained NPLL model.
 ```
 
 ## When things go wrong
 
-Initialization is deliberately defensive. If training or loading raises, Odin logs the error and falls back to constant confidence rather than taking the whole engine down. When a model does not come up as expected, check the logs under the `odin` logger and confirm the mode with `get_status()`.
+Backend failures, corrupt artifacts, and conflicting model writes raise distinct
+errors during initialization and retraining. They are not interpreted as missing
+weights or converted to constant confidence. Model saves atomically replace the
+artifact only if its revision still matches the revision read before training.
+Exceptions inside the trainer raise `npll.TrainingError` with the original
+exception as their cause. An empty graph also makes engine initialization fail
+when training is requested. Choose `auto_train=False` explicitly for retrieval
+without NPLL. Failed retraining preserves the active model, report, and scoring
+components; it raises instead of publishing partial replacement state.
+For corrupt Arango artifacts, follow the [recovery procedure](../reference/troubleshooting.md#recovering-from-corruptmodelerror):
+identify and export the hashed `OdinModels` document, delete that inspected
+revision, then initialize Odin to train again. Forced retraining does not bypass
+artifact validation.
+
+Direct bootstrap callers now construct
+`KnowledgeBootstrapper(backend.triple_source(), backend.model_store())`.
+See the [backend contracts](../development/backend-contracts.md) for the snapshot,
+artifact schema, migration, and concurrency details.
 
 ## Next
 

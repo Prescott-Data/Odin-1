@@ -4,13 +4,19 @@ icon: material/rocket-launch
 
 # Getting Started
 
-This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
+!!! note "Upgrading from 0.3.0"
+    The engine now takes an explicit backend. See the
+    [migration guide](guides/backend-migration.md) when updating existing code.
+
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes.
 
 ---
 
 ## Requirements
 
-Odin needs **Python 3.9+** and a **graph database**; the reference backend is [ArangoDB](https://www.arangodb.com/) 3.10 or later. That is genuinely all: there is no separate ML service or vector store to stand up, because Odin trains and stores its model inside ArangoDB itself.
+Odin needs **Python 3.9+** and a graph backend. This guide uses ArangoDB 3.10
+or later. NPLL training runs in your Python process; `ArangoBackend` reads the
+graph and persists the resulting model artifact in ArangoDB.
 
 | Dependency | Why |
 |------------|-----|
@@ -18,26 +24,20 @@ Odin needs **Python 3.9+** and a **graph database**; the reference backend is [A
 | ArangoDB ≥ 3.10 | Stores your knowledge graph and Odin's learned NPLL weights |
 | PyTorch ≥ 2.0 | Powers the NPLL edge-plausibility model |
 
-PyTorch, `python-arango`, NumPy, scikit-learn, and `gremlinpython` are pulled in automatically with the package.
+The core package includes PyTorch, NumPy, scikit-learn, and the retrieval
+dependencies. Install the `arango` extra to use the reference backend.
 
 ---
 
 ## Installation
 
 ```bash
-pip install odin-engine
+pip install "odin-engine[arango]"
 ```
-
-=== "From PyPI"
-    ```bash
-    pip install odin-engine
-    ```
 
 === "From source"
     ```bash
-    git clone https://github.com/Prescott-Data/Odin-1.git
-    cd Odin-1
-    pip install -e .
+    pip install -e ".[arango]"
     ```
 
 === "With dev tools"
@@ -49,7 +49,7 @@ pip install odin-engine
     The package is published as `odin-engine`, but you import it as `odin`:
 
     ```python
-    from odin import OdinEngine, SchemaInspector
+    from odin import OdinEngine, inspect_schema
     ```
 
 ---
@@ -67,22 +67,65 @@ This exposes ArangoDB on `http://localhost:8529` with authentication disabled, w
 
 ---
 
+## Load a small sample graph
+
+Odin reads a graph you already have; it does not create one. If you have none, this creates the `CaseRecords` / `EvidenceLinks` graph used in the rest of this guide:
+
+```python
+from arango import ArangoClient
+
+client = ArangoClient(hosts="http://localhost:8529")
+sys_db = client.db("_system", username="root", password="")
+if not sys_db.has_database("my_graph"):
+    sys_db.create_database("my_graph")
+db = client.db("my_graph", username="root", password="")
+
+nodes = db.create_collection("CaseRecords")
+edges = db.create_collection("EvidenceLinks", edge=True)
+
+nodes.import_bulk([
+    {"_key": "claim_123", "record_type": "claim"},
+    {"_key": "patient_001", "record_type": "person"},
+    {"_key": "doctor_smith", "record_type": "person"},
+    {"_key": "provider_456", "record_type": "provider"},
+])
+edges.import_bulk([
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/patient_001", "predicate": "submitted_by"},
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/provider_456", "predicate": "billed_by"},
+    {"_from": "CaseRecords/patient_001", "_to": "CaseRecords/doctor_smith", "predicate": "treated_by"},
+])
+```
+
+This graph only illustrates the shape Odin expects and is too small to judge scores. Training can still fail or produce uninformative scores on a graph this size; use `OdinEngine(backend, auto_train=False)` for a quick structural check, or your own graph for real results. Only the mapping in the next section changes.
+
+---
+
 ## Connect and initialize
 
 ```python
 from arango import ArangoClient
 from odin import OdinEngine
+from odin.backends.arango import ArangoBackend, ArangoGraphConfig
 
 client = ArangoClient(hosts="http://localhost:8529")
 db = client.db("my_graph", username="root", password="")
 
-engine = OdinEngine(db=db, community_id="global")
+graph = ArangoGraphConfig(
+    node_collection="CaseRecords",
+    edge_collection="EvidenceLinks",
+    relation_field="predicate",
+    entity_type_field="record_type",
+)
+backend = ArangoBackend(db, graph)
+engine = OdinEngine(backend, community_id="global")
 ```
 
-On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (typically 2-5 minutes). It then stores the learned weights in an ArangoDB collection, so subsequent runs load in about 30 seconds. See [Model Lifecycle](guides/npll-lifecycle.md).
+On the **first** initialization against a graph, Odin extracts edge patterns and trains its NPLL model (cost depends on graph size and hardware). It then stores the learned weights in an ArangoDB collection, so subsequent runs load learned state without training. See [Model Lifecycle](guides/npll-lifecycle.md).
 
-!!! tip "No model? No problem"
-    If training cannot run (for example, an empty graph), Odin falls back to a constant edge-confidence and keeps working. Check `engine.has_npll` to see which mode you are in.
+!!! tip "Explicit retrieval-only operation"
+    Use `OdinEngine(backend, auto_train=False)` to retrieve with constant
+    confidence without training. Requested training that fails, including on
+    an empty graph, raises an error instead of changing scoring modes.
 
 ---
 
@@ -90,7 +133,7 @@ On the **first** initialization against a graph, Odin extracts edge patterns and
 
 ```python
 result = engine.retrieve(
-    seeds=["entity/claim_123"],
+    seeds=["CaseRecords/claim_123"],
     max_paths=50,
     hop_limit=3,
 )
@@ -112,11 +155,11 @@ Whole-path retrieval is the main event, but the same engine gives you two more f
 
 ## Score a single edge
 
-Sometimes you do not want a path, just a yes-or-no on one relationship. `score_edge()` answers exactly that:
+Sometimes you do not want a path, just a plausibility score for one relationship. `score_edge()` answers exactly that:
 
 ```python
-score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
-print(score)   # 0.0 (impossible) … 1.0 (highly plausible)
+score = engine.score_edge("CaseRecords/patient_001", "treated_by", "CaseRecords/doctor_smith")
+print(score)   # 0.0 … 1.0: learned plausibility, not a calibrated probability
 ```
 
 It is the same NPLL signal Odin uses internally, exposed so you can drop it straight into an agent's decision logic. See [Scoring Edges](guides/edge-scoring.md).
@@ -128,7 +171,7 @@ It is the same NPLL signal Odin uses internally, exposed so you can drop it stra
 And when you are not sure *where* to start, ask which nodes matter most around a seed:
 
 ```python
-anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
+anchors = engine.find_anchors(seeds=["CaseRecords/claim_123"], topn=20)
 for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```

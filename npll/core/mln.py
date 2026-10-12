@@ -76,16 +76,22 @@ class MarkovLogicNetwork(nn.Module):
         self.fact_to_groundrules: Dict[Triple, List[GroundRule]] = defaultdict(list)
         
         # Caching for efficiency
-        self._partition_function_cache: Dict[str, torch.Tensor] = {}
+        self._counts_known_facts = None
+        self._count_indices = None
         self._ground_rule_counts_cache: Optional[torch.Tensor] = None
     
     def add_knowledge_graph(self, kg: KnowledgeGraph):
         """Add knowledge graph to MLN"""
         self.knowledge_graph = kg
+        self._ground_rule_counts_cache = None
+        self._counts_known_facts = None
+        self._count_indices = None
         logger.info(f"Added knowledge graph with {len(kg.known_facts)} known facts")
     
     def add_logical_rules(self, rules: List[LogicalRule]):
         self.logical_rules.extend(rules)
+        self._count_indices = None
+        self._ground_rule_counts_cache = None
         
         # Initialize or expand rule weights
         if self.rule_weights is None:
@@ -166,6 +172,68 @@ class MarkovLogicNetwork(nn.Module):
         
         return rule_counts
     
+    def _prepare_count_indices(self):
+        device = self.rule_weights.device
+        if self._count_indices is not None and self._count_indices[0] == device:
+            return self._count_indices[1:]
+        facts = sorted(self.ground_rule_facts, key=lambda f: (f.head.name, f.relation.name, f.tail.name))
+        fact_index = {fact: index for index, fact in enumerate(facts)}
+        groups = defaultdict(lambda: ([], [], []))
+        for rule_index, rule in enumerate(self.logical_rules):
+            for gr in self.rule_to_ground_rules[rule.rule_id]:
+                heads, bodies, parents = groups[len(gr.body_facts)]
+                heads.append(fact_index[gr.head_fact])
+                bodies.append([fact_index[fact] for fact in gr.body_facts])
+                parents.append(rule_index)
+        indices = [(torch.tensor(heads, device=device, dtype=torch.long),
+                    torch.tensor(bodies, device=device, dtype=torch.long),
+                    torch.tensor(parents, device=device, dtype=torch.long))
+                   for heads, bodies, parents in groups.values()]
+        self._count_indices = (device, facts, fact_index, indices)
+        return facts, fact_index, indices
+
+    def _count_world_tensor(self, truth_values, indices):
+        counts = self.rule_weights.new_zeros((len(truth_values), len(self.logical_rules)))
+        for heads, bodies, parents in indices:
+            satisfied = truth_values[:, heads]
+            if bodies.shape[1]:
+                satisfied = satisfied | ~truth_values[:, bodies].all(dim=2)
+            counts.scatter_add_(1, parents.expand(len(truth_values), -1), satisfied.to(counts.dtype))
+        return counts
+
+    def compute_ground_rule_counts_batch(self, worlds):
+        """Count every supplied world with bounded tensor workspace."""
+        facts, fact_index, indices = self._prepare_count_indices()
+        counts = self.rule_weights.new_zeros((len(worlds), len(self.logical_rules)))
+        for start in range(0, len(worlds), 64):
+            batch = worlds[start:start + 64]
+            truth = torch.zeros((len(batch), len(facts)), dtype=torch.bool, device=self.rule_weights.device)
+            rows, columns = [], []
+            for row, world in enumerate(batch):
+                for fact, value in world.items():
+                    if value and fact in fact_index:
+                        rows.append(row)
+                        columns.append(fact_index[fact])
+            if rows:
+                truth[rows, columns] = True
+            counts[start:start + len(batch)] = self._count_world_tensor(truth, indices)
+        return counts
+
+    def _sample_ground_rule_counts(self, num_samples=1000):
+        """Use the existing CPU random stream, without materializing world dicts."""
+        facts, _, indices = self._prepare_count_indices()
+        known = self.knowledge_graph.known_facts if self.knowledge_graph else set()
+        known_mask = torch.tensor([fact in known for fact in facts], dtype=torch.bool)
+        free = (~known_mask).nonzero().flatten()
+        counts = self.rule_weights.new_zeros((num_samples, len(self.logical_rules)))
+        generator = torch.Generator().manual_seed(42)
+        for start in range(0, num_samples, 64):
+            size = min(64, num_samples - start)
+            truth = known_mask.expand(size, -1).clone()
+            truth[:, free] = torch.rand((size, len(free)), generator=generator) > 0.5
+            counts[start:start + size] = self._count_world_tensor(truth.to(self.rule_weights.device), indices)
+        return counts
+
     def compute_partition_function(self, sample_states: Optional[List[Dict[Triple, bool]]] = None,
                                  use_approximation: bool = True) -> torch.Tensor:
         """
@@ -174,38 +242,24 @@ class MarkovLogicNetwork(nn.Module):
         if self.rule_weights is None or len(self.logical_rules) == 0:
             return torch.tensor(0.0)
         
-        # Use caching if available
-        cache_key = str(self.rule_weights.data.tolist())
-        if cache_key in self._partition_function_cache:
-            return self._partition_function_cache[cache_key]
-        
-        if use_approximation or sample_states is not None:
-            # Sampling-based approximation
-            if sample_states is None:
-                sample_states = self._generate_sample_states(num_samples=1000)
-            
-            # Compute counts for each sample state
-            all_counts = []
-            for state_assignment in sample_states:
-                counts = self.compute_ground_rule_counts(state_assignment)
-                all_counts.append(counts)
-            
-            if all_counts:
-                counts_tensor = torch.stack(all_counts)  # [num_samples, num_rules]
-                log_partition = partition_function_approximation(
-                    self.rule_weights, counts_tensor, use_log_domain=True
-                )
-            else:
-                log_partition = torch.tensor(0.0)
+        if not use_approximation and sample_states is None:
+            return self._compute_exact_partition_function()
+
+        if sample_states is None:
+            known = frozenset(self.knowledge_graph.known_facts) if self.knowledge_graph else frozenset()
+            if self._ground_rule_counts_cache is None or self._counts_known_facts != known:
+                self._ground_rule_counts_cache = self._sample_ground_rule_counts(num_samples=1000)
+                self._counts_known_facts = known
+            counts = self._ground_rule_counts_cache
         else:
-            # Exact computation (intractable for large graphs)
-            logger.warning("Exact partition function computation is intractable for large graphs")
-            log_partition = self._compute_exact_partition_function()
-        
-        # Cache result
-        self._partition_function_cache[cache_key] = log_partition
-        
-        return log_partition
+            counts = self.compute_ground_rule_counts_batch(sample_states)
+        if not len(counts):
+            return self.rule_weights.new_zeros(())
+        # Cache only weight-independent evidence. Each call has a fresh autograd
+        # graph and explicit caller-supplied worlds never reuse default counts.
+        return partition_function_approximation(
+            self.rule_weights, counts.to(self.rule_weights.device), use_log_domain=True,
+        )
     
     def compute_joint_probability(self, fact_assignments: Dict[Triple, bool],
                                 log_partition: Optional[torch.Tensor] = None,
@@ -242,12 +296,15 @@ class MarkovLogicNetwork(nn.Module):
             return sample_states
         
         # Get all facts that appear in ground rules
-        all_facts = list(self.ground_rule_facts)
+        all_facts = sorted(self.ground_rule_facts, key=lambda f: (
+            f.head.name, f.relation.name, f.tail.name,
+        ))
         
         if not all_facts:
             return sample_states
         
         # Generate random assignments
+        generator = torch.Generator().manual_seed(42)
         for _ in range(num_samples):
             # Start with known facts as true
             assignment = {}
@@ -260,7 +317,7 @@ class MarkovLogicNetwork(nn.Module):
             unknown_facts_in_rules = [f for f in all_facts if f not in assignment]
             for fact in unknown_facts_in_rules:
                 # Assign random truth value (could be made smarter)
-                assignment[fact] = torch.rand(1).item() > 0.5
+                assignment[fact] = torch.rand(1, generator=generator).item() > 0.5
             
             sample_states.append(assignment)
         
