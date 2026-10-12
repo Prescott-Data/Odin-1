@@ -4,9 +4,8 @@ icon: material/rocket-launch
 
 # Getting Started
 
-!!! note "Unreleased backend API"
-    This guide describes the source checkout containing the backend migration,
-    not the published 0.3.0 package. Install from that checkout and see the
+!!! note "Upgrading from 0.3.0"
+    The engine now takes an explicit backend. See the
     [migration guide](guides/backend-migration.md) when updating existing code.
 
 This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes.
@@ -33,12 +32,11 @@ dependencies. Install the `arango` extra to use the reference backend.
 ## Installation
 
 ```bash
-pip install -e ".[arango]"
+pip install "odin-engine[arango]"
 ```
 
 === "From source"
     ```bash
-    # Run in the checkout containing the backend migration.
     pip install -e ".[arango]"
     ```
 

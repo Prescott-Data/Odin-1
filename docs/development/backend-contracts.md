@@ -3,7 +3,7 @@
 `OdinEngine(backend)` accepts a `GraphBackend` and obtains database operations
 through its capabilities. `KnowledgeBootstrapper` receives a training source
 and model store. Raw database handles raise a migration error. These contracts
-are unreleased; see [Backend migration](../guides/backend-migration.md) for
+are new in 0.4.0; see [Backend migration](../guides/backend-migration.md) for
 installation and API changes. Neo4j engine support is not included yet.
 
 ## Engine capabilities

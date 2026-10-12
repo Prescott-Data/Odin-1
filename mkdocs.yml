@@ -126,7 +126,7 @@ nav:
   - Development: development/backend-contracts.md
 
 extra:
-  version: "0.3.0"
+  version: "0.4.0"
   social:
     - icon: material/web
       link: https://developers.prescottdata.io

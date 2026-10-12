@@ -46,14 +46,12 @@ Emitting `triage["score"]` and `timings_ms["total"]` as metrics lets you watch s
 
 ## Containerizing
 
-Odin is a library; create a Dockerfile for your service. For the unreleased
-backend API, build from the matching source checkout:
+Odin is a library; create a Dockerfile for your service:
 
 ```dockerfile
 FROM python:3.11-slim
 WORKDIR /opt/odin
-COPY . .
-RUN pip install --no-cache-dir ".[arango]"
+RUN pip install --no-cache-dir "odin-engine[arango]"
 # ... copy your service code, set env, run
 ```
 

@@ -130,16 +130,13 @@ investigator interprets it and chooses the next action.
 
 ## Quick Start
 
-**Unreleased API:** this checkout uses explicit backends. The published 0.3.0
-package does not provide this API. Install from the checkout containing these
-changes and follow the [backend migration guide](docs/guides/backend-migration.md)
-when upgrading existing code.
+**Upgrading from 0.3.0?** The engine now takes an explicit backend. Follow the
+[backend migration guide](docs/guides/backend-migration.md) when upgrading existing code.
 
 ### Installation
 
 ```bash
-# From the repository root of the checkout containing the backend migration
-pip install -e ".[arango]"
+pip install "odin-engine[arango]"
 ```
 
 **Requirements:**

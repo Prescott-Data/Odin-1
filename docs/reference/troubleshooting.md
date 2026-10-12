@@ -146,11 +146,10 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 
 ## `ImportError` / wrong package
 
-For the unreleased backend API, install from the matching source checkout and
-import the **short** name:
+Install the package and import the **short** name:
 
 ```bash
-pip install -e ".[arango]"
+pip install "odin-engine[arango]"
 ```
 
 ```python

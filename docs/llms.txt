@@ -4,7 +4,7 @@
 
 Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB is the only complete backend (retrieval, training, model storage); a JanusGraph accessor supports retrieval only; custom backends implement the `odin.backends` contracts.
 
-This checkout documents an unreleased explicit-backend API, not published 0.3.0.
+This documents the explicit-backend API introduced in 0.4.0.
 
 ## Start here
 

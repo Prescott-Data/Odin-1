@@ -95,9 +95,9 @@ See [Connecting ArangoDB](../guides/arangodb.md).
 | ArangoDB (Arango backend only) | ≥ 3.10 |
 | PyTorch | ≥ 2.0 |
 
-For this unreleased source checkout, install core dependencies with
-`pip install -e .`. Use `pip install -e ".[arango]"` or
-`pip install -e ".[gremlin]"` for the corresponding driver.
+Install core dependencies with `pip install odin-engine`. Use
+`pip install "odin-engine[arango]"` or `pip install "odin-engine[gremlin]"` for the
+corresponding driver.
 See [Backend migration](../guides/backend-migration.md).
 
 ## NPLL dataset configuration

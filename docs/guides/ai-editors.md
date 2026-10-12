@@ -50,8 +50,8 @@ Copilot and Cursor read more than one of these directories, so with the default 
 
 Commit the files so everyone who opens the project gets an agent that knows Odin. The command prints one line per file (`installed`, `updated`, `unchanged`, `skipped`, `removed` or `failed`) and exits non-zero if anything failed.
 
-!!! note "Source checkout"
-    Until the next release is published, install from the checkout that contains the backend API (`pip install -e ".[arango]"`) and run `odin init --skill` from that environment. The skills come from the installed package, not from the network, so they cannot get ahead of or behind the library.
+!!! note "Version matching"
+    The skills come from the installed package, not from the network, so they always match the installed Odin. Re-run `odin init --skill` after upgrading.
 
 ## Refresh after an upgrade
 

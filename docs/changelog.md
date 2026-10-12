@@ -12,7 +12,7 @@ All notable changes to **Odin** (`odin-engine`) are documented here. This projec
 
 <div class="changelog-release" markdown>
 
-## Unreleased
+## 0.4.0 <span class="changelog-date">2026-10-12</span>
 
 The engine now accepts `OdinEngine(backend)`. ArangoDB operations are provided
 by `ArangoBackend(db, graph)`, with a required explicit Arango graph mapping,
@@ -37,7 +37,11 @@ Training failures raise; constant confidence requires explicit
 `auto_train=False`. Failed retraining preserves the active serving state.
 
 See [Backend migration](guides/backend-migration.md) before upgrading.
-These changes have not been released to PyPI.
+
+Odin now ships two agent skills, `odin` and `odin-custom-backend`, inside the
+package. `odin init --skill` installs them for Claude Code, GitHub Copilot, Cursor
+and Codex, records what it installed, and never overwrites files you edited unless
+you pass `--force`. See [AI editor setup](guides/ai-editors.md).
 
 </div>
 

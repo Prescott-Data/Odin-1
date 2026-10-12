@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-12
+
 ### Changed
 - E-M bootstrap trains until convergence within configured safety limits instead
   of stopping after 10 epochs. Exhaustion raises `TrainingConvergenceError` with
@@ -75,6 +77,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   though Odin is distributed as a Python library.
 
 ### Added
+- Two agent skills ship inside the package: `odin` (using the engine, with
+  references for the result schema, Arango mapping, errors and migration from
+  0.3.0) and `odin-custom-backend` (implementing a backend). They always match
+  the installed version.
+- `odin init --skill` installs the full skill bundle to `.claude/skills/` and
+  `.agents/skills/` by default (`--target github|claude|cursor|agents|all`),
+  writes a manifest of file hashes, reports `installed`, `updated`, `unchanged`,
+  `skipped`, `removed` or `failed` per file, exits non-zero on failure, and keeps
+  files you edited unless `--force` is given.
+- Behavioral evals for the skills under `tests/skills/` (run before releases,
+  not part of the wheel) and an optional `evals` extra for the `openai` and
+  `anthropic` SDKs.
 - Public backend migration guide covering optional drivers, changed imports,
   artifact migration, capability support, and explicit training failures.
 - **NPLL training telemetry and convergence diagnostics.** Every training run
@@ -165,7 +179,8 @@ First release from the public **Odin-1** repository
 - Self-managing NPLL lifecycle (auto-train, weights persisted in ArangoDB).
 - Edge plausibility scoring and PPR-based anchor discovery.
 
-[Unreleased]: https://github.com/Prescott-Data/Odin-1/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Prescott-Data/Odin-1/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Prescott-Data/Odin-1/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Prescott-Data/Odin-1/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/Prescott-Data/Odin-1/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Prescott-Data/Odin-1/releases/tag/v0.2.0

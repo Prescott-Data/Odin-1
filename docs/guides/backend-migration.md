@@ -4,16 +4,13 @@ icon: material/swap-horizontal
 
 # Migrating to explicit backends
 
-These breaking changes are **unreleased** and describe this source checkout.
-Use the checkout containing the backend migration; the published 0.3.0 package
-does not provide this API. A package release and version bump are separate steps.
+These breaking changes shipped in odin-engine 0.4.0. The 0.3.0 package does not
+provide this API.
 
 ## Install the backend driver
 
-From the repository root:
-
 ```bash
-pip install -e ".[arango]"
+pip install "odin-engine[arango]"
 ```
 
 The core package no longer requires `python-arango` or `gremlinpython`.
@@ -184,7 +181,7 @@ cached NPLL model. For error handling, see [Troubleshooting](../reference/troubl
 | Custom backend | Implements `GraphBackend` | Optional source/store capabilities | Optional introspector |
 
 Neo4j engine support and cross-database parity validation are not included in
-this checkout. See [Adapters](../concepts/adapters.md) for custom retrieval
+this release. See [Adapters](../concepts/adapters.md) for custom retrieval
 integration and [Backend contracts](../development/backend-contracts.md) for
 implementing training and persistence.
 

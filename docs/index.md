@@ -84,12 +84,11 @@ Odin trains its NPLL model from your graph on first run and persists the weights
 
 ## Quickstart
 
-This checkout documents the **unreleased backend API**. Install from the
-matching source checkout; published 0.3.0 does not provide these interfaces.
-See [Backend migration](guides/backend-migration.md) for existing applications.
+Odin 0.4.0 takes an explicit backend. See [Backend migration](guides/backend-migration.md)
+if you are upgrading an existing application.
 
 ```bash title="Install"
-pip install -e ".[arango]"
+pip install "odin-engine[arango]"
 ```
 
 ```python title="explore.py"
