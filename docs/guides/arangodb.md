@@ -71,6 +71,14 @@ falling back to a named Arango property. The standalone Arango analytics and
 content helpers likewise require their collection and field mappings and return
 complete source documents; normal engine use needs only the graph mapping above.
 
+### Optional status and provenance filters
+
+`edge_status_field` exposes metadata. Set `allowed_edge_statuses=("active",)` to
+filter edges by mapped status values. `provenance_target_collections=("Reports",)`
+restricts mapped provenance edges to those source collections. A configured
+provenance collection must exist; missing collections raise
+`BackendConfigurationError`.
+
 ## Production connections
 
 Outside local development, never disable authentication. Use a dedicated, least-privilege user and pull secrets from the environment rather than the source:
@@ -155,16 +163,8 @@ An `intelligence_mode` of `Constant` means NPLL was explicitly disabled with
 
 ## Other backends
 
-The accessor layer is an interface (`retrieval/adapters.py`). Odin ships adapters for ArangoDB and JanusGraph, and you can implement the same contract for other stores. See [Adapters](../concepts/adapters.md) for the full picture.
+`ArangoBackend` is the only complete backend today. A JanusGraph accessor supports retrieval only, and Neo4j is planned. To build your own, see [Adapters](../concepts/adapters.md) and [Backend contracts](../development/backend-contracts.md#implementing-a-backend).
 
 ## Next
 
 With a connection in place, run [Your First Retrieval](first-retrieval.md), or let an agent discover the graph's structure with [Schema Introspection](schema-introspection.md).
-
-### Optional status and provenance filters
-
-`edge_status_field` exposes metadata. Set `allowed_edge_statuses=("active",)` to
-filter edges by mapped status values. `provenance_target_collections=("Reports",)`
-restricts mapped provenance edges to those source collections. A configured
-provenance collection must exist; missing collections raise
-`BackendConfigurationError`.

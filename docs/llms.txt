@@ -2,7 +2,7 @@
 
 > Open-source Python library for guided knowledge-graph retrieval. Given seed entities, Odin returns ranked, scored paths through a graph using Personalized PageRank, beam search, and learned edge-plausibility scoring (NPLL). It is the compass for AI agents navigating knowledge graphs: structured, explainable evidence rather than hallucinated relationships.
 
-Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB backend, with JanusGraph and custom adapters supported.
+Package: `odin-engine` on PyPI. Import name: `odin`. Python 3.9+. ArangoDB is the only complete backend (retrieval, training, model storage); a JanusGraph accessor supports retrieval only; custom backends implement the `odin.backends` contracts.
 
 This checkout documents an unreleased explicit-backend API, not published 0.3.0.
 
@@ -21,7 +21,7 @@ This checkout documents an unreleased explicit-backend API, not published 0.3.0.
 - [Motifs & Aggregation](https://odin.developers.prescottdata.io/concepts/aggregation/): patterns and summaries
 - [Triage & Insight Scoring](https://odin.developers.prescottdata.io/concepts/scoring/): the 0-100 prioritization score
 - [Caching](https://odin.developers.prescottdata.io/concepts/caching/): LRU graph access
-- [Adapters](https://odin.developers.prescottdata.io/concepts/adapters/): ArangoDB, JanusGraph, custom backends
+- [Adapters](https://odin.developers.prescottdata.io/concepts/adapters/): ArangoDB backend, JanusGraph retrieval accessor, custom backends
 
 ## Guides
 

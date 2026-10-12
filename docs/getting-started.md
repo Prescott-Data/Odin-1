@@ -9,7 +9,7 @@ icon: material/rocket-launch
     not the published 0.3.0 package. Install from that checkout and see the
     [migration guide](guides/backend-migration.md) when updating existing code.
 
-This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes. Ten minutes, start to finish.
+This guide takes you from a fresh Python environment to your first scored retrieval, and then to the two other things you will do most often: scoring a single edge and finding the important nodes.
 
 ---
 
@@ -69,6 +69,39 @@ This exposes ArangoDB on `http://localhost:8529` with authentication disabled, w
 
 ---
 
+## Load a small sample graph
+
+Odin reads a graph you already have; it does not create one. If you have none, this creates the `CaseRecords` / `EvidenceLinks` graph used in the rest of this guide:
+
+```python
+from arango import ArangoClient
+
+client = ArangoClient(hosts="http://localhost:8529")
+sys_db = client.db("_system", username="root", password="")
+if not sys_db.has_database("my_graph"):
+    sys_db.create_database("my_graph")
+db = client.db("my_graph", username="root", password="")
+
+nodes = db.create_collection("CaseRecords")
+edges = db.create_collection("EvidenceLinks", edge=True)
+
+nodes.import_bulk([
+    {"_key": "claim_123", "record_type": "claim"},
+    {"_key": "patient_001", "record_type": "person"},
+    {"_key": "doctor_smith", "record_type": "person"},
+    {"_key": "provider_456", "record_type": "provider"},
+])
+edges.import_bulk([
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/patient_001", "predicate": "submitted_by"},
+    {"_from": "CaseRecords/claim_123", "_to": "CaseRecords/provider_456", "predicate": "billed_by"},
+    {"_from": "CaseRecords/patient_001", "_to": "CaseRecords/doctor_smith", "predicate": "treated_by"},
+])
+```
+
+This graph only illustrates the shape Odin expects. NPLL training needs enough relations to generate rules, so a three-edge graph may fail to train; use `OdinEngine(backend, auto_train=False)` for a quick structural check, or use your own graph for real scores. Only the mapping in the next section changes.
+
+---
+
 ## Connect and initialize
 
 ```python
@@ -83,6 +116,7 @@ graph = ArangoGraphConfig(
     node_collection="CaseRecords",
     edge_collection="EvidenceLinks",
     relation_field="predicate",
+    entity_type_field="record_type",
 )
 backend = ArangoBackend(db, graph)
 engine = OdinEngine(backend, community_id="global")
@@ -126,7 +160,7 @@ Whole-path retrieval is the main event, but the same engine gives you two more f
 Sometimes you do not want a path, just a yes-or-no on one relationship. `score_edge()` answers exactly that:
 
 ```python
-score = engine.score_edge("entity/patient_001", "treated_by", "entity/doctor_smith")
+score = engine.score_edge("CaseRecords/patient_001", "treated_by", "CaseRecords/doctor_smith")
 print(score)   # 0.0 (impossible) … 1.0 (highly plausible)
 ```
 
@@ -139,7 +173,7 @@ It is the same NPLL signal Odin uses internally, exposed so you can drop it stra
 And when you are not sure *where* to start, ask which nodes matter most around a seed:
 
 ```python
-anchors = engine.find_anchors(seeds=["community/insurance_claims"], topn=20)
+anchors = engine.find_anchors(seeds=["CaseRecords/claim_123"], topn=20)
 for node_id, ppr_score in anchors[:10]:
     print(f"{ppr_score:.4f}  {node_id}")
 ```

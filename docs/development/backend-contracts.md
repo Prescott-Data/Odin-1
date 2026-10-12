@@ -18,6 +18,37 @@ a non-null `TripleSource` and `ModelStore`; otherwise the engine raises
 `BackendCapabilityError`. Unexpected bootstrap failures propagate rather than
 being converted into constant confidence.
 
+## Implementing a backend
+
+All protocols live in `odin.backends` (`odin/backends/base.py`). `ArangoBackend`
+is the reference implementation; the in-memory example in
+[Adapters](../concepts/adapters.md) is the smallest retrieval-only one.
+
+| Protocol | Method | Required | Purpose |
+| --- | --- | --- | --- |
+| `GraphBackend` | `accessor(community_id, community_mode)` | Always | Returns a `GraphAccessor` for retrieval. |
+| `TrainingBackend` | `triple_source()` | For training | Returns a `TripleSource` whose `snapshot()` yields a `TrainingSnapshot`. |
+| `TrainingBackend` | `model_store()` | For training | Returns a `ModelStore` with `load(key)` and `save(key, document, expected_revision=...)`. |
+| `GlobalAccessBackend` | `global_accessor()` | Optional | Direct access to global signals such as bridges and affinity. |
+| `SchemaInspectionBackend` | `schema_inspector()` | Optional | Returns an object with `get_schema_map(refresh=False)` for `inspect_schema(backend)`. |
+
+A backend must supply:
+
+- **Identity.** Node IDs from the accessor and the entity IDs in training
+  triples must be the same strings, with exact, case-sensitive relation labels.
+- **A global training snapshot.** Training is global; communities only scope
+  retrieval.
+- **Atomic storage.** `save` must be a compare-and-swap on an opaque revision
+  token, raising `ModelConflictError` on a conflict, and namespaced so
+  different databases or graph mappings never share an artifact.
+- **The documented errors.** Use the errors in the table under
+  [Model artifacts and concurrency](#model-artifacts-and-concurrency).
+
+Everything else on this page is Arango's implementation of those requirements
+(AQL extraction, `_id` identities, `_rev` checks, the `OdinModels` collection)
+and does not constrain another database. Without `TrainingBackend`, construct
+the engine with `auto_train=False`.
+
 ## Snapshot identity
 
 `TripleSource.snapshot()` returns a frozen `TrainingSnapshot`. Its triples are

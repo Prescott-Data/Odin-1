@@ -48,7 +48,7 @@ If your backend can traverse both directions, enumerate nodes, and read node pro
 | Adapter | Backend | Notes |
 |---------|---------|-------|
 | `ArangoCommunityAccessor` | ArangoDB | The reference adapter. Rich edges (weights, timestamps, provenance), community mapping, and the backend `OdinEngine` uses. |
-| `JanusGraphAccessor` | JanusGraph | Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
+| `JanusGraphAccessor` | JanusGraph | Retrieval only: no engine backend, training, or schema inspection. Runs over a Gremlin traversal source; validated against JanusGraph 1.x with the GraphSON v3 serializer. |
 | `KGCommunityAccessor` | In-memory `KnowledgeGraph` | For a pre-sliced community held in memory. |
 | `OverlayAccessor` | Any accessor | Wraps a base accessor and adds soft overlay edges on top. |
 

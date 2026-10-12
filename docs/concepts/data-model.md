@@ -73,7 +73,7 @@ embeddings, because NPLL trains straight from the graph's edge structure. And
 there is no query language to write on your side: you hand Odin entity IDs and
 it handles the traversal.
 
-The reference backend is **ArangoDB**, but the graph accessor is an interface. Adapters already ship for ArangoDB and JanusGraph, and you can implement the same contract for other stores such as Neptune or Neo4j. See [Adapters](adapters.md) for the interface and how to plug in a backend.
+The reference backend is **ArangoDB**, but the graph accessor is an interface. `ArangoBackend` is the only complete backend today. A JanusGraph accessor ships for retrieval only, and you can implement the backend contracts for other stores such as Neo4j. See [Adapters](adapters.md) for the accessor interface and [Backend contracts](../development/backend-contracts.md#implementing-a-backend) for a full backend.
 
 ---
 

@@ -188,13 +188,13 @@ for p in result['paths']:
     print(f"  [{p['score']:.2f}]", " -> ".join(str(n) for n in nodes))
 ```
 
-**Output Example:**
+**Output Example** (illustrative; your IDs, counts, and scores will differ):
 ```
 Found 47 paths
 Triage Score: 87/100
-  [0.94] claim_123 → billed_by → provider_456 → flagged_in → audit_07
-  [0.89] claim_123 → has_diagnosis → sepsis_dx → rare_in → nursing_home_cluster
-  [0.82] provider_456 → prescribed → medication_999 → contraindicated_with → patient_history
+  [0.94] CaseRecords/claim_123 -> CaseRecords/provider_456 -> CaseRecords/audit_07
+  [0.89] CaseRecords/claim_123 -> CaseRecords/sepsis_dx -> CaseRecords/nursing_home_cluster
+  [0.82] CaseRecords/provider_456 -> CaseRecords/medication_999 -> CaseRecords/patient_history
 ```
 
 ### Automatic NPLL Lifecycle
